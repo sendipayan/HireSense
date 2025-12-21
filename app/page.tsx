@@ -145,7 +145,7 @@ export default function HomePage() {
                       </Link>
                     </ShimmerButton>
                   </MagneticButton>
-                  <MagneticButton>
+                  {/*<MagneticButton>
                     <Button
                       size="lg"
                       variant="outline"
@@ -157,7 +157,7 @@ export default function HomePage() {
                         Watch Demo
                       </Link>
                     </Button>
-                  </MagneticButton>
+                  </MagneticButton>*/}
                 </div>
               </BlurFade>
 
