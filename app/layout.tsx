@@ -6,6 +6,7 @@ import "./globals.css"
 import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
 import { ThemeProvider } from "@/components/theme-provider"
+import { AuthProvider } from "@/components/authProvider"
 
 const _geist = Geist({ subsets: ["latin"] })
 const _geistMono = Geist_Mono({ subsets: ["latin"] })
@@ -72,7 +73,7 @@ export const metadata: Metadata = {
     creator: "@hiresense",
   },
   icons: {
-     icon: "/icon.svg",
+    icon: "/icon.svg",
     shortcut: "/favicon.ico",
     apple: "/apple-icon.png",
   }
@@ -100,11 +101,13 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className="font-sans antialiased min-h-screen flex flex-col">
-        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
-          <Navbar />
-          <div className="flex-1">{children}</div>
-          <Footer />
-        </ThemeProvider>
+        <AuthProvider>
+          <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
+            <Navbar />
+            <div className="flex-1">{children}</div>
+            <Footer />
+          </ThemeProvider>
+        </AuthProvider>
         <Analytics />
       </body>
     </html>

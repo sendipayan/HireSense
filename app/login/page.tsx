@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { sendOtp } from "../actions/send-otp";
-import Router from "next/router";
 import axios from "axios";
 import {
   Sparkles,
@@ -80,6 +79,7 @@ export default function LoginPage() {
       }, { withCredentials: true })
       console.log(res)
       if (res.status === 201) {
+        await fetch("/api/auth/me")
         const path = formData.role.toLowerCase()
         router.push(`/${path}/dashboard`)
       }

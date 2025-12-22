@@ -1,3 +1,5 @@
+"use client"
+
 import type { Metadata } from "next"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
@@ -7,20 +9,26 @@ import { StatCard } from "@/components/stat-card"
 import { CandidateCard } from "@/components/candidate-card"
 import { Badge } from "@/components/ui/badge"
 import { mockCandidates, mockJobs } from "@/lib/mock-data"
+import { useAuthStore } from "@/store/authStore"
+import { useRouter } from "next/navigation";
 import { Users, Briefcase, Target, TrendingUp, Plus, ArrowRight, Eye, Clock, CheckCircle2 } from "lucide-react"
+import { useEffect } from "react"
 
 /**
  * SEO: Recruiter dashboard metadata
  * - noindex since this is an authenticated page
  */
-export const metadata: Metadata = {
-  title: "Recruiter Dashboard",
-  description:
-    "Manage your hiring pipeline with AI-powered candidate matching. View top candidates, active jobs, and hiring analytics.",
-  robots: { index: false, follow: false },
-}
+//export const metadata: Metadata = {
+//title: "Recruiter Dashboard",
+//description:
+//"Manage your hiring pipeline with AI-powered candidate matching. View top candidates, active jobs, and hiring analytics.",
+//robots: { index: false, follow: false },
+//}
 
 export default function RecruiterDashboardPage() {
+
+  const router = useRouter()
+  const { isLoggedIn } = useAuthStore()
   // Mock company data
   const company = {
     name: "TechCorp Inc.",
@@ -47,6 +55,13 @@ export default function RecruiterDashboardPage() {
     newApplicants: 3 + index,
     status: index === 0 ? "Active" : index === 1 ? "Reviewing" : "Active",
   }))
+
+  useEffect(() => {
+    if (!isLoggedIn) {
+      router.push("/login")
+    }
+  }, [])
+
 
   return (
     <main className="py-8 sm:py-12">

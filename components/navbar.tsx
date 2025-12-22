@@ -7,7 +7,10 @@ import { Menu, X, Sparkles } from "lucide-react"
 import { ThemeToggle } from "./theme-toggle"
 import icon from "@/public/icon.png"
 import Image from "next/image"
-
+import { ProfileMenu } from "./profileMenu"
+import { useAuthStore } from "@/store/authStore"
+import { useRouter } from "next/navigation"
+import axios from "axios"
 /**
  * Main navigation component
  * - Semantic <header> and <nav> elements for accessibility and SEO
@@ -17,8 +20,11 @@ import Image from "next/image"
  * - Theme toggle button
  */
 export function Navbar() {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const router = useRouter()
+  const clearAuth = useAuthStore((s) => s.logout)
 
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const { isLoggedIn, user } = useAuthStore()
   const navigation = [
     { name: "For Candidates", href: "/candidate/dashboard" },
     { name: "For Recruiters", href: "/recruiter/dashboard" },
@@ -39,7 +45,7 @@ export function Navbar() {
         <div className="flex items-center gap-2">
           <Link href="/" className="flex items-center gap-2 text-xl font-bold tracking-tight" aria-label="HireAI Home">
             <div className="flex h-8 w-8 items-center justify-center ">
-              <Image src={icon} alt="HireAI Logo" width={24} height={24} className=""/>
+              <Image src={icon} alt="HireAI Logo" width={24} height={24} className="" />
             </div>
             <span>HireSense</span>
           </Link>
@@ -60,12 +66,24 @@ export function Navbar() {
 
         <div className="hidden md:flex md:items-center md:gap-3">
           <ThemeToggle />
-          <Button variant="ghost" asChild>
+          {!isLoggedIn && <Button variant="ghost" asChild>
             <Link href="/login">Sign in</Link>
-          </Button>
-          <Button asChild>
+          </Button>}
+          {!isLoggedIn && <Button asChild>
             <Link href="/login">Get Started</Link>
-          </Button>
+          </Button>}
+          {isLoggedIn && (
+            <ProfileMenu
+              email={user?.email.slice(0, 15) + "..."}
+              role={user?.role}
+              onLogout={async () => {
+                const res = await axios.post("/api/auth/logout")
+                if (res.data.success) {
+                  clearAuth()
+                  router.replace("/login")
+                }
+              }}
+            />)}
         </div>
 
         <div className="flex items-center gap-2 md:hidden">

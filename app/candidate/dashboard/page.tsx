@@ -1,3 +1,4 @@
+"use client"
 import type { Metadata } from "next"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
@@ -7,6 +8,9 @@ import { StatCard } from "@/components/stat-card"
 import { JobCard } from "@/components/job-card"
 import { Badge } from "@/components/ui/badge"
 import { mockJobs, mockApplications } from "@/lib/mock-data"
+import { useAuthStore } from "@/store/authStore"
+import { useRouter } from "next/navigation";
+import { useEffect } from "react"
 import {
   FileText,
   Briefcase,
@@ -25,14 +29,16 @@ import {
  * - Descriptive title for the dashboard page
  * - noindex since this is an authenticated page
  */
-export const metadata: Metadata = {
-  title: "Candidate Dashboard",
-  description:
-    "Your personal job search dashboard. View recommended jobs, track applications, and get AI-powered insights on your resume.",
-  robots: { index: false, follow: false },
-}
+//export const metadata: Metadata = {
+//  title: "Candidate Dashboard",
+//description:
+//"Your personal job search dashboard. View recommended jobs, track applications, and get AI-powered insights on your resume.",
+//robots: { index: false, follow: false },
+//}
 
 export default function CandidateDashboardPage() {
+  const router = useRouter()
+  const { isLoggedIn } = useAuthStore()
   // Mock user data
   const user = {
     name: "Sarah Chen",
@@ -69,6 +75,8 @@ export default function CandidateDashboardPage() {
         return AlertCircle
     }
   }
+
+
 
   return (
     <main className="py-8 sm:py-12">
