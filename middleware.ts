@@ -7,41 +7,55 @@ export default async function middleware(req: NextRequest) {
   const token = req.cookies.get("auth_token")?.value;
   if (token) {
     console.log("token present");
+
+    // Not logged in
+
+    // Redirect logged-in users away from login
+    if (pathname.startsWith("/login")) {
+      const payload = await verifyJwtEdge(token);
+
+      if (payload) {
+        return NextResponse.redirect(
+          new URL(`/${payload.role.toLowerCase()}/dashboard`, req.url)
+        );
+      }
+    }
+
+    const payload = await verifyJwtEdge(token);
+    console.log(payload);
+
+    // Invalid / expired token
+    if (!payload) {
+      return NextResponse.redirect(new URL("/", req.url));
+    }
+
+    /**
+     * ROLE-BASED ACCESS
+     *
+     * /recruiter/*  → RECRUITER only
+     * /candidate/*  → CANDIDATE only
+     */
+
+    if (pathname.startsWith("/recruiter") && payload.role !== "RECRUITER") {
+      return NextResponse.redirect(new URL("/", req.url));
+    }
+
+    if (pathname.startsWith("/candidate") && payload.role !== "CANDIDATE") {
+      return NextResponse.redirect(new URL("/", req.url));
+    }
+  } else {
+    if (pathname.startsWith("/recruiter")) {
+      return NextResponse.redirect(new URL("/login", req.url));
+    }
+
+    if (pathname.startsWith("/candidate")) {
+      return NextResponse.redirect(new URL("/login", req.url));
+    }
   }
-  // Not logged in
-  else {
-    return NextResponse.redirect(new URL("/login", req.url));
-  }
 
-  const payload = await verifyJwtEdge(token);
-  console.log(payload);
-
-  // Invalid / expired token
-  if (!payload) {
-    return NextResponse.redirect(new URL("/login", req.url));
-  }
-
-  /**
-   * ROLE-BASED ACCESS
-   *
-   * /recruiter/*  → RECRUITER only
-   * /candidate/*  → CANDIDATE only
-   */
-
-  if (pathname.startsWith("/recruiter") && payload.role !== "RECRUITER") {
-    return NextResponse.redirect(new URL("/", req.url));
-  }
-
-  if (pathname.startsWith("/candidate") && payload.role !== "CANDIDATE") {
-    return NextResponse.redirect(new URL("/", req.url));
-  }
-
-  //if (pathname.startsWith("/login") && token) {
-  // return NextResponse.redirect(new URL("/", req.url));
-  //}
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ["/recruiter/:path*", "/candidate/:path*"],
+  matcher: ["/recruiter/:path*", "/candidate/:path*", "/login/:path*"],
 };
