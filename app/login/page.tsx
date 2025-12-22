@@ -39,6 +39,10 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [isNext, setIsNext] = useState(false);
   const [Otp, setOtp] = useState("")
+  const [timer, setTimer] = useState(false)
+  const [sec, setSec] = useState(15)
+  const [loading, setLoading] = useState(false)
+  const [chances, setChances] = useState(3)
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -51,6 +55,7 @@ export default function LoginPage() {
     // Frontend-only: form submission would be handled by backend
     if (isSignUp) {
       setIsNext(true);
+      setTimer(true)
     }
     console.log("Form submitted:", formData);
   };
@@ -63,8 +68,35 @@ export default function LoginPage() {
   };
 
   useEffect(() => {
-    setFormData({ ...formData, name: "", email: "", password: "", role: "" })
-  }, [isNext, isSignUp])
+    setFormData((prev) => ({
+      ...prev,
+      name: "",
+      email: "",
+      password: "",
+      role: "",
+    }))
+  }, [isSignUp])
+
+
+  useEffect(() => {
+    if (!timer) return
+
+    if (sec <= 0) {
+      setTimer(false)
+      return
+    }
+
+    const interval = setInterval(() => {
+      setSec((prev) => prev - 1)
+    }, 1000)
+
+    return () => clearInterval(interval)
+  }, [timer, sec])
+
+
+
+
+
 
   return (
     <main className="flex min-h-[calc(100vh-4rem)] items-center justify-center py-12 px-4">
@@ -101,7 +133,7 @@ export default function LoginPage() {
         {/* Login/Signup Card */}
         <div className="rounded-2xl border border-border bg-card p-8">
           {/* OAuth Buttons */}
-          <div className="space-y-3">
+          {!isNext && <div className="space-y-3">
             {/* Google OAuth Button */}
             <Button
               variant="outline"
@@ -161,10 +193,10 @@ export default function LoginPage() {
               </svg>
               Continue with GitHub
             </Button>
-          </div>
+          </div>}
 
           {/* Divider */}
-          <div className="relative my-6">
+          {!isNext && <div className="relative my-6">
             <div className="absolute inset-0 flex items-center">
               <div className="w-full border-t border-border" />
             </div>
@@ -173,7 +205,7 @@ export default function LoginPage() {
                 or continue with email
               </span>
             </div>
-          </div>
+          </div>}
 
           {isNext ? (
             <form onSubmit={handleNext} className="space-y-4 w-full">
@@ -341,12 +373,12 @@ export default function LoginPage() {
             </form>
           )}
 
-          {isNext && (<div className="mt-6 text-center">
-            <p className="text-sm text-muted-foreground">Didn't recieve the OTP? {" "}
-              <button type="button" className="font-medium text-primary hover:underline">
+          {isNext && chances > 0 && (<div className="mt-6 text-center">
+            {!timer ? <p className="text-sm text-muted-foreground">Didn't recieve the OTP? {" "}
+              <button type="button" className="font-medium text-primary hover:underline" onClick={() => { setTimer(true); setSec(15); setChances(chances - 1) }}>
                 Resend OTP
               </button>
-            </p>
+            </p> : <p className="text-sm text-muted-foreground">Resend OTP in {sec} seconds</p>}
           </div>)}
 
           <div className="mt-6 text-center">
