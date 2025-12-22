@@ -29,6 +29,7 @@ import Image from "next/image";
 import icon from "@/public/icon.png";
 import { OTPInput } from "@/components/OTPinput";
 import { useRouter } from "next/navigation";
+import { useAuthStore } from "@/store/authStore";
 
 
 /**
@@ -39,6 +40,8 @@ import { useRouter } from "next/navigation";
  * - Accessible form with proper labels
  */
 export default function LoginPage() {
+  const { setIsLoggedIn, setUser } = useAuthStore()
+
   const router = useRouter()
   const [isSignUp, setIsSignUp] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -62,6 +65,22 @@ export default function LoginPage() {
       await sendOtp(formData.email)
       setIsNext(true);
       setTimer(true)
+    } else {
+      const res = await axios.post("/api/auth/login", {
+        email: formData.email,
+        password: formData.password,
+        role: formData.role
+      }, { withCredentials: true })
+      console.log(res)
+      if (res.status === 200) {
+        const res2 = await fetch("/api/auth/me")
+        const data2 = await res2.json()
+        setUser(data2.user)
+        setIsLoggedIn(true)
+        const path = formData.role.toLowerCase()
+        router.push(`/${path}/dashboard`)
+
+      }
     }
     console.log("Form submitted:", formData);
   };
@@ -79,9 +98,13 @@ export default function LoginPage() {
       }, { withCredentials: true })
       console.log(res)
       if (res.status === 201) {
-        await fetch("/api/auth/me")
+        const res2 = await fetch("/api/auth/me")
+        const data2 = await res2.json()
+        setUser(data2.user)
+        setIsLoggedIn(true)
         const path = formData.role.toLowerCase()
         router.push(`/${path}/dashboard`)
+
       }
     }
 

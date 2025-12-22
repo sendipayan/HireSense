@@ -56,11 +56,7 @@ export default function RecruiterDashboardPage() {
     status: index === 0 ? "Active" : index === 1 ? "Reviewing" : "Active",
   }))
 
-  useEffect(() => {
-    if (!isLoggedIn) {
-      router.push("/login")
-    }
-  }, [])
+
 
 
   return (
