@@ -7,6 +7,9 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { sendOtp } from "../actions/send-otp";
+import Router from "next/router";
+import axios from "axios";
 import {
   Sparkles,
   Eye,
@@ -26,6 +29,8 @@ import {
 import Image from "next/image";
 import icon from "@/public/icon.png";
 import { OTPInput } from "@/components/OTPinput";
+import { useRouter } from "next/navigation";
+
 
 /**
  * Login/Signup page with OAuth and email/password options
@@ -35,6 +40,7 @@ import { OTPInput } from "@/components/OTPinput";
  * - Accessible form with proper labels
  */
 export default function LoginPage() {
+  const router = useRouter()
   const [isSignUp, setIsSignUp] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [isNext, setIsNext] = useState(false);
@@ -50,20 +56,34 @@ export default function LoginPage() {
     role: "",
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     // Frontend-only: form submission would be handled by backend
     if (isSignUp) {
+      await sendOtp(formData.email)
       setIsNext(true);
       setTimer(true)
     }
     console.log("Form submitted:", formData);
   };
 
-  const handleNext = (e: React.FormEvent) => {
+  const handleNext = async (e: React.FormEvent) => {
     e.preventDefault();
     // Frontend-only: form submission would be handled by backend
-    console.log(Otp)
+    if (Otp.length === 6) {
+      const res = await axios.post("/api/auth/signup", {
+        email: formData.email,
+        name: formData.name,
+        password: formData.password,
+        role: formData.role,
+        otp: Otp,
+      }, { withCredentials: true })
+      console.log(res)
+      if (res.status === 201) {
+        const path = formData.role.toLowerCase()
+        router.push(`/${path}/dashboard`)
+      }
+    }
 
   };
 
@@ -296,8 +316,8 @@ export default function LoginPage() {
                     </SelectTrigger>
 
                     <SelectContent>
-                      <SelectItem value="candidate">Candidate</SelectItem>
-                      <SelectItem value="recruiter">Recruiter</SelectItem>
+                      <SelectItem value="CANDIDATE">Candidate</SelectItem>
+                      <SelectItem value="RECRUITER">Recruiter</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
