@@ -26,8 +26,7 @@ export function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const { isLoggedIn, user } = useAuthStore()
   const navigation = [
-    { name: "For Candidates", href: "/candidate/dashboard" },
-    { name: "For Recruiters", href: "/recruiter/dashboard" },
+    { name: "Home", href: "/" },
     { name: "About", href: "/about" },
     { name: "Contact", href: "/contact" },
   ]
@@ -121,12 +120,27 @@ export function Navbar() {
               </Link>
             ))}
             <div className="mt-4 flex flex-col gap-2 pt-4 border-t border-border">
-              <Button variant="outline" asChild className="w-full bg-transparent">
+              {!isLoggedIn && <Button variant="outline" asChild className="w-full bg-transparent">
                 <Link href="/login">Sign in</Link>
-              </Button>
-              <Button asChild className="w-full">
+              </Button>}
+              {!isLoggedIn && <Button asChild className="w-full">
                 <Link href="/login">Get Started</Link>
-              </Button>
+              </Button>}
+              {isLoggedIn && <Button asChild className="w-full">
+                <Link href={`/${user?.role.toLowerCase()}/dashboard`}>Dashboard</Link>
+              </Button>}
+              {isLoggedIn && <Button asChild className="w-full">
+                <Link href={`/${user?.role.toLowerCase()}/dashboard/profile`}>Profile</Link>
+              </Button>}
+              {isLoggedIn && <Button asChild className="w-full bg-red-500" onClick={async () => {
+                const res = await axios.post("/api/auth/logout")
+                if (res.data.success) {
+                  clearAuth()
+                  router.replace("/login")
+                }
+              }}>
+                <p >Logout</p>
+              </Button>}
             </div>
           </div>
         </div>
