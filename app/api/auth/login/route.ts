@@ -6,9 +6,9 @@ import { signJwt } from "@/lib/jwt";
 
 export async function POST(req: Request) {
   try {
-    const { email, password, role } = await req.json();
+    const { email, password } = await req.json();
 
-    if (!email || !password || !role) {
+    if (!email || !password) {
       return NextResponse.json(
         { message: "All fields are required" },
         { status: 400 }
@@ -19,9 +19,6 @@ export async function POST(req: Request) {
     });
 
     if (user) {
-      if (user.role !== role) {
-        return NextResponse.json({ message: "Invalid role" }, { status: 401 });
-      }
       const verified = await verifyPassword(password, user.password);
       if (!verified) {
         return NextResponse.json(

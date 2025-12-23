@@ -69,7 +69,6 @@ export default function LoginPage() {
       const res = await axios.post("/api/auth/login", {
         email: formData.email,
         password: formData.password,
-        role: formData.role
       }, { withCredentials: true })
       console.log(res)
       if (res.status === 200) {
@@ -77,7 +76,8 @@ export default function LoginPage() {
         const data2 = await res2.json()
         setUser(data2.user)
         setIsLoggedIn(true)
-        const path = formData.role.toLowerCase()
+        const path = data2.user.role.toLowerCase()
+        console.log(path)
         router.push(`/${path}/dashboard`)
 
       }
@@ -89,22 +89,27 @@ export default function LoginPage() {
     e.preventDefault();
     // Frontend-only: form submission would be handled by backend
     if (Otp.length === 6) {
-      const res = await axios.post("/api/auth/signup", {
-        email: formData.email,
-        name: formData.name,
-        password: formData.password,
-        role: formData.role,
-        otp: Otp,
-      }, { withCredentials: true })
-      console.log(res)
-      if (res.status === 201) {
-        const res2 = await fetch("/api/auth/me")
-        const data2 = await res2.json()
-        setUser(data2.user)
-        setIsLoggedIn(true)
-        const path = formData.role.toLowerCase()
-        router.push(`/${path}/dashboard`)
+      try {
+        const res = await axios.post("/api/auth/signup", {
+          email: formData.email,
+          name: formData.name,
+          password: formData.password,
+          role: formData.role,
+          otp: Otp,
+        }, { withCredentials: true })
+        console.log(res)
+        if (res.status === 201) {
+          const res2 = await fetch("/api/auth/me")
+          const data2 = await res2.json()
+          setUser(data2.user)
+          setIsLoggedIn(true)
+          const path = formData.role.toLowerCase()
+          router.push(`/${path}/dashboard`)
 
+        }
+      } catch (error: any) {
+        console.log(error)
+        alert(error)
       }
     }
 
@@ -317,7 +322,7 @@ export default function LoginPage() {
                 </div>
               </div>
               {/* Role Field*/}
-              <div className="space-y-2 ">
+              {isSignUp && <div className="space-y-2 ">
                 <Label htmlFor="role" className="text-sm font-medium">
                   Role
                 </Label>
@@ -344,7 +349,7 @@ export default function LoginPage() {
                     </SelectContent>
                   </Select>
                 </div>
-              </div>
+              </div>}
 
               {/* Password field */}
               <div className="space-y-2">
@@ -418,7 +423,7 @@ export default function LoginPage() {
 
           {isNext && chances > 0 && (<div className="mt-6 text-center">
             {!timer ? <p className="text-sm text-muted-foreground">Didn't recieve the OTP? {" "}
-              <button type="button" className="font-medium text-primary hover:underline" onClick={() => { setTimer(true); setSec(15); setChances(chances - 1) }}>
+              <button type="button" className="font-medium text-primary hover:underline" onClick={async () => { await sendOtp(formData.email); setTimer(true); setSec(15); setChances(chances - 1) }}>
                 Resend OTP
               </button>
             </p> : <p className="text-sm text-muted-foreground">Resend OTP in {sec} seconds</p>}

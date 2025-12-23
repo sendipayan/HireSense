@@ -31,8 +31,12 @@ export async function POST(req: Request) {
     }
 
     const hashedPassword = await hashPassword(password);
-
-    if (!user) {
+    if (user) {
+      return NextResponse.json(
+        { success: false, error: "User already exists" },
+        { status: 400 }
+      );
+    } else {
       user = await prisma.user.create({
         data: {
           email,
