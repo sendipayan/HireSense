@@ -2,7 +2,9 @@
 
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu"
 import * as Avatar from "@radix-ui/react-avatar"
-import { LogOut, User } from "lucide-react"
+import { LogOut, User, LayoutDashboard } from "lucide-react"
+
+import { useRouter } from "next/navigation"
 
 type Props = {
     email: string | undefined
@@ -11,6 +13,8 @@ type Props = {
 }
 
 export function ProfileMenu({ email, role, onLogout }: Props) {
+    const router = useRouter()
+
     return (
         <DropdownMenu.Root>
             <DropdownMenu.Trigger asChild>
@@ -34,12 +38,21 @@ export function ProfileMenu({ email, role, onLogout }: Props) {
             >
                 <div className="px-2 py-1">
                     <p className="text-sm font-medium">{email}</p>
-                    <p className="text-xs text-muted-foreground">{role}</p>
+                    <p className="text-xs text-muted-foreground">{role?.toLowerCase()}</p>
                 </div>
 
                 <DropdownMenu.Separator className="my-1 h-px bg-border" />
 
-                <DropdownMenu.Item className="flex cursor-pointer items-center gap-2 rounded px-2 py-2 text-sm outline-none hover:bg-muted">
+                <DropdownMenu.Item className="flex cursor-pointer items-center gap-2 rounded px-2 py-2 text-sm outline-none hover:bg-muted"
+                    onClick={() => router.push(`/${role?.toLowerCase()}/dashboard`)}
+                >
+                    <LayoutDashboard className="h-4 w-4" />
+                    Dashboard
+                </DropdownMenu.Item>
+
+                <DropdownMenu.Item className="flex cursor-pointer items-center gap-2 rounded px-2 py-2 text-sm outline-none hover:bg-muted"
+                    onClick={() => router.push(`/${role?.toLowerCase()}/dashboard/profile`)}
+                >
                     <User className="h-4 w-4" />
                     Profile
                 </DropdownMenu.Item>
