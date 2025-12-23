@@ -7,12 +7,12 @@ import { LogOut, User, LayoutDashboard } from "lucide-react"
 import { useRouter } from "next/navigation"
 
 type Props = {
-    email: string | undefined
+    name: string | undefined
     role: "CANDIDATE" | "RECRUITER" | undefined
     onLogout: () => void
 }
 
-export function ProfileMenu({ email, role, onLogout }: Props) {
+export function ProfileMenu({ name, role, onLogout }: Props) {
     const router = useRouter()
 
     return (
@@ -26,7 +26,7 @@ export function ProfileMenu({ email, role, onLogout }: Props) {
                             className="h-full w-full rounded-full object-cover"
                         />
                         <Avatar.Fallback className="text-sm font-medium">
-                            {email?.[0].toUpperCase()}
+                            {name?.[0].toUpperCase()}
                         </Avatar.Fallback>
                     </Avatar.Root>
                 </button>
@@ -37,7 +37,7 @@ export function ProfileMenu({ email, role, onLogout }: Props) {
                 className="w-56 rounded-md bg-background p-2 shadow-md"
             >
                 <div className="px-2 py-1">
-                    <p className="text-sm font-medium">{email}</p>
+                    <p className="text-sm font-medium">{name}</p>
                     <p className="text-xs text-muted-foreground">{role?.toLowerCase()}</p>
                 </div>
 

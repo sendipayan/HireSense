@@ -73,7 +73,7 @@ export function Navbar() {
           </Button>}
           {isLoggedIn && (
             <ProfileMenu
-              email={user?.email.slice(0, 15) + "..."}
+              name={user?.name}
               role={user?.role}
               onLogout={async () => {
                 const res = await axios.post("/api/auth/logout")
@@ -107,7 +107,7 @@ export function Navbar() {
       {/* Mobile Menu */}
       {mobileMenuOpen && (
         <div id="mobile-menu" className="md:hidden border-t border-border bg-background" role="menu">
-          <div className="space-y-1 px-4 py-4">
+          <div className="space-y-1 px-4 py-4 flex flex-col items-center">
             {navigation.map((item) => (
               <Link
                 key={item.name}
@@ -119,7 +119,7 @@ export function Navbar() {
                 {item.name}
               </Link>
             ))}
-            <div className="mt-4 flex flex-col gap-2 pt-4 border-t border-border">
+            <div className="mt-4 flex flex-col gap-2 pt-4 border-t border-border w-full">
               {!isLoggedIn && <Button variant="outline" asChild className="w-full bg-transparent">
                 <Link href="/login">Sign in</Link>
               </Button>}
