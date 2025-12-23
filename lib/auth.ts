@@ -15,6 +15,7 @@ export async function getAuthUser() {
         id: true,
         email: true,
         role: true,
+        name: true,
       },
     });
 
