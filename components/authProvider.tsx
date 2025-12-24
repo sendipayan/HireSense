@@ -2,11 +2,12 @@
 
 import { useEffect } from "react"
 import { useAuthStore } from "@/store/authStore"
+import { SessionProvider } from "next-auth/react"
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const setUser = useAuthStore((s) => s.setUser)
 
-  const { isLoggedIn, setIsLoggedIn } = useAuthStore()
+  const { setIsLoggedIn } = useAuthStore()
 
   useEffect(() => {
     async function loadUser() {
@@ -19,5 +20,5 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     loadUser()
   }, [setUser])
 
-  return <>{children}</>
+  return <SessionProvider>{children}</SessionProvider>
 }

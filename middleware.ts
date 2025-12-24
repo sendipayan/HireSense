@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyJwtEdge } from "@/lib/jwt_edge";
+import { cookies } from "next/headers";
 
 export default async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
-
-  const token = req.cookies.get("auth_token")?.value;
+  const cookieStore = await cookies();
+  const token = cookieStore.get("auth_token")?.value;
   if (token) {
     console.log("token present");
 
@@ -22,7 +23,6 @@ export default async function middleware(req: NextRequest) {
     }
 
     const payload = await verifyJwtEdge(token);
-    console.log(payload);
 
     // Invalid / expired token
     if (!payload) {
@@ -44,6 +44,7 @@ export default async function middleware(req: NextRequest) {
       return NextResponse.redirect(new URL("/", req.url));
     }
   } else {
+    console.log("token not present");
     if (pathname.startsWith("/recruiter")) {
       return NextResponse.redirect(new URL("/login", req.url));
     }

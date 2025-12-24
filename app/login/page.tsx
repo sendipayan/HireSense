@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { sendOtp } from "../actions/send-otp";
 import axios from "axios";
+import { signIn } from "next-auth/react"
 import {
   Sparkles,
   Eye,
@@ -190,6 +191,7 @@ export default function LoginPage() {
               aria-label={
                 isSignUp ? "Sign up with Google" : "Sign in with Google"
               }
+              onClick={() => signIn("google", { callbackUrl: "/auth/redirect" })}
             >
               <svg
                 className="h-5 w-5"

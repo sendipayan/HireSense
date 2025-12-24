@@ -10,6 +10,7 @@ import Image from "next/image"
 import { ProfileMenu } from "./profileMenu"
 import { useAuthStore } from "@/store/authStore"
 import { useRouter } from "next/navigation"
+import { signOut } from "next-auth/react"
 import axios from "axios"
 /**
  * Main navigation component
@@ -79,8 +80,12 @@ export function Navbar() {
                 const res = await axios.post("/api/auth/logout")
                 if (res.data.success) {
                   clearAuth()
-                  router.replace("/login")
+
                 }
+                await signOut({
+                  redirect: false,
+                })
+                router.replace("/login")
               }}
             />)}
         </div>
@@ -136,8 +141,12 @@ export function Navbar() {
                 const res = await axios.post("/api/auth/logout")
                 if (res.data.success) {
                   clearAuth()
-                  router.replace("/login")
+
                 }
+                await signOut({
+                  redirect: false,
+                })
+                router.replace("/login")
               }}>
                 <p >Logout</p>
               </Button>}
