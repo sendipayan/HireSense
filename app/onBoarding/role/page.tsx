@@ -29,12 +29,12 @@ export default function RolePage() {
     if (!session) return null
 
     return (
-        <div className="mt-10  flex flex-col items-center justify-evenly h-[25vh]  px-4 py-2">
-            <h1>Select your role: </h1>
-            <button onClick={() => submitRole("CANDIDATE")} className="border border-border rounded-md px-4 py-2 cursor-pointer">
+        <div className="mt-10  flex flex-col items-center justify-evenly h-[50vh]  px-4 py-2">
+            <h1 className="text-2xl font-bold">Select your role: </h1>
+            <button onClick={() => submitRole("CANDIDATE")} className="rounded-xl border border-border bg-card p-4 transition-colors hover:border-primary/50 cursor-pointer">
                 Candidate
             </button>
-            <button onClick={() => submitRole("RECRUITER")} className="border border-border rounded-md px-4 py-2 cursor-pointer">
+            <button onClick={() => submitRole("RECRUITER")} className="rounded-xl border border-border bg-card p-4 transition-colors hover:border-primary/50 cursor-pointer">
                 Recruiter
             </button>
         </div>
