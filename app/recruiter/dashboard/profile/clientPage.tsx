@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Save, AlertCircle, CheckCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { FormField } from "@/components/form-field"
@@ -13,27 +13,25 @@ import { VerificationBadge } from "@/components/verification-badge"
 import { PageHeader } from "@/components/page-header"
 import { Breadcrumbs } from "@/components/breadcrumbs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { useRecruiterStore } from "@/store/RecuiterStore"
+import { useAuthStore } from "@/store/authStore"
 
 interface RecruiterFormData {
-  // Basic Information
-  fullName: string
-  email: string
-  jobTitle: string
-  phone: string
-
-  // Company Information
-  companyName: string
-  companyWebsite: string
-  companyLinkedIn: string
-  industry: string
-  companySize: string
-
-  // Hiring Context
-  hiringRoles: string[]
-  hiringType: string
+  fullName?: string | null;
+  email?: string | null;
+  jobTitle?: string | null;
+  phoneNumber?: string | null;
+  companyName?: string | null;
+  companyWebsite?: string | null;
+  companyLinkedIn?: string | null;
+  industry?: string | null;
+  companySize?: string | null;
+  hiringForRoles?: any;
+  isVerified?: boolean | null;
 }
 
 const INDUSTRY_OPTIONS = [
+  { value: "none", label: "Select Industry" },
   { value: "technology", label: "Technology" },
   { value: "finance", label: "Finance" },
   { value: "healthcare", label: "Healthcare" },
@@ -44,6 +42,7 @@ const INDUSTRY_OPTIONS = [
 ]
 
 const COMPANY_SIZE_OPTIONS = [
+  { value: "none", label: "Select Company Size" },
   { value: "1-10", label: "1-10 employees" },
   { value: "11-50", label: "11-50 employees" },
   { value: "51-200", label: "51-200 employees" },
@@ -60,44 +59,60 @@ const HIRING_ROLES = [
   { value: "operations", label: "Operations" },
 ]
 
-const HIRING_TYPE_OPTIONS = [
-  { value: "fulltime", label: "Full-Time" },
-  { value: "contract", label: "Contract" },
-  { value: "internship", label: "Internship" },
-]
-
 export function RecruiterProfileClientPage() {
+
+  const { RecuiterProfile } = useRecruiterStore()
+  const { user } = useAuthStore()
+
   const [formData, setFormData] = useState<RecruiterFormData>({
-    fullName: "Sarah Johnson",
-    email: "sarah@techcorp.com",
-    jobTitle: "Talent Acquisition Manager",
-    phone: "+1 (555) 123-4567",
-    companyName: "TechCorp Inc.",
-    companyWebsite: "https://techcorp.com",
-    companyLinkedIn: "https://linkedin.com/company/techcorp",
-    industry: "technology",
-    companySize: "200+",
-    hiringRoles: ["engineer", "designer"],
-    hiringType: "fulltime",
+    fullName: "",
+    email: "",
+    jobTitle: "",
+    phoneNumber: "",
+    companyName: "",
+    companyWebsite: "",
+    companyLinkedIn: "",
+    industry: "",
+    companySize: "",
+    hiringForRoles: [],
+    isVerified: false,
   })
+
+  useEffect(() => {
+    if (RecuiterProfile) {
+      setFormData({
+        fullName: user?.name,
+        email: user?.email,
+        jobTitle: RecuiterProfile?.jobTitle,
+        phoneNumber: RecuiterProfile?.phoneNumber,
+        companyName: RecuiterProfile?.companyName,
+        companyWebsite: RecuiterProfile?.companyWebsite,
+        companyLinkedIn: RecuiterProfile?.companyLinkedIn,
+        industry: RecuiterProfile?.industry,
+        companySize: RecuiterProfile?.companySize,
+        hiringForRoles: RecuiterProfile?.hiringForRoles,
+        isVerified: RecuiterProfile?.isVerified,
+      })
+    }
+  }, [RecuiterProfile])
+
+
+
 
   const [isSaved, setIsSaved] = useState(false)
 
   // Calculate profile completion
   const totalFields = 11
-  const completedFields = Object.values(formData).filter((value) => {
-    if (Array.isArray(value)) return value.length > 0
-    return value.trim().length > 0
+  const completedFields = Object.values(formData).filter((v) => {
+    if (Array.isArray(v)) return v.length > 0
+    if (typeof v === "string") return v.trim() !== ""
+    return v !== null && v !== undefined
   }).length
-
-  const handleChange = (field: keyof RecruiterFormData, value: string | string[]) => {
-    setFormData((prev) => ({ ...prev, [field]: value }))
-    setIsSaved(false)
-  }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     // Mock save
+    console.log(formData)
     setIsSaved(true)
     setTimeout(() => setIsSaved(false), 3000)
   }
@@ -148,8 +163,8 @@ export function RecruiterProfileClientPage() {
               name="fullName"
               placeholder="Enter your full name"
               required
-              value={formData.fullName}
-              onChange={(e) => handleChange("fullName", e.target.value)}
+              value={formData?.fullName || ""}
+              onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
             />
             <FormField
               label="Work Email"
@@ -159,15 +174,15 @@ export function RecruiterProfileClientPage() {
               required
               description="Your company email address (read-only)"
               disabled
-              value={formData.email}
+              value={formData?.email || ""}
             />
             <FormField
               label="Job Title"
               name="jobTitle"
               placeholder="e.g., HR Manager, Talent Partner, Recruiter"
               required
-              value={formData.jobTitle}
-              onChange={(e) => handleChange("jobTitle", e.target.value)}
+              value={formData?.jobTitle || ""}
+              onChange={(e) => setFormData({ ...formData, jobTitle: e.target.value })}
             />
             <FormField
               label="Phone Number"
@@ -175,8 +190,8 @@ export function RecruiterProfileClientPage() {
               type="tel"
               placeholder="+1 (555) 123-4567"
               description="Optional: For candidate communication"
-              value={formData.phone}
-              onChange={(e) => handleChange("phone", e.target.value)}
+              value={formData?.phoneNumber || ""}
+              onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
             />
           </FormSection>
 
@@ -187,8 +202,8 @@ export function RecruiterProfileClientPage() {
               name="companyName"
               placeholder="Enter your company name"
               required
-              value={formData.companyName}
-              onChange={(e) => handleChange("companyName", e.target.value)}
+              value={formData?.companyName || ""}
+              onChange={(e) => setFormData({ ...formData, companyName: e.target.value })}
             />
             <FormField
               label="Company Website"
@@ -196,8 +211,8 @@ export function RecruiterProfileClientPage() {
               type="url"
               placeholder="https://company.com"
               required
-              value={formData.companyWebsite}
-              onChange={(e) => handleChange("companyWebsite", e.target.value)}
+              value={formData?.companyWebsite || ""}
+              onChange={(e) => setFormData({ ...formData, companyWebsite: e.target.value })}
             />
             <FormField
               label="Company LinkedIn URL"
@@ -205,13 +220,13 @@ export function RecruiterProfileClientPage() {
               type="url"
               placeholder="https://linkedin.com/company/yourcompany"
               description="Link to your company's LinkedIn page"
-              value={formData.companyLinkedIn}
-              onChange={(e) => handleChange("companyLinkedIn", e.target.value)}
+              value={formData?.companyLinkedIn || ""}
+              onChange={(e) => setFormData({ ...formData, companyLinkedIn: e.target.value })}
             />
 
             <div className="space-y-2">
               <label className="text-sm font-medium text-foreground">Industry</label>
-              <Select value={formData.industry} onValueChange={(value) => handleChange("industry", value)}>
+              <Select value={formData?.industry || "none"} onValueChange={(value) => setFormData({ ...formData, industry: value })}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -227,7 +242,7 @@ export function RecruiterProfileClientPage() {
 
             <div className="space-y-2">
               <label className="text-sm font-medium text-foreground">Company Size</label>
-              <Select value={formData.companySize} onValueChange={(value) => handleChange("companySize", value)}>
+              <Select value={formData?.companySize || "none"} onValueChange={(value) => setFormData({ ...formData, companySize: value })} >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -248,15 +263,15 @@ export function RecruiterProfileClientPage() {
               label="Hiring For Roles"
               name="hiringRoles"
               options={HIRING_ROLES}
-              selected={formData.hiringRoles}
-              onChange={(selected) => handleChange("hiringRoles", selected)}
+              selected={formData?.hiringForRoles || []}
+              onChange={(selected) => setFormData({ ...formData, hiringForRoles: selected })}
               placeholder="Select roles you're hiring for"
               required
             />
 
-            <div className="space-y-2">
+            {/*<div className="space-y-2">
               <label className="text-sm font-medium text-foreground">Hiring Type</label>
-              <Select value={formData.hiringType} onValueChange={(value) => handleChange("hiringType", value)}>
+              <Select value={formData?.hiringType || ""} onValueChange={(value) => setFormData({ ...formData, hiringType: value })}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -268,20 +283,20 @@ export function RecruiterProfileClientPage() {
                   ))}
                 </SelectContent>
               </Select>
-            </div>
+            </div>*/}
           </FormSection>
 
           {/* Verification Status Section */}
           <FormSection title="Verification Status" description="Current verification state of your profile">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <VerificationBadge status="verified" label="Email Verified" />
-              <VerificationBadge status="pending" label="Company Domain Match" />
-              <VerificationBadge status="pending" label="Manual Review" />
+              <VerificationBadge status={formData?.isVerified ? "verified" : "pending"} label="Account Verified" />
+              <VerificationBadge status={formData?.isVerified ? "verified" : "pending"} label="Company Domain Match" />
+              <VerificationBadge status={formData?.isVerified ? "verified" : "pending"} label="Manual Review" />
             </div>
           </FormSection>
 
           {/* Submit Button */}
-          <div className="flex justify-end gap-3 pt-4 border-t border-border">
+          <div className="flex justify-end gap-3 pt-4  border-border">
             <Button variant="outline">Cancel</Button>
             <Button className="gap-2">
               <Save className="w-4 h-4" />

@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Save, AlertCircle, Upload, CheckCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { FormField } from "@/components/form-field"
@@ -11,45 +11,39 @@ import { ProfileCompletionIndicator } from "@/components/profile-completion-indi
 import { MultiSelect } from "@/components/multi-select"
 import { PageHeader } from "@/components/page-header"
 import { Breadcrumbs } from "@/components/breadcrumbs"
+import { useCandidateStore } from "@/store/candidateStore"
+import { useAuthStore } from "@/store/authStore"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 interface CandidateFormData {
-  // Basic Information
-  fullName: string
-  email: string
-  phone: string
-
-  // Education
-  currentStatus: string
-  institution: string
-  degree: string
-  graduationYear: string
-
-  // Skills & Experience
-  primarySkills: string[]
-  secondarySkills: string[]
-  experienceLevel: string
-  preferredRoles: string[]
-
-  // Work Links
-  github: string
-  portfolio: string
-  linkedin: string
-  resumeFile: string
-
-  // Preferences
-  jobTypePreference: string
-  openToRemote: boolean
-  availability: string
-}
+  fullName?: string | null;
+  email?: string | null;
+  phoneNumber?: string | null;
+  status?: string | null;
+  institution?: string | null;
+  graduationYear?: string | null;
+  degree?: string | null;
+  primarySkills?: any;
+  secondarySkills?: any;
+  experienceLevel?: string | null;
+  preferredRoles?: any;
+  githubUrl?: string | null;
+  linkedinUrl?: string | null;
+  portfolioUrl?: string | null;
+  jobTypePreference?: string | null;
+  openToWork: boolean;
+  availability?: string | null;
+};
 
 const CURRENT_STATUS_OPTIONS = [
+  { value: "none", label: "Select a Status" },
   { value: "student", label: "Student" },
   { value: "graduate", label: "Graduate" },
   { value: "working", label: "Working Professional" },
 ]
 
 const SKILLS_OPTIONS = [
+  { value: "none", label: "None" },
   { value: "react", label: "React" },
   { value: "typescript", label: "TypeScript" },
   { value: "nodejs", label: "Node.js" },
@@ -61,6 +55,7 @@ const SKILLS_OPTIONS = [
 ]
 
 const EXPERIENCE_LEVEL_OPTIONS = [
+  { value: "none", label: "Select an Experience Level" },
   { value: "beginner", label: "Beginner" },
   { value: "intermediate", label: "Intermediate" },
   { value: "advanced", label: "Advanced" },
@@ -76,47 +71,74 @@ const PREFERRED_ROLES_OPTIONS = [
 ]
 
 const JOB_TYPE_OPTIONS = [
+  { value: "none", label: "Select a Job Type" },
   { value: "fulltime", label: "Full-Time" },
   { value: "internship", label: "Internship" },
   { value: "both", label: "Both" },
 ]
 
 const AVAILABILITY_OPTIONS = [
+  { value: "none", label: "Select Availability" },
   { value: "immediate", label: "Immediate" },
   { value: "1-3months", label: "1-3 months" },
   { value: "3-6months", label: "3-6 months" },
 ]
 
 export default function CandidateProfileClientPage() {
+  const { candidateProfile } = useCandidateStore()
+  const { user } = useAuthStore()
   const [formData, setFormData] = useState<CandidateFormData>({
-    fullName: "Alex Chen",
-    email: "alex@example.com",
-    phone: "+1 (555) 987-6543",
-    currentStatus: "working",
-    institution: "University of California, Berkeley",
-    degree: "Bachelor of Science in Computer Science",
-    graduationYear: "2020",
-    primarySkills: ["react", "typescript", "nodejs"],
-    secondarySkills: ["python", "aws"],
-    experienceLevel: "advanced",
-    preferredRoles: ["fullstack", "frontend"],
-    github: "https://github.com/alexchen",
-    portfolio: "https://alexchen.dev",
-    linkedin: "https://linkedin.com/in/alexchen",
-    resumeFile: "alex-chen-resume.pdf",
-    jobTypePreference: "fulltime",
-    openToRemote: true,
-    availability: "immediate",
+    fullName: "",
+    email: "",
+    phoneNumber: "",
+    status: "",
+    institution: "",
+    degree: "",
+    graduationYear: "",
+    primarySkills: [],
+    secondarySkills: [],
+    experienceLevel: "",
+    preferredRoles: [],
+    githubUrl: "",
+    portfolioUrl: "",
+    linkedinUrl: "",
+    jobTypePreference: "",
+    openToWork: true,
+    availability: "",
   })
+
+  useEffect(() => {
+    if (candidateProfile) {
+      setFormData({
+        fullName: user?.name,
+        email: user?.email,
+        phoneNumber: candidateProfile.phoneNumber,
+        status: candidateProfile.status,
+        institution: candidateProfile.institution,
+        degree: candidateProfile.degree,
+        graduationYear: candidateProfile.graduationYear,
+        primarySkills: candidateProfile.primarySkills,
+        secondarySkills: candidateProfile.secondarySkills,
+        experienceLevel: candidateProfile.experienceLevel,
+        preferredRoles: candidateProfile.preferredRoles,
+        githubUrl: candidateProfile.githubUrl,
+        portfolioUrl: candidateProfile.portfolioUrl,
+        linkedinUrl: candidateProfile.linkedinUrl,
+        jobTypePreference: candidateProfile.jobTypePreference,
+        openToWork: candidateProfile.openToWork,
+        availability: candidateProfile.availability,
+      })
+    }
+  }, [candidateProfile])
 
   const [isSaved, setIsSaved] = useState(false)
 
   // Calculate profile completion
   const totalFields = 16
-  const completedFields = Object.values(formData).filter((value) => {
-    if (Array.isArray(value)) return value.length > 0
-    if (typeof value === "boolean") return value === true
-    return value.trim().length > 0
+  const completedFields = Object.values(formData).filter((v) => {
+    if (Array.isArray(v)) return v.length > 0
+    if (typeof v === "string") return v.trim() !== ""
+    return v !== null && v !== undefined
   }).length
 
   const handleChange = (field: keyof CandidateFormData, value: string | string[] | boolean) => {
@@ -177,7 +199,7 @@ export default function CandidateProfileClientPage() {
               name="fullName"
               placeholder="Enter your full name"
               required
-              value={formData.fullName}
+              value={formData.fullName || ""}
               onChange={(e) => handleChange("fullName", e.target.value)}
             />
             <FormField
@@ -188,7 +210,7 @@ export default function CandidateProfileClientPage() {
               required
               description="Your email address (read-only)"
               disabled
-              value={formData.email}
+              value={formData.email || ""}
             />
             <FormField
               label="Phone Number"
@@ -196,8 +218,8 @@ export default function CandidateProfileClientPage() {
               type="tel"
               placeholder="+1 (555) 987-6543"
               description="For employer contact"
-              value={formData.phone}
-              onChange={(e) => handleChange("phone", e.target.value)}
+              value={formData.phoneNumber || ""}
+              onChange={(e) => handleChange("phoneNumber", e.target.value)}
             />
           </FormSection>
 
@@ -205,7 +227,7 @@ export default function CandidateProfileClientPage() {
           <FormSection title="Education" description="Your educational background">
             <div className="space-y-2">
               <label className="text-sm font-medium text-foreground">Current Status</label>
-              <Select value={formData.currentStatus} onValueChange={(value) => handleChange("currentStatus", value)}>
+              <Select value={formData.status || "none"} onValueChange={(value) => handleChange("status", value)}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -223,14 +245,14 @@ export default function CandidateProfileClientPage() {
               label="Institution Name"
               name="institution"
               placeholder="e.g., University of California, Berkeley"
-              value={formData.institution}
+              value={formData.institution || ""}
               onChange={(e) => handleChange("institution", e.target.value)}
             />
             <FormField
               label="Degree"
               name="degree"
               placeholder="e.g., Bachelor of Science in Computer Science"
-              value={formData.degree}
+              value={formData.degree || ""}
               onChange={(e) => handleChange("degree", e.target.value)}
             />
             <FormField
@@ -238,7 +260,7 @@ export default function CandidateProfileClientPage() {
               name="graduationYear"
               type="number"
               placeholder="2024"
-              value={formData.graduationYear}
+              value={formData.graduationYear || ""}
               onChange={(e) => handleChange("graduationYear", e.target.value)}
             />
           </FormSection>
@@ -249,7 +271,7 @@ export default function CandidateProfileClientPage() {
               label="Primary Skills"
               name="primarySkills"
               options={SKILLS_OPTIONS}
-              selected={formData.primarySkills}
+              selected={formData.primarySkills || []}
               onChange={(selected) => handleChange("primarySkills", selected)}
               placeholder="Select your primary skills"
               required
@@ -259,7 +281,7 @@ export default function CandidateProfileClientPage() {
               label="Secondary Skills"
               name="secondarySkills"
               options={SKILLS_OPTIONS}
-              selected={formData.secondarySkills}
+              selected={formData.secondarySkills || []}
               onChange={(selected) => handleChange("secondarySkills", selected)}
               placeholder="Select additional skills"
             />
@@ -267,7 +289,7 @@ export default function CandidateProfileClientPage() {
             <div className="space-y-2">
               <label className="text-sm font-medium text-foreground">Experience Level</label>
               <Select
-                value={formData.experienceLevel}
+                value={formData.experienceLevel || "none"}
                 onValueChange={(value) => handleChange("experienceLevel", value)}
               >
                 <SelectTrigger>
@@ -287,7 +309,7 @@ export default function CandidateProfileClientPage() {
               label="Preferred Roles"
               name="preferredRoles"
               options={PREFERRED_ROLES_OPTIONS}
-              selected={formData.preferredRoles}
+              selected={formData.preferredRoles || []}
               onChange={(selected) => handleChange("preferredRoles", selected)}
               placeholder="Select roles you're interested in"
               required
@@ -302,8 +324,8 @@ export default function CandidateProfileClientPage() {
               type="url"
               placeholder="https://github.com/yourname"
               description="Link to your GitHub profile"
-              value={formData.github}
-              onChange={(e) => handleChange("github", e.target.value)}
+              value={formData.githubUrl || ""}
+              onChange={(e) => handleChange("githubUrl", e.target.value)}
             />
             <FormField
               label="Portfolio URL"
@@ -311,8 +333,8 @@ export default function CandidateProfileClientPage() {
               type="url"
               placeholder="https://yourportfolio.com"
               description="Link to your portfolio website"
-              value={formData.portfolio}
-              onChange={(e) => handleChange("portfolio", e.target.value)}
+              value={formData.portfolioUrl || ""}
+              onChange={(e) => handleChange("portfolioUrl", e.target.value)}
             />
             <FormField
               label="LinkedIn URL"
@@ -320,11 +342,11 @@ export default function CandidateProfileClientPage() {
               type="url"
               placeholder="https://linkedin.com/in/yourname"
               description="Link to your LinkedIn profile"
-              value={formData.linkedin}
-              onChange={(e) => handleChange("linkedin", e.target.value)}
+              value={formData.linkedinUrl || ""}
+              onChange={(e) => handleChange("linkedinUrl", e.target.value)}
             />
 
-            <div className="space-y-2">
+            {/*<div className="space-y-2">
               <label htmlFor="resume" className="text-sm font-medium text-foreground">
                 Resume (PDF only)
               </label>
@@ -334,7 +356,7 @@ export default function CandidateProfileClientPage() {
                 <p className="text-xs text-muted-foreground">Drag and drop your PDF or click to upload</p>
               </div>
               {formData.resumeFile && <p className="text-xs text-success">✓ Resume uploaded: {formData.resumeFile}</p>}
-            </div>
+            </div>*/}
           </FormSection>
 
           {/* Preferences Section */}
@@ -342,7 +364,7 @@ export default function CandidateProfileClientPage() {
             <div className="space-y-2">
               <label className="text-sm font-medium text-foreground">Job Type Preference</label>
               <Select
-                value={formData.jobTypePreference}
+                value={formData.jobTypePreference || "none"}
                 onValueChange={(value) => handleChange("jobTypePreference", value)}
               >
                 <SelectTrigger>
@@ -364,14 +386,14 @@ export default function CandidateProfileClientPage() {
                 <p className="text-xs text-muted-foreground">Toggle to show remote job preferences</p>
               </div>
               <button
-                onClick={() => handleChange("openToRemote", !formData.openToRemote)}
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${formData.openToRemote ? "bg-primary" : "bg-muted"
+                onClick={() => handleChange("openToWork", !formData.openToWork)}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${formData.openToWork ? "bg-primary" : "bg-muted"
                   }`}
                 role="switch"
-                aria-checked={formData.openToRemote}
+                aria-checked={formData.openToWork}
               >
                 <span
-                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${formData.openToRemote ? "translate-x-6" : "translate-x-1"
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${formData.openToWork ? "translate-x-6" : "translate-x-1"
                     }`}
                 />
               </button>
@@ -379,7 +401,7 @@ export default function CandidateProfileClientPage() {
 
             <div className="space-y-2">
               <label className="text-sm font-medium text-foreground">Availability</label>
-              <Select value={formData.availability} onValueChange={(value) => handleChange("availability", value)}>
+              <Select value={formData.availability || "none"} onValueChange={(value) => handleChange("availability", value)}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -395,7 +417,7 @@ export default function CandidateProfileClientPage() {
           </FormSection>
 
           {/* Submit Button */}
-          <div className="flex justify-end gap-3 pt-4 border-t border-border">
+          <div className="flex justify-end gap-3 pt-4  border-border">
             <Button variant="outline">Cancel</Button>
             <Button className="gap-2">
               <Save className="w-4 h-4" />
