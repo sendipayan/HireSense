@@ -13,6 +13,7 @@ import { PageHeader } from "@/components/page-header"
 import { Breadcrumbs } from "@/components/breadcrumbs"
 import { useCandidateStore } from "@/store/candidateStore"
 import { useAuthStore } from "@/store/authStore"
+import axios from "axios"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 interface CandidateFormData {
@@ -36,14 +37,14 @@ interface CandidateFormData {
 };
 
 const CURRENT_STATUS_OPTIONS = [
-  { value: "none", label: "Select a Status" },
-  { value: "student", label: "Student" },
-  { value: "graduate", label: "Graduate" },
-  { value: "working", label: "Working Professional" },
+  { value: "NONE", label: "Select a Status" },
+  { label: "student", value: "STUDENT" },
+  { label: "graduate", value: "GRADUATE" },
+  { label: "working", value: "WORKING_PROFESSIONAL" },
 ]
 
 const SKILLS_OPTIONS = [
-  { value: "none", label: "None" },
+  { value: "NONE", label: "NONE" },
   { value: "react", label: "React" },
   { value: "typescript", label: "TypeScript" },
   { value: "nodejs", label: "Node.js" },
@@ -55,10 +56,10 @@ const SKILLS_OPTIONS = [
 ]
 
 const EXPERIENCE_LEVEL_OPTIONS = [
-  { value: "none", label: "Select an Experience Level" },
-  { value: "beginner", label: "Beginner" },
-  { value: "intermediate", label: "Intermediate" },
-  { value: "advanced", label: "Advanced" },
+  { value: "NONE", label: "Select an Experience Level" },
+  { label: "beginner", value: "BEGINNER" },
+  { label: "intermediate", value: "INTERMEDIATE" },
+  { label: "advanced", value: "ADVANCED" },
 ]
 
 const PREFERRED_ROLES_OPTIONS = [
@@ -71,17 +72,17 @@ const PREFERRED_ROLES_OPTIONS = [
 ]
 
 const JOB_TYPE_OPTIONS = [
-  { value: "none", label: "Select a Job Type" },
-  { value: "fulltime", label: "Full-Time" },
-  { value: "internship", label: "Internship" },
-  { value: "both", label: "Both" },
+  { value: "NONE", label: "Select a Job Type" },
+  { label: "fulltime", value: "FULL_TIME" },
+  { label: "internship", value: "INTERNSHIP" },
+  { label: "both", value: "BOTH" },
 ]
 
 const AVAILABILITY_OPTIONS = [
-  { value: "none", label: "Select Availability" },
-  { value: "immediate", label: "Immediate" },
-  { value: "1-3months", label: "1-3 months" },
-  { value: "3-6months", label: "3-6 months" },
+  { value: "NONE", label: "Select Availability" },
+  { label: "immediate", value: "IMMEDIATE" },
+  { label: "1-3months", value: "ONE_TO_THREE_MONTHS" },
+  { label: "3-6months", value: "THREE_TO_SIX_MONTHS" },
 ]
 
 export default function CandidateProfileClientPage() {
@@ -131,7 +132,25 @@ export default function CandidateProfileClientPage() {
     }
   }, [candidateProfile])
 
+
+  //phoneNumber,
+  //status,
+  //institution,
+  //degree,
+  //graduationYear,
+  //primarySkills,
+  //secondarySkills,
+  //experienceLevel,
+  //preferredRoles,
+  //githubUrl,
+  //portfolioUrl,
+  //linkedinUrl,
+  //jobTypePreference,
+  //openToWork,
+  //availability,
+
   const [isSaved, setIsSaved] = useState(false)
+  const [isError, setIsError] = useState(false)
 
   // Calculate profile completion
   const totalFields = 16
@@ -146,11 +165,36 @@ export default function CandidateProfileClientPage() {
     setIsSaved(false)
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    // Mock save
-    setIsSaved(true)
-    setTimeout(() => setIsSaved(false), 3000)
+
+    if (!candidateProfile) return
+
+
+    const payload = {
+      id: candidateProfile.userId,
+      name: formData.fullName,
+      primarySkills: JSON.stringify(formData.primarySkills),
+      secondarySkills: JSON.stringify(formData.secondarySkills),
+      preferredRoles: JSON.stringify(formData.preferredRoles),
+      ...formData
+    }
+    console.log(payload)
+    try {
+      const res = await axios.patch("/api/candidate/update_profile", payload, { withCredentials: true })
+      if (res.status === 200) {
+        setIsSaved(true)
+        setTimeout(() => {
+          setIsSaved(false)
+        }, 3000)
+      }
+    } catch (error) {
+      console.log(error)
+      setIsError(true)
+      setTimeout(() => {
+        setIsError(false)
+      }, 3000)
+    }
   }
 
   const breadcrumbs = [
@@ -186,8 +230,16 @@ export default function CandidateProfileClientPage() {
         {/* Success message */}
         {isSaved && (
           <div className="bg-success/10 border border-success/30 rounded-lg p-4 mb-6 flex gap-3">
-            <CheckCircle className="w-5 h-5 text-success" />
+            <CheckCircle className="w-5 h-5 text-success " />
             <p className="text-sm font-medium text-foreground">Profile saved successfully!</p>
+          </div>
+        )}
+
+        {/* Error message */}
+        {isError && (
+          <div className="bg-destructive/10 border border-destructive/30 rounded-lg p-4 mb-6 flex gap-3">
+            <AlertCircle className="w-5 h-5 text-destructive" />
+            <p className="text-sm font-medium text-foreground">Failed to save profile.</p>
           </div>
         )}
 
@@ -227,7 +279,7 @@ export default function CandidateProfileClientPage() {
           <FormSection title="Education" description="Your educational background">
             <div className="space-y-2">
               <label className="text-sm font-medium text-foreground">Current Status</label>
-              <Select value={formData.status || "none"} onValueChange={(value) => handleChange("status", value)}>
+              <Select value={formData.status || "NONE"} onValueChange={(value) => handleChange("status", value)}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -289,7 +341,7 @@ export default function CandidateProfileClientPage() {
             <div className="space-y-2">
               <label className="text-sm font-medium text-foreground">Experience Level</label>
               <Select
-                value={formData.experienceLevel || "none"}
+                value={formData.experienceLevel || "NONE"}
                 onValueChange={(value) => handleChange("experienceLevel", value)}
               >
                 <SelectTrigger>
@@ -364,7 +416,7 @@ export default function CandidateProfileClientPage() {
             <div className="space-y-2">
               <label className="text-sm font-medium text-foreground">Job Type Preference</label>
               <Select
-                value={formData.jobTypePreference || "none"}
+                value={formData.jobTypePreference || "NONE"}
                 onValueChange={(value) => handleChange("jobTypePreference", value)}
               >
                 <SelectTrigger>
@@ -401,7 +453,7 @@ export default function CandidateProfileClientPage() {
 
             <div className="space-y-2">
               <label className="text-sm font-medium text-foreground">Availability</label>
-              <Select value={formData.availability || "none"} onValueChange={(value) => handleChange("availability", value)}>
+              <Select value={formData.availability || "NONE"} onValueChange={(value) => handleChange("availability", value)}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>

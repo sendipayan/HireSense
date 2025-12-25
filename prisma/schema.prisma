@@ -69,7 +69,7 @@ model Candidate {
   phoneNumber       String?
   status            CandidateStatus?
   institution       String?
-  graduationYear    Int?
+  graduationYear    String?
   degree            String?
   primarySkills     Json?
   secondarySkills   Json?
@@ -86,24 +86,28 @@ model Candidate {
 }
 
 enum CandidateStatus {
+  NONE
   STUDENT
   GRADUATE
   WORKING_PROFESSIONAL
 }
 
 enum ExperienceLevel {
+  NONE
   BEGINNER
   INTERMEDIATE
   ADVANCED
 }
 
 enum JobType {
+  NONE
   INTERNSHIP
   FULL_TIME
   BOTH
 }
 
 enum Availability {
+  NONE
   IMMEDIATE
   ONE_TO_THREE_MONTHS
   THREE_TO_SIX_MONTHS

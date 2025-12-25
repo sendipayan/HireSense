@@ -15,6 +15,7 @@ import { Breadcrumbs } from "@/components/breadcrumbs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useRecruiterStore } from "@/store/RecuiterStore"
 import { useAuthStore } from "@/store/authStore"
+import axios from "axios"
 
 interface RecruiterFormData {
   fullName?: string | null;
@@ -31,7 +32,7 @@ interface RecruiterFormData {
 }
 
 const INDUSTRY_OPTIONS = [
-  { value: "none", label: "Select Industry" },
+  { value: "NONE", label: "Select Industry" },
   { value: "technology", label: "Technology" },
   { value: "finance", label: "Finance" },
   { value: "healthcare", label: "Healthcare" },
@@ -42,11 +43,11 @@ const INDUSTRY_OPTIONS = [
 ]
 
 const COMPANY_SIZE_OPTIONS = [
-  { value: "none", label: "Select Company Size" },
-  { value: "1-10", label: "1-10 employees" },
-  { value: "11-50", label: "11-50 employees" },
-  { value: "51-200", label: "51-200 employees" },
-  { value: "200+", label: "200+ employees" },
+  { value: "NONE", label: "Select Company Size" },
+  { value: "SMALL", label: "Small" },
+  { value: "MEDIUM", label: "Medium" },
+  { value: "LARGE", label: "Large" },
+  { value: "ENTERPRISE", label: "Enterprise" },
 ]
 
 const HIRING_ROLES = [
@@ -100,6 +101,7 @@ export function RecruiterProfileClientPage() {
 
 
   const [isSaved, setIsSaved] = useState(false)
+  const [isError, setIsError] = useState(false)
 
   // Calculate profile completion
   const totalFields = 11
@@ -109,12 +111,42 @@ export function RecruiterProfileClientPage() {
     return v !== null && v !== undefined
   }).length
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     // Mock save
-    console.log(formData)
-    setIsSaved(true)
-    setTimeout(() => setIsSaved(false), 3000)
+
+    if (!RecuiterProfile) {
+      return
+    }
+    const payload = {
+      id: RecuiterProfile.userId,
+      name: user?.name,
+      phoneNumber: formData.phoneNumber,
+      jobTitle: formData.jobTitle,
+      companyName: formData.companyName,
+      companyWebsite: formData.companyWebsite,
+      companyLinkedIn: formData.companyLinkedIn,
+      industry: formData.industry,
+      companySize: formData.companySize,
+      hiringForRoles: formData.hiringForRoles,
+      isVerified: formData.isVerified,
+    }
+    console.log(payload)
+    try {
+      const res = await axios.patch("/api/recruiter/update_profile", payload, { withCredentials: true })
+      if (res.status === 200) {
+        setIsSaved(true)
+        setTimeout(() => {
+          setIsSaved(false)
+        }, 3000)
+      }
+    } catch (error) {
+      console.log(error)
+      setIsError(true)
+      setTimeout(() => {
+        setIsError(false)
+      }, 3000)
+    }
   }
 
   const breadcrumbs = [
@@ -152,6 +184,14 @@ export function RecruiterProfileClientPage() {
           <div className="bg-success/10 border border-success/30 rounded-lg p-4 mb-6 flex gap-3">
             <CheckCircle className="w-5 h-5 text-success" />
             <p className="text-sm font-medium text-foreground">Profile saved successfully!</p>
+          </div>
+        )}
+
+        {/* Error message */}
+        {isError && (
+          <div className="bg-destructive/10 border border-destructive/30 rounded-lg p-4 mb-6 flex gap-3">
+            <AlertCircle className="w-5 h-5 text-destructive" />
+            <p className="text-sm font-medium text-foreground">Failed to save profile.</p>
           </div>
         )}
 
@@ -226,7 +266,7 @@ export function RecruiterProfileClientPage() {
 
             <div className="space-y-2">
               <label className="text-sm font-medium text-foreground">Industry</label>
-              <Select value={formData?.industry || "none"} onValueChange={(value) => setFormData({ ...formData, industry: value })}>
+              <Select value={formData?.industry || "NONE"} onValueChange={(value) => setFormData({ ...formData, industry: value })}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -242,7 +282,7 @@ export function RecruiterProfileClientPage() {
 
             <div className="space-y-2">
               <label className="text-sm font-medium text-foreground">Company Size</label>
-              <Select value={formData?.companySize || "none"} onValueChange={(value) => setFormData({ ...formData, companySize: value })} >
+              <Select value={formData?.companySize || "NONE"} onValueChange={(value) => setFormData({ ...formData, companySize: value })} >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>

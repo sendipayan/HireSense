@@ -17,7 +17,7 @@ interface FormFieldProps {
   as?: "input" | "textarea"
 
   /** NEW */
-  value?: string
+  value?: string | number
   onChange?: (
     e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => void
@@ -33,7 +33,7 @@ interface FormFieldProps {
 export function FormField({
   label,
   name,
-  type = "text",
+  type,
   placeholder,
   required = false,
   description,
