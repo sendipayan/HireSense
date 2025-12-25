@@ -3,12 +3,14 @@
 import { useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useAuthStore } from "@/store/authStore"
-import { useUserStore } from "@/store/userStore"
+import { useRecruiterStore } from "@/store/RecuiterStore"
+import { useCandidateStore } from "@/store/candidateStore"
 
 
 export default function TriggerGoogleJwt() {
     const { setIsLoggedIn, setUser } = useAuthStore()
-    const { setProfile } = useUserStore()
+    const { setRecuiterProfile } = useRecruiterStore()
+    const { setCandidateProfile } = useCandidateStore()
     const router = useRouter()
     useEffect(() => {
 
@@ -21,8 +23,12 @@ export default function TriggerGoogleJwt() {
             if (res.ok) {
                 const res2 = await fetch("/api/auth/me")
                 const data2 = await res2.json()
-                setProfile(data2.user)
                 setUser(data2.user.user)
+                if (data2.user.user.role === "RECRUITER") {
+                    setRecuiterProfile(data2.user)
+                } else {
+                    setCandidateProfile(data2.user)
+                }
                 setIsLoggedIn(true)
                 router.replace(`${data.role}/dashboard`)
             }

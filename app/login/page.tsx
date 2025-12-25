@@ -31,7 +31,8 @@ import icon from "@/public/icon.png";
 import { OTPInput } from "@/components/OTPinput";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
-import { useUserStore } from "@/store/userStore";
+import { useCandidateStore } from "@/store/candidateStore";
+import { useRecruiterStore } from "@/store/RecuiterStore";
 
 
 /**
@@ -43,7 +44,8 @@ import { useUserStore } from "@/store/userStore";
  */
 export default function LoginPage() {
   const { setIsLoggedIn, setUser } = useAuthStore()
-  const { setProfile } = useUserStore()
+  const { setCandidateProfile } = useCandidateStore()
+  const { setRecuiterProfile } = useRecruiterStore()
   const router = useRouter()
   const [isSignUp, setIsSignUp] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -76,7 +78,11 @@ export default function LoginPage() {
       if (res.status === 200) {
         const res2 = await fetch("/api/auth/me")
         const data2 = await res2.json()
-        setProfile(data2.user)
+        if (data2.user.user.role === "RECRUITER") {
+          setRecuiterProfile(data2.user)
+        } else {
+          setCandidateProfile(data2.user)
+        }
         setUser(data2.user.user)
         setIsLoggedIn(true)
         const path = data2.user.user.role.toLowerCase()
@@ -104,7 +110,11 @@ export default function LoginPage() {
         if (res.status === 201) {
           const res2 = await fetch("/api/auth/me")
           const data2 = await res2.json()
-          setProfile(data2.user)
+          if (data2.user.user.role === "RECRUITER") {
+            setRecuiterProfile(data2.user)
+          } else {
+            setCandidateProfile(data2.user)
+          }
           setUser(data2.user.user)
           setIsLoggedIn(true)
           const path = data2.user.user.role.toLowerCase()
