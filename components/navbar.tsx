@@ -9,6 +9,7 @@ import icon from "@/public/icon.png"
 import Image from "next/image"
 import { ProfileMenu } from "./profileMenu"
 import { useAuthStore } from "@/store/authStore"
+import { useUserStore } from "@/store/userStore"
 import { useRouter } from "next/navigation"
 import { signOut } from "next-auth/react"
 import axios from "axios"
@@ -23,6 +24,7 @@ import axios from "axios"
 export function Navbar() {
   const router = useRouter()
   const clearAuth = useAuthStore((s) => s.logout)
+  const clearUser = useUserStore((s) => s.clearProfile)
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const { isLoggedIn, user } = useAuthStore()
@@ -80,7 +82,7 @@ export function Navbar() {
                 const res = await axios.post("/api/auth/logout")
                 if (res.data.success) {
                   clearAuth()
-
+                  clearUser()
                 }
                 await signOut({
                   redirect: false,
@@ -141,7 +143,7 @@ export function Navbar() {
                 const res = await axios.post("/api/auth/logout")
                 if (res.data.success) {
                   clearAuth()
-
+                  clearUser()
                 }
                 await signOut({
                   redirect: false,

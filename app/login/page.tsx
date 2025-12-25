@@ -31,6 +31,7 @@ import icon from "@/public/icon.png";
 import { OTPInput } from "@/components/OTPinput";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
+import { useUserStore } from "@/store/userStore";
 
 
 /**
@@ -42,7 +43,7 @@ import { useAuthStore } from "@/store/authStore";
  */
 export default function LoginPage() {
   const { setIsLoggedIn, setUser } = useAuthStore()
-
+  const { setProfile } = useUserStore()
   const router = useRouter()
   const [isSignUp, setIsSignUp] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -75,9 +76,10 @@ export default function LoginPage() {
       if (res.status === 200) {
         const res2 = await fetch("/api/auth/me")
         const data2 = await res2.json()
-        setUser(data2.user)
+        setProfile(data2.user)
+        setUser(data2.user.user)
         setIsLoggedIn(true)
-        const path = data2.user.role.toLowerCase()
+        const path = data2.user.user.role.toLowerCase()
         console.log(path)
         router.push(`/${path}/dashboard`)
 
@@ -102,9 +104,10 @@ export default function LoginPage() {
         if (res.status === 201) {
           const res2 = await fetch("/api/auth/me")
           const data2 = await res2.json()
-          setUser(data2.user)
+          setProfile(data2.user)
+          setUser(data2.user.user)
           setIsLoggedIn(true)
-          const path = formData.role.toLowerCase()
+          const path = data2.user.user.role.toLowerCase()
           router.push(`/${path}/dashboard`)
 
         }

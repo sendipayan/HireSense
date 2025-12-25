@@ -3,10 +3,12 @@
 import { useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useAuthStore } from "@/store/authStore"
+import { useUserStore } from "@/store/userStore"
 
 
 export default function TriggerGoogleJwt() {
     const { setIsLoggedIn, setUser } = useAuthStore()
+    const { setProfile } = useUserStore()
     const router = useRouter()
     useEffect(() => {
 
@@ -19,7 +21,8 @@ export default function TriggerGoogleJwt() {
             if (res.ok) {
                 const res2 = await fetch("/api/auth/me")
                 const data2 = await res2.json()
-                setUser(data2.user)
+                setProfile(data2.user)
+                setUser(data2.user.user)
                 setIsLoggedIn(true)
                 router.replace(`${data.role}/dashboard`)
             }

@@ -3,9 +3,11 @@
 import { useRouter } from "next/navigation"
 import { useSession } from "next-auth/react"
 import { useAuthStore } from "@/store/authStore"
+import { useUserStore } from "@/store/userStore"
 
 export default function RolePage() {
     const { setIsLoggedIn, setUser } = useAuthStore()
+    const { setProfile } = useUserStore()
     const { data: session } = useSession()
     const router = useRouter()
 
@@ -19,7 +21,8 @@ export default function RolePage() {
         if (res.ok) {
             const res2 = await fetch("/api/auth/me")
             const data2 = await res2.json()
-            setUser(data2.user)
+            setUser(data2.user.user)
+            setProfile(data2.user)
             setIsLoggedIn(true)
             router.replace(`/${role.toLowerCase()}/dashboard`)
         }

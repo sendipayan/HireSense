@@ -9,17 +9,28 @@ export async function getAuthUser() {
   try {
     const payload = verifyJwt(token);
 
-    const user = await prisma.user.findUnique({
-      where: { id: payload.userId },
-      select: {
-        id: true,
-        email: true,
-        role: true,
-        name: true,
-      },
-    });
+    let data;
+    if (payload.role === "RECRUITER") {
+      data = await prisma.recruiter.findUnique({
+        where: { userId: payload.userId },
+        include: {
+          user: {
+            select: { name: true, email: true, role: true },
+          },
+        },
+      });
+    } else {
+      data = await prisma.candidate.findUnique({
+        where: { userId: payload.userId },
+        include: {
+          user: {
+            select: { name: true, email: true, role: true },
+          },
+        },
+      });
+    }
 
-    return user;
+    return data;
   } catch {
     return null;
   }
