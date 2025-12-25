@@ -40,7 +40,6 @@ export async function PATCH(req: NextRequest) {
     } = body;
 
     // 2️⃣ Enforce ownership: the id must match the token user id
-    console.log(id, authUser.userId);
     if (id !== authUser.userId) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }

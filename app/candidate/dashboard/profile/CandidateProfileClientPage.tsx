@@ -86,7 +86,7 @@ const AVAILABILITY_OPTIONS = [
 ]
 
 export default function CandidateProfileClientPage() {
-  const { candidateProfile } = useCandidateStore()
+  const { candidateProfile, setCandidateProfile } = useCandidateStore()
   const { user } = useAuthStore()
   const [formData, setFormData] = useState<CandidateFormData>({
     fullName: "",
@@ -183,6 +183,9 @@ export default function CandidateProfileClientPage() {
     try {
       const res = await axios.patch("/api/candidate/update_profile", payload, { withCredentials: true })
       if (res.status === 200) {
+        const res2 = await fetch("/api/auth/me")
+        const data2 = await res2.json()
+        setCandidateProfile(data2.user)
         setIsSaved(true)
         setTimeout(() => {
           setIsSaved(false)

@@ -62,7 +62,7 @@ const HIRING_ROLES = [
 
 export function RecruiterProfileClientPage() {
 
-  const { RecuiterProfile } = useRecruiterStore()
+  const { RecuiterProfile, setRecuiterProfile } = useRecruiterStore()
   const { user } = useAuthStore()
 
   const [formData, setFormData] = useState<RecruiterFormData>({
@@ -135,6 +135,9 @@ export function RecruiterProfileClientPage() {
     try {
       const res = await axios.patch("/api/recruiter/update_profile", payload, { withCredentials: true })
       if (res.status === 200) {
+        const res2 = await fetch("/api/auth/me")
+        const data2 = await res2.json()
+        setRecuiterProfile(data2.user)
         setIsSaved(true)
         setTimeout(() => {
           setIsSaved(false)
