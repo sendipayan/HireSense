@@ -45,6 +45,19 @@ export async function POST(req: Request) {
           password: hashedPassword,
         },
       });
+      if (role === "RECRUITER") {
+        await prisma.recruiter.create({
+          data: {
+            userId: user.id,
+          },
+        });
+      } else {
+        await prisma.candidate.create({
+          data: {
+            userId: user.id,
+          },
+        });
+      }
     }
 
     // Create JWT

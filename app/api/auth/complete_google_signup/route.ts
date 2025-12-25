@@ -24,6 +24,19 @@ export async function POST(req: NextRequest) {
             password: "GOOGLE_OAUTH",
           },
         });
+        if (role === "RECRUITER") {
+          await prisma.recruiter.create({
+            data: {
+              userId: user.id,
+            },
+          });
+        } else {
+          await prisma.candidate.create({
+            data: {
+              userId: user.id,
+            },
+          });
+        }
       }
 
       const token = signJwt({

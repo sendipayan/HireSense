@@ -1,0 +1,13 @@
+-- AlterTable
+ALTER TABLE "Candidate" ALTER COLUMN "status" DROP NOT NULL,
+ALTER COLUMN "primarySkills" DROP NOT NULL,
+ALTER COLUMN "experienceLevel" DROP NOT NULL,
+ALTER COLUMN "preferredRoles" DROP NOT NULL;
+
+-- AlterTable
+ALTER TABLE "Recruiter" ALTER COLUMN "jobTitle" DROP NOT NULL,
+ALTER COLUMN "companyName" DROP NOT NULL,
+ALTER COLUMN "companyWebsite" DROP NOT NULL,
+ALTER COLUMN "industry" DROP NOT NULL,
+ALTER COLUMN "companySize" DROP NOT NULL,
+ALTER COLUMN "hiringForRoles" DROP NOT NULL;
