@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { verifyJwt } from "@/lib/jwt";
+import { qstash } from "@/lib/qstash";
 
 export async function PATCH(req: NextRequest) {
   const token = req.cookies.get("auth_token")?.value;
@@ -27,6 +28,7 @@ export async function PATCH(req: NextRequest) {
     const {
       id,
       name,
+      email,
       phoneNumber,
       jobTitle,
       companyName,
@@ -79,6 +81,26 @@ export async function PATCH(req: NextRequest) {
         },
       }),
     ]);
+
+    if (isVerified === "PENDING") {
+      if (id && email && companyWebsite && companyLinkedIn && companyName) {
+        const payload = {
+          id,
+          email,
+          companyWebsite,
+          companyLinkedIn,
+          companyName,
+        };
+        if (process.env.NODE_ENV === "production") {
+          await qstash.publishJSON({
+            url: `${process.env.NEXTAUTH_URL}/api/recruiter/verify`,
+            body: {
+              payload,
+            },
+          });
+        }
+      }
+    }
 
     return NextResponse.json(
       { message: "Profile updated successfully" },

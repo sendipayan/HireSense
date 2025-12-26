@@ -17,6 +17,10 @@ import { useRecruiterStore } from "@/store/RecuiterStore"
 import { useAuthStore } from "@/store/authStore"
 import axios from "axios"
 
+type verificationStatus = "PENDING" | "APPROVED" | "REJECTED";
+
+type approve = "verified" | "pending" | "rejected"
+
 interface RecruiterFormData {
   fullName?: string | null;
   email?: string | null;
@@ -28,7 +32,7 @@ interface RecruiterFormData {
   industry?: string | null;
   companySize?: string | null;
   hiringForRoles?: any;
-  isVerified?: boolean | null;
+  isVerified?: verificationStatus | null;
 }
 
 const INDUSTRY_OPTIONS = [
@@ -76,8 +80,10 @@ export function RecruiterProfileClientPage() {
     industry: "",
     companySize: "",
     hiringForRoles: [],
-    isVerified: false,
+    isVerified: "PENDING",
   })
+  const [approve, setApprove] = useState<approve>("pending")
+
 
   useEffect(() => {
     if (RecuiterProfile) {
@@ -94,6 +100,15 @@ export function RecruiterProfileClientPage() {
         hiringForRoles: RecuiterProfile?.hiringForRoles,
         isVerified: RecuiterProfile?.isVerified,
       })
+      if (RecuiterProfile.isVerified === "APPROVED") {
+        setApprove("verified")
+      }
+      else if (RecuiterProfile.isVerified === "REJECTED") {
+        setApprove("rejected")
+      }
+      else {
+        setApprove("pending")
+      }
     }
   }, [RecuiterProfile])
 
@@ -120,7 +135,8 @@ export function RecruiterProfileClientPage() {
     }
     const payload = {
       id: RecuiterProfile.userId,
-      name: user?.name,
+      name: formData.fullName,
+      email: user?.email,
       phoneNumber: formData.phoneNumber,
       jobTitle: formData.jobTitle,
       companyName: formData.companyName,
@@ -132,8 +148,18 @@ export function RecruiterProfileClientPage() {
       isVerified: formData.isVerified,
     }
     console.log(payload)
+
+    const payload1 = {
+      id: RecuiterProfile.userId,
+      email: user?.email,
+      companyWebsite: formData.companyWebsite,
+      companyLinkedIn: formData.companyLinkedIn,
+      companyName: formData.companyName,
+    };
     try {
       const res = await axios.patch("/api/recruiter/update_profile", payload, { withCredentials: true })
+      const res1 = await axios.post("/api/recruiter/verify", payload1, { withCredentials: true })
+      console.log(res1)
       if (res.status === 200) {
         const res2 = await fetch("/api/auth/me")
         const data2 = await res2.json()
@@ -332,9 +358,9 @@ export function RecruiterProfileClientPage() {
           {/* Verification Status Section */}
           <FormSection title="Verification Status" description="Current verification state of your profile">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <VerificationBadge status={formData?.isVerified ? "verified" : "pending"} label="Account Verification" />
-              <VerificationBadge status={formData?.isVerified ? "verified" : "pending"} label="Company Domain Match" />
-              <VerificationBadge status={formData?.isVerified ? "verified" : "pending"} label="Manual Review" />
+              <VerificationBadge status={approve} label="Account Verification" />
+              <VerificationBadge status={approve} label="Company Domain Match" />
+              <VerificationBadge status={approve} label="Manual Review" />
             </div>
           </FormSection>
 

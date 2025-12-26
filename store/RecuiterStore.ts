@@ -6,6 +6,8 @@ type BaseUser = {
   role: "CANDIDATE" | "RECRUITER";
 };
 
+type verificationStatus = "PENDING" | "APPROVED" | "REJECTED";
+
 type RecruiterProfile = {
   id: string;
   userId: string;
@@ -18,7 +20,8 @@ type RecruiterProfile = {
   industry?: string | null;
   companySize?: string | null;
   hiringForRoles?: any;
-  isVerified: boolean;
+  isVerified: verificationStatus;
+  failedReasons?: any;
 };
 
 type RecruiterStore = {

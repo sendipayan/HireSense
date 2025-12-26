@@ -41,6 +41,13 @@ export async function POST(request: NextRequest) {
     // 1️⃣ Hard gate — domain relationship
     const allow = await emailMatchesCompany(email, companyWebsite);
     if (!allow) {
+      await prisma.recruiter.update({
+        where: { userId: payload.userId },
+        data: {
+          isVerified: "REJECTED",
+          failedReasons: "Email domain does not match company domain",
+        },
+      });
       return NextResponse.json(
         {
           success: false,
@@ -73,7 +80,7 @@ export async function POST(request: NextRequest) {
     if (signals.emailVerified && signals.website.real) {
       await prisma.recruiter.update({
         where: { userId: payload.userId },
-        data: { isVerified: true },
+        data: { isVerified: "APPROVED" },
       });
       return NextResponse.json({
         success: true,
@@ -86,7 +93,15 @@ export async function POST(request: NextRequest) {
     if (approved) {
       await prisma.recruiter.update({
         where: { userId: payload.userId },
-        data: { isVerified: true },
+        data: { isVerified: "APPROVED" },
+      });
+    } else {
+      await prisma.recruiter.update({
+        where: { userId: payload.userId },
+        data: {
+          isVerified: "REJECTED",
+          failedReasons: "Verification failed",
+        },
       });
     }
 
