@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import jwt from "jsonwebtoken";
 import { verifyJwt } from "@/lib/jwt";
 
 export async function PATCH(req: NextRequest) {

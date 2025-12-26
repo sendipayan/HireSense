@@ -190,6 +190,9 @@ export default function LoginPage() {
               ? "Start your journey with AI-powered hiring"
               : "Sign in to your account to continue"}
           </p>
+          <p className="mt-2 text-muted-foreground">
+            {isSignUp && "Note: If you are a recuiter sigup with your work email provided by the company"}
+          </p>
         </div>
 
         {/* Login/Signup Card */}

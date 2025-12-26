@@ -332,7 +332,7 @@ export function RecruiterProfileClientPage() {
           {/* Verification Status Section */}
           <FormSection title="Verification Status" description="Current verification state of your profile">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <VerificationBadge status={formData?.isVerified ? "verified" : "pending"} label="Account Verified" />
+              <VerificationBadge status={formData?.isVerified ? "verified" : "pending"} label="Account Verification" />
               <VerificationBadge status={formData?.isVerified ? "verified" : "pending"} label="Company Domain Match" />
               <VerificationBadge status={formData?.isVerified ? "verified" : "pending"} label="Manual Review" />
             </div>
