@@ -26,9 +26,18 @@ export async function POST(req: Request) {
           { status: 401 }
         );
       }
+      const verifier = await prisma.recruiter.findUnique({
+        select: {
+          isVerified: true,
+        },
+        where: {
+          userId: user.id,
+        },
+      });
       const token = signJwt({
         userId: user.id,
         role: user.role,
+        isVerified: verifier?.isVerified ?? "PENDING",
       });
       const cookieStore = await cookies();
       cookieStore.set("auth_token", token, {

@@ -52,6 +52,7 @@ model Recruiter {
   hiringForRoles  Json?
   isVerified      verificationStatus @default(PENDING)
   failedReasons   Json?
+  postJob         PostJob[]
   createdAt       DateTime           @default(now())
   updatedAt       DateTime           @updatedAt
 }
@@ -109,8 +110,8 @@ enum ExperienceLevel {
 enum JobType {
   NONE
   INTERNSHIP
-  FULL_TIME
   BOTH
+  FULL_TIME
 }
 
 enum Availability {
@@ -119,4 +120,44 @@ enum Availability {
   ONE_TO_THREE_MONTHS
   THREE_TO_SIX_MONTHS
   LATER
+}
+
+model PostJob {
+  id                 String             @id @default(uuid())
+  recruiter          Recruiter          @relation(fields: [recruiterId], references: [id])
+  recruiterId        String
+  title              String
+  description        String
+  location           String
+  minSalary          Int
+  maxSalary          BigInt
+  department         Department
+  jobType            JobType
+  experienceRequired ExperienceRequired
+  requirements       String
+  optional           String?
+  benifits           Json?
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+}
+
+enum Department {
+  NONE
+  ENGINEERING
+  DESIGN
+  MARKETING
+  SALES
+  SUPPORT
+  HR
+  FINANCE
+  OPERATIONS
+}
+
+enum ExperienceRequired {
+  NONE
+  ENTRY_LEVEL
+  MID_LEVEL
+  SENIOR_LEVEL
+  LEAD
+  EXECUTIVE
 }

@@ -3,6 +3,8 @@ import prisma from "@/lib/prisma";
 import jwt from "jsonwebtoken";
 import { verifyJwt } from "@/lib/jwt";
 
+//type JobType = "INTERNSHIP" | "BOTH" | "FULL_TIME";
+
 export async function PATCH(req: NextRequest) {
   const token = req.cookies.get("auth_token")?.value;
 
@@ -64,6 +66,8 @@ export async function PATCH(req: NextRequest) {
         { status: 404 }
       );
     }
+
+    console.log(jobTypePreference);
 
     // 3️⃣ Use a transaction to keep data consistent
     await prisma.$transaction([

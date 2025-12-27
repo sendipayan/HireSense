@@ -9,6 +9,7 @@ export async function verifyJwtEdge(token: string) {
     return {
       userId: payload.userId as string,
       role: payload.role as "RECRUITER" | "CANDIDATE",
+      isVerified: payload.isVerified as "APPROVED" | "PENDING" | "REJECTED",
     };
   } catch {
     return null;

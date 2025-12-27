@@ -6,8 +6,11 @@ import { linkedinCheck } from "@/lib/verifications/linkedinChecker";
 import { businessRegistryCheck } from "@/lib/verifications/buisnessRegistry";
 import { emailMatchesCompany } from "@/lib/verifications/emailVerifier";
 import type { VerificationSignals } from "@/types/verifySignals";
-import { verifyJwt } from "@/lib/jwt";
+import { verifyJwt, signJwt } from "@/lib/jwt";
+import { cookies } from "next/headers";
 import prisma from "@/lib/prisma";
+
+type verificationStatus = "APPROVED" | "PENDING" | "REJECTED";
 
 export async function POST(request: NextRequest) {
   const token = request.cookies.get("auth_token")?.value;
@@ -82,6 +85,19 @@ export async function POST(request: NextRequest) {
         where: { userId: payload.userId },
         data: { isVerified: "APPROVED" },
       });
+      const token1 = signJwt({
+        userId: payload.userId,
+        role: payload.role,
+        isVerified: "APPROVED",
+      });
+      const cookieStore = await cookies();
+
+      cookieStore.set("auth_token", token1, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        path: "/",
+      });
       return NextResponse.json({
         success: true,
         reason: "Email domain matches company domain and website is real",
@@ -90,11 +106,15 @@ export async function POST(request: NextRequest) {
       });
     }
 
+    let isVerified: verificationStatus = "REJECTED";
+
     if (approved) {
       await prisma.recruiter.update({
         where: { userId: payload.userId },
         data: { isVerified: "APPROVED" },
       });
+
+      isVerified = "APPROVED";
     } else {
       await prisma.recruiter.update({
         where: { userId: payload.userId },
@@ -104,6 +124,20 @@ export async function POST(request: NextRequest) {
         },
       });
     }
+
+    const token1 = signJwt({
+      userId: payload.userId,
+      role: payload.role,
+      isVerified,
+    });
+    const cookieStore = await cookies();
+
+    cookieStore.set("auth_token", token1, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+    });
 
     // 4️⃣ Score fallback
 

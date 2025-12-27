@@ -284,7 +284,7 @@ export default function CandidateProfileClientPage() {
               <label className="text-sm font-medium text-foreground">Current Status</label>
               <Select value={formData.status || "NONE"} onValueChange={(value) => handleChange("status", value)}>
                 <SelectTrigger>
-                  <SelectValue />
+                  <SelectValue placeholder="Select current status" />
                 </SelectTrigger>
                 <SelectContent>
                   {CURRENT_STATUS_OPTIONS.map((option) => (
@@ -348,7 +348,7 @@ export default function CandidateProfileClientPage() {
                 onValueChange={(value) => handleChange("experienceLevel", value)}
               >
                 <SelectTrigger>
-                  <SelectValue />
+                  <SelectValue placeholder="Select experience level" />
                 </SelectTrigger>
                 <SelectContent>
                   {EXPERIENCE_LEVEL_OPTIONS.map((option) => (
@@ -423,7 +423,7 @@ export default function CandidateProfileClientPage() {
                 onValueChange={(value) => handleChange("jobTypePreference", value)}
               >
                 <SelectTrigger>
-                  <SelectValue />
+                  <SelectValue placeholder="Select job type preference" />
                 </SelectTrigger>
                 <SelectContent>
                   {JOB_TYPE_OPTIONS.map((option) => (
@@ -458,7 +458,7 @@ export default function CandidateProfileClientPage() {
               <label className="text-sm font-medium text-foreground">Availability</label>
               <Select value={formData.availability || "NONE"} onValueChange={(value) => handleChange("availability", value)}>
                 <SelectTrigger>
-                  <SelectValue />
+                  <SelectValue placeholder="Select availability" />
                 </SelectTrigger>
                 <SelectContent>
                   {AVAILABILITY_OPTIONS.map((option) => (

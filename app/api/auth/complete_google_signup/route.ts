@@ -42,6 +42,7 @@ export async function POST(req: NextRequest) {
       const token = signJwt({
         userId: user.id,
         role: user.role,
+        isVerified: "PENDING",
       });
 
       const cookieStore = await cookies();

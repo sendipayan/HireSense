@@ -1,24 +1,95 @@
-"use client"
-import Link from "next/link"
-import { Button } from "@/components/ui/button"
-import { Breadcrumbs } from "@/components/breadcrumbs"
-import { PageHeader } from "@/components/page-header"
-import { FormField } from "@/components/form-field"
-import { Label } from "@/components/ui/label"
-import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Sparkles, Eye, Save, ArrowLeft } from "lucide-react"
-import { useRouter } from "next/navigation"
+"use client";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { Breadcrumbs } from "@/components/breadcrumbs";
+import { PageHeader } from "@/components/page-header";
+import { FormField } from "@/components/form-field";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Sparkles, Eye, Save, ArrowLeft } from "lucide-react";
+import { useRouter } from "next/navigation";
+import axios from "axios";
+import { useState, useEffect } from "react";
+import { useRecruiterStore } from "@/store/RecuiterStore";
 
+type Department =
+    | "ENGINEERING"
+    | "DESIGN"
+    | "MARKETING"
+    | "SALES"
+    | "SUPPORT"
+    | "HR"
+    | "FINANCE"
+    | "OPERATIONS";
+type JobType = "FULL_TIME" | "INTERNSHIP" | "BOTH";
+type ExperienceRequired =
+    | "ENTRY_LEVEL"
+    | "MID_LEVEL"
+    | "SENIOR_LEVEL"
+    | "LEAD"
+    | "EXECUTIVE";
 
-
+type formType = {
+    id: string;
+    title: string | "";
+    description: string | "";
+    location: string | "";
+    minSalary: number;
+    maxSalary: number;
+    department: Department | string;
+    jobType: JobType | string;
+    experienceRequired: ExperienceRequired | string;
+    requirements: string;
+    optional?: string;
+    benifits: string[];
+};
 
 export default function PostJob() {
-    const router = useRouter()
-    const jobTypes = ["Full-time", "Part-time", "Contract", "Internship", "Remote"]
-    const experienceLevels = ["Entry Level", "Mid Level", "Senior", "Lead", "Executive"]
-    const departments = ["Engineering", "Product", "Design", "Marketing", "Sales", "Operations", "HR", "Finance"]
+    const [loading, setLoading] = useState(false);
+    const { RecuiterProfile } = useRecruiterStore()
+    const [form, setForm] = useState<formType>({
+        id: "",
+        title: "",
+        description: "",
+        location: "",
+        jobType: "NONE",
+        experienceRequired: "NONE",
+        department: "NONE",
+        requirements: "",
+        optional: "",
+        benifits: [],
+        minSalary: 0,
+        maxSalary: 0,
+    });
+    const router = useRouter();
+    const jobTypes = ["FULL_TIME", "INTERNSHIP", "BOTH", "NONE"];
+    const experienceLevels = [
+        "ENTRY_LEVEL",
+        "MID_LEVEL",
+        "SENIOR_LEVEL",
+        "LEAD",
+        "EXECUTIVE",
+        "NONE",
+    ];
+    const departments = [
+        "ENGINEERING",
+        "DESIGN",
+        "MARKETING",
+        "SALES",
+        "SUPPORT",
+        "HR",
+        "FINANCE",
+        "OPERATIONS",
+        "NONE",
+    ];
 
     const benefits = [
         "Health Insurance",
@@ -29,13 +100,55 @@ export default function PostJob() {
         "Professional Development",
         "Paid Time Off",
         "Parental Leave",
-    ]
+    ];
 
+    useEffect(() => {
+
+        if (RecuiterProfile) {
+            setForm({ ...form, id: RecuiterProfile.id })
+        }
+    }, [RecuiterProfile])
+
+    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+
+        console.log(form);
+
+        if (form.id.trim() === "") {
+            return
+        }
+
+        if (form.title.trim() === "" ||
+            form.description.trim() === "" ||
+            form.location.trim() === "" ||
+            form.minSalary < 0 ||
+            form.requirements.trim() == "" ||
+            form.maxSalary <= 0) {
+            alert("Please fill all the fields");
+            return;
+        }
+
+        try {
+            const res = await axios.post("/api/recruiter/post_job", form, { withCredentials: true });
+            if (res.status === 201) {
+                console.log("Form submitted: ", res.data);
+                router.push("/recruiter/dashboard");
+            }
+
+        } catch (err) {
+            console.error("Form submission error: ", err);
+        }
+    };
     return (
         <main className="py-8 sm:py-12">
             <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
                 {/* Breadcrumbs */}
-                <Breadcrumbs items={[{ label: "Recruiter", href: "/recruiter/dashboard" }, { label: "Post a Job" }]} />
+                <Breadcrumbs
+                    items={[
+                        { label: "Recruiter", href: "/recruiter/dashboard" },
+                        { label: "Post a Job" },
+                    ]}
+                />
 
                 {/* Page Header */}
                 <PageHeader
@@ -44,7 +157,7 @@ export default function PostJob() {
                 />
 
                 {/* Job Posting Form */}
-                <form className="mt-8 space-y-8" action="#" method="POST">
+                <form className="mt-8 space-y-8" onSubmit={handleSubmit}>
                     {/* Basic Information */}
                     <section aria-labelledby="basic-info-heading">
                         <h2 id="basic-info-heading" className="text-lg font-semibold mb-4">
@@ -57,18 +170,30 @@ export default function PostJob() {
                                 placeholder="e.g., Senior Frontend Engineer"
                                 required
                                 description="Be specific to attract the right candidates"
+                                value={form.title}
+                                onChange={(e) => setForm({ ...form, title: e.target.value })}
                             />
 
                             <div className="grid gap-6 sm:grid-cols-2">
                                 <div className="space-y-2">
                                     <Label htmlFor="department">Department</Label>
-                                    <Select name="department">
-                                        <SelectTrigger id="department" aria-label="Select department">
+                                    <Select
+                                        name="department"
+                                        value={form.department || "NONE"}
+                                        onValueChange={(value) => {
+                                            setForm({ ...form, department: value });
+                                        }}
+                                        required
+                                    >
+                                        <SelectTrigger
+                                            id="department"
+                                            aria-label="Select department"
+                                        >
                                             <SelectValue placeholder="Select department" />
                                         </SelectTrigger>
                                         <SelectContent>
                                             {departments.map((dept) => (
-                                                <SelectItem key={dept} value={dept.toLowerCase()}>
+                                                <SelectItem key={dept} value={dept}>
                                                     {dept}
                                                 </SelectItem>
                                             ))}
@@ -78,13 +203,20 @@ export default function PostJob() {
 
                                 <div className="space-y-2">
                                     <Label htmlFor="job-type">Job Type</Label>
-                                    <Select name="jobType">
+                                    <Select
+                                        name="jobType"
+                                        value={form.jobType || "NONE"}
+                                        onValueChange={(value) => {
+                                            setForm({ ...form, jobType: value });
+                                        }}
+                                        required
+                                    >
                                         <SelectTrigger id="job-type" aria-label="Select job type">
                                             <SelectValue placeholder="Select type" />
                                         </SelectTrigger>
                                         <SelectContent>
                                             {jobTypes.map((type) => (
-                                                <SelectItem key={type} value={type.toLowerCase()}>
+                                                <SelectItem key={type} value={type}>
                                                     {type}
                                                 </SelectItem>
                                             ))}
@@ -94,17 +226,36 @@ export default function PostJob() {
                             </div>
 
                             <div className="grid gap-6 sm:grid-cols-2">
-                                <FormField label="Location" name="location" placeholder="e.g., San Francisco, CA or Remote" required />
+                                <FormField
+                                    label="Location"
+                                    name="location"
+                                    placeholder="e.g., San Francisco, CA or Remote"
+                                    required
+                                    value={form.location}
+                                    onChange={(e) =>
+                                        setForm({ ...form, location: e.target.value })
+                                    }
+                                />
 
                                 <div className="space-y-2">
                                     <Label htmlFor="experience">Experience Level</Label>
-                                    <Select name="experience">
-                                        <SelectTrigger id="experience" aria-label="Select experience level">
+                                    <Select
+                                        name="experience"
+                                        value={form.experienceRequired || "NONE"}
+                                        onValueChange={(value) => {
+                                            setForm({ ...form, experienceRequired: value });
+                                        }}
+                                        required
+                                    >
+                                        <SelectTrigger
+                                            id="experience"
+                                            aria-label="Select experience level"
+                                        >
                                             <SelectValue placeholder="Select level" />
                                         </SelectTrigger>
                                         <SelectContent>
                                             {experienceLevels.map((level) => (
-                                                <SelectItem key={level} value={level.toLowerCase().replace(" ", "-")}>
+                                                <SelectItem key={level} value={level}>
                                                     {level}
                                                 </SelectItem>
                                             ))}
@@ -117,7 +268,10 @@ export default function PostJob() {
 
                     {/* Compensation */}
                     <section aria-labelledby="compensation-heading">
-                        <h2 id="compensation-heading" className="text-lg font-semibold mb-4">
+                        <h2
+                            id="compensation-heading"
+                            className="text-lg font-semibold mb-4"
+                        >
                             Compensation
                         </h2>
                         <div className="rounded-xl border border-border bg-card p-6 space-y-6">
@@ -125,7 +279,9 @@ export default function PostJob() {
                                 <div className="space-y-2">
                                     <Label htmlFor="salary-min">Minimum Salary</Label>
                                     <div className="relative">
-                                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
+                                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+                                            ₹
+                                        </span>
                                         <Input
                                             id="salary-min"
                                             name="salaryMin"
@@ -133,14 +289,32 @@ export default function PostJob() {
                                             placeholder="100,000"
                                             className="pl-7"
                                             aria-describedby="salary-hint"
+                                            value={form.minSalary}
+                                            onChange={(e) =>
+                                                setForm({ ...form, minSalary: Number(e.target.value) })
+                                            }
+                                            required
                                         />
                                     </div>
                                 </div>
                                 <div className="space-y-2">
                                     <Label htmlFor="salary-max">Maximum Salary</Label>
                                     <div className="relative">
-                                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
-                                        <Input id="salary-max" name="salaryMax" type="number" placeholder="150,000" className="pl-7" />
+                                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+                                            ₹
+                                        </span>
+                                        <Input
+                                            id="salary-max"
+                                            name="salaryMax"
+                                            type="number"
+                                            placeholder="150,000"
+                                            className="pl-7"
+                                            value={form.maxSalary}
+                                            onChange={(e) =>
+                                                setForm({ ...form, maxSalary: Number(e.target.value) })
+                                            }
+                                            required
+                                        />
                                     </div>
                                 </div>
                             </div>
@@ -164,6 +338,10 @@ export default function PostJob() {
                                 placeholder="Describe the role, responsibilities, and what makes this opportunity exciting..."
                                 required
                                 description="Be detailed - this helps our AI find better matches"
+                                value={form.description}
+                                onChange={(e) =>
+                                    setForm({ ...form, description: e.target.value })
+                                }
                             />
 
                             <FormField
@@ -173,6 +351,10 @@ export default function PostJob() {
                                 rows={4}
                                 placeholder="List the required skills, experience, and qualifications..."
                                 required
+                                value={form.requirements}
+                                onChange={(e) =>
+                                    setForm({ ...form, requirements: e.target.value })
+                                }
                             />
 
                             <FormField
@@ -181,6 +363,8 @@ export default function PostJob() {
                                 as="textarea"
                                 rows={3}
                                 placeholder="Optional skills or experience that would be a plus..."
+                                value={form.optional}
+                                onChange={(e) => setForm({ ...form, optional: e.target.value })}
                             />
                         </div>
                     </section>
@@ -197,12 +381,32 @@ export default function PostJob() {
                                     {benefits.map((benefit) => (
                                         <div key={benefit} className="flex items-center space-x-3">
                                             <Checkbox
-                                                id={`benefit-${benefit.toLowerCase().replace(" ", "-")}`}
+                                                id={`benefit-${benefit
+                                                    .toLowerCase()
+                                                    .replace(" ", "-")}`}
                                                 name="benefits"
                                                 value={benefit}
+                                                checked={form.benifits.includes(benefit)}
+                                                onCheckedChange={(checked) => {
+                                                    if (checked) {
+                                                        setForm({
+                                                            ...form,
+                                                            benifits: [...form.benifits, benefit],
+                                                        });
+                                                    } else {
+                                                        setForm({
+                                                            ...form,
+                                                            benifits: form.benifits.filter(
+                                                                (b) => b !== benefit
+                                                            ),
+                                                        });
+                                                    }
+                                                }}
                                             />
                                             <Label
-                                                htmlFor={`benefit-${benefit.toLowerCase().replace(" ", "-")}`}
+                                                htmlFor={`benefit-${benefit
+                                                    .toLowerCase()
+                                                    .replace(" ", "-")}`}
                                                 className="text-sm font-normal cursor-pointer"
                                             >
                                                 {benefit}
@@ -223,8 +427,9 @@ export default function PostJob() {
                             <div className="flex-1">
                                 <h2 className="font-semibold">AI-Powered Matching</h2>
                                 <p className="mt-1 text-sm text-muted-foreground">
-                                    Our AI will analyze your job posting and automatically match it with qualified candidates in our
-                                    database. You&apos;ll receive instant notifications when great matches are found.
+                                    Our AI will analyze your job posting and automatically match
+                                    it with qualified candidates in our database. You&apos;ll
+                                    receive instant notifications when great matches are found.
                                 </p>
                             </div>
                         </div>
@@ -232,12 +437,17 @@ export default function PostJob() {
 
                     {/* Form Actions */}
                     <div className="flex flex-col gap-4 sm:flex-row sm:justify-between">
-                        <Button type="button" variant="outline" size="lg" className="bg-transparent" onClick={() => router.back()}>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            size="lg"
+                            className="bg-transparent"
+                            onClick={() => router.back()}
+                        >
                             <ArrowLeft className="mr-2 h-4 w-4" aria-hidden="true" />
                             Back to Dashboard
                         </Button>
                         <div className="flex flex-col gap-3 sm:flex-row">
-
                             <Button type="submit" size="lg">
                                 Publish Job
                             </Button>
@@ -246,5 +456,5 @@ export default function PostJob() {
                 </form>
             </div>
         </main>
-    )
+    );
 }
