@@ -121,26 +121,28 @@ export default function RecruiterDashboardPage() {
                                     key={job.id}
                                     className="rounded-xl border border-border bg-card p-4 transition-colors hover:border-primary/50"
                                 >
-                                    <div className="flex items-start justify-between gap-3">
-                                        <div className="min-w-0">
-                                            <h3 className="font-medium truncate">
-                                                <Link href={`/match-results?job=${job.id}`} className="hover:text-primary transition-colors">
+                                    <Link href={`/recruiter/edit-job?job=${job.id}`} className="hover:text-primary transition-colors">
+                                        <div className="flex items-start justify-between gap-3">
+                                            <div className="min-w-0">
+                                                <h3 className="font-medium truncate">
+
                                                     {job.title}
-                                                </Link>
-                                            </h3>
-                                            <p className="text-sm text-muted-foreground">{job.location}</p>
+
+                                                </h3>
+                                                <p className="text-sm text-muted-foreground">{job.location}</p>
+                                            </div>
+                                            <Badge variant={job.status === "Reviewing" ? "secondary" : "outline"}>{job.status}</Badge>
                                         </div>
-                                        <Badge variant={job.status === "Reviewing" ? "secondary" : "outline"}>{job.status}</Badge>
-                                    </div>
-                                    <div className="mt-3 flex items-center gap-4 text-sm text-muted-foreground">
-                                        <span className="flex items-center gap-1">
-                                            <Users className="h-4 w-4" aria-hidden="true" />
-                                            {job.applicants} applicants
-                                        </span>
-                                        {job.newApplicants > 0 && (
-                                            <span className="text-primary font-medium">+{job.newApplicants} new</span>
-                                        )}
-                                    </div>
+                                        <div className="mt-3 flex items-center gap-4 text-sm text-muted-foreground">
+                                            <span className="flex items-center gap-1">
+                                                <Users className="h-4 w-4" aria-hidden="true" />
+                                                {job.applicants} applicants
+                                            </span>
+                                            {job.newApplicants > 0 && (
+                                                <span className="text-primary font-medium">+{job.newApplicants} new</span>
+                                            )}
+                                        </div>
+                                    </Link>
                                 </article>
                             ))}
                         </div>
