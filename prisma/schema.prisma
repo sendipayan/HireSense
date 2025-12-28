@@ -130,12 +130,12 @@ model PostJob {
   description        String
   location           String
   minSalary          Int
-  maxSalary          BigInt
+  maxSalary          Int
   department         Department
   jobType            JobType
   experienceRequired ExperienceRequired
-  requirements       String
-  optional           String?
+  requirements       Json
+  optional           Json?
   benifits           Json?
   createdAt          DateTime           @default(now())
   updatedAt          DateTime           @updatedAt

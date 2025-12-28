@@ -6,6 +6,7 @@ import { PageHeader } from "@/components/page-header";
 import { FormField } from "@/components/form-field";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { MultiSelect } from "@/components/multi-select";
 import {
     Select,
     SelectContent,
@@ -47,8 +48,8 @@ type formType = {
     department: Department | string;
     jobType: JobType | string;
     experienceRequired: ExperienceRequired | string;
-    requirements: string;
-    optional?: string;
+    requirements: string[];
+    optional?: string[];
     benifits: string[];
 };
 
@@ -63,13 +64,24 @@ export default function PostJob() {
         jobType: "NONE",
         experienceRequired: "NONE",
         department: "NONE",
-        requirements: "",
-        optional: "",
+        requirements: [],
+        optional: [],
         benifits: [],
         minSalary: 0,
         maxSalary: 0,
     });
     const router = useRouter();
+    const SKILLS_OPTIONS = [
+        { value: "NONE", label: "NONE" },
+        { value: "react", label: "React" },
+        { value: "typescript", label: "TypeScript" },
+        { value: "nodejs", label: "Node.js" },
+        { value: "python", label: "Python" },
+        { value: "aws", label: "AWS" },
+        { value: "sql", label: "SQL" },
+        { value: "design", label: "UI/UX Design" },
+        { value: "product", label: "Product Management" },
+    ]
     const jobTypes = ["FULL_TIME", "INTERNSHIP", "BOTH", "NONE"];
     const experienceLevels = [
         "ENTRY_LEVEL",
@@ -122,7 +134,7 @@ export default function PostJob() {
             form.description.trim() === "" ||
             form.location.trim() === "" ||
             form.minSalary < 0 ||
-            form.requirements.trim() == "" ||
+            form.requirements.length <= 0 ||
             form.maxSalary <= 0) {
             alert("Please fill all the fields");
             return;
@@ -344,28 +356,26 @@ export default function PostJob() {
                                 }
                             />
 
-                            <FormField
-                                label="Requirements"
-                                name="requirements"
-                                as="textarea"
-                                rows={4}
-                                placeholder="List the required skills, experience, and qualifications..."
+                            <MultiSelect
+                                label="Primary Skills"
+                                name="primarySkills"
+                                options={SKILLS_OPTIONS}
+                                selected={form.requirements || []}
+                                onChange={(selected) => setForm({ ...form, requirements: selected })}
+                                placeholder="Select your primary skills"
                                 required
-                                value={form.requirements}
-                                onChange={(e) =>
-                                    setForm({ ...form, requirements: e.target.value })
-                                }
                             />
 
-                            <FormField
+                            <MultiSelect
                                 label="Nice to Have"
                                 name="niceToHave"
-                                as="textarea"
-                                rows={3}
-                                placeholder="Optional skills or experience that would be a plus..."
-                                value={form.optional}
-                                onChange={(e) => setForm({ ...form, optional: e.target.value })}
+                                options={SKILLS_OPTIONS}
+                                selected={form.optional || []}
+                                onChange={(selected) => setForm({ ...form, optional: selected })}
+                                placeholder="Select your nice to have skills"
                             />
+
+
                         </div>
                     </section>
 

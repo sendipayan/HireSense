@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { verifyJwt } from "@/lib/jwt";
 import prisma from "@/lib/prisma";
+//import { getJob } from "./job";
 
 export async function getAuthUser() {
   const token = (await cookies()).get("auth_token")?.value;
@@ -29,7 +30,10 @@ export async function getAuthUser() {
         },
       });
     }
-
+    //const job = await getJob();
+    //if (!job) {
+    //return data;
+    //}
     return data;
   } catch {
     return null;

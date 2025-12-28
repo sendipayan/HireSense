@@ -14,6 +14,8 @@ import { useRecruiterStore } from "@/store/RecuiterStore"
 import { useRouter } from "next/navigation";
 import { Users, Briefcase, Target, TrendingUp, Plus, ArrowRight, Eye, Clock, CheckCircle2 } from "lucide-react"
 import { useEffect, useState } from "react"
+import { useJobStore } from "@/store/jobStore"
+
 
 
 
@@ -23,6 +25,7 @@ export default function RecruiterDashboardPage() {
     const router = useRouter()
     const { RecuiterProfile } = useRecruiterStore()
     const { isLoggedIn } = useAuthStore()
+    const { setJobs, jobs } = useJobStore()
 
     useEffect(() => {
 
@@ -40,6 +43,14 @@ export default function RecruiterDashboardPage() {
     useEffect(() => {
         console.log(verfiy)
     }, [verfiy])
+
+
+
+    useEffect(() => {
+        if (jobs) {
+            console.log(jobs)
+        }
+    }, [jobs])
     // Mock company data
     const company = {
         name: "TechCorp Inc.",
@@ -116,7 +127,7 @@ export default function RecruiterDashboardPage() {
                             </Button>
                         </div>
                         <div className="space-y-3">
-                            {activeJobs.map((job) => (
+                            {jobs?.map((job) => (
                                 <article
                                     key={job.id}
                                     className="rounded-xl border border-border bg-card p-4 transition-colors hover:border-primary/50"
@@ -131,16 +142,14 @@ export default function RecruiterDashboardPage() {
                                                 </h3>
                                                 <p className="text-sm text-muted-foreground">{job.location}</p>
                                             </div>
-                                            <Badge variant={job.status === "Reviewing" ? "secondary" : "outline"}>{job.status}</Badge>
+
                                         </div>
                                         <div className="mt-3 flex items-center gap-4 text-sm text-muted-foreground">
                                             <span className="flex items-center gap-1">
                                                 <Users className="h-4 w-4" aria-hidden="true" />
-                                                {job.applicants} applicants
+                                                15 applicants
                                             </span>
-                                            {job.newApplicants > 0 && (
-                                                <span className="text-primary font-medium">+{job.newApplicants} new</span>
-                                            )}
+
                                         </div>
                                     </Link>
                                 </article>

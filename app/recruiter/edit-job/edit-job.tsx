@@ -6,6 +6,7 @@ import { PageHeader } from "@/components/page-header";
 import { FormField } from "@/components/form-field";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { MultiSelect } from "@/components/multi-select";
 import {
     Select,
     SelectContent,
@@ -19,6 +20,7 @@ import { useRouter } from "next/navigation";
 import axios from "axios";
 import { useState, useEffect } from "react";
 import { useRecruiterStore } from "@/store/RecuiterStore";
+import { useJobStore } from "@/store/jobStore";
 
 type Department =
     | "ENGINEERING"
@@ -47,13 +49,13 @@ type formType = {
     department: Department | string;
     jobType: JobType | string;
     experienceRequired: ExperienceRequired | string;
-    requirements: string;
-    optional?: string;
+    requirements: string[];
+    optional?: string[];
     benifits: string[];
 };
 
 export default function EditJob({ job }: { job: string }) {
-
+    const { jobs, updateJob } = useJobStore()
     const [loading, setLoading] = useState(false);
     const { RecuiterProfile } = useRecruiterStore()
     const [form, setForm] = useState<formType>({
@@ -64,13 +66,24 @@ export default function EditJob({ job }: { job: string }) {
         jobType: "NONE",
         experienceRequired: "NONE",
         department: "NONE",
-        requirements: "",
-        optional: "",
+        requirements: [],
+        optional: [],
         benifits: [],
         minSalary: 0,
         maxSalary: 0,
     });
     const router = useRouter();
+    const SKILLS_OPTIONS = [
+        { value: "NONE", label: "NONE" },
+        { value: "react", label: "React" },
+        { value: "typescript", label: "TypeScript" },
+        { value: "nodejs", label: "Node.js" },
+        { value: "python", label: "Python" },
+        { value: "aws", label: "AWS" },
+        { value: "sql", label: "SQL" },
+        { value: "design", label: "UI/UX Design" },
+        { value: "product", label: "Product Management" },
+    ]
     const jobTypes = ["FULL_TIME", "INTERNSHIP", "BOTH", "NONE"];
     const experienceLevels = [
         "ENTRY_LEVEL",
@@ -104,11 +117,28 @@ export default function EditJob({ job }: { job: string }) {
     ];
 
     useEffect(() => {
+        if (jobs.length > 0 && job) {
+            const data = jobs.find((j) => j.id === job);
 
-        if (RecuiterProfile) {
-            setForm({ ...form, id: RecuiterProfile.id })
+            if (data) {
+                setForm((prev) => ({
+                    ...prev,
+                    id: data.id,
+                    title: data.title,
+                    description: data.description,
+                    location: data.location,
+                    jobType: data.jobType,
+                    experienceRequired: data.experienceRequired,
+                    department: data.department,
+                    requirements: data.requirements,
+                    optional: data.optional,
+                    benifits: data.benifits,
+                    minSalary: data.minSalary,
+                    maxSalary: Number(data.maxSalary),
+                }));
+            }
         }
-    }, [RecuiterProfile])
+    }, [jobs]);
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
@@ -123,17 +153,19 @@ export default function EditJob({ job }: { job: string }) {
             form.description.trim() === "" ||
             form.location.trim() === "" ||
             form.minSalary < 0 ||
-            form.requirements.trim() == "" ||
+            form.requirements.length <= 0 ||
+            form.experienceRequired.trim() === "" ||
             form.maxSalary <= 0) {
             alert("Please fill all the fields");
             return;
         }
 
         try {
-            const res = await axios.post("/api/recruiter/post_job", form, { withCredentials: true });
-            if (res.status === 201) {
+            const res = await axios.patch("/api/recruiter/update_job", form, { withCredentials: true });
+            if (res.status === 200) {
                 console.log("Form submitted: ", res.data);
-                router.push("/recruiter/dashboard");
+                updateJob(res.data.job)
+
             }
 
         } catch (err) {
@@ -147,14 +179,14 @@ export default function EditJob({ job }: { job: string }) {
                 <Breadcrumbs
                     items={[
                         { label: "Recruiter", href: "/recruiter/dashboard" },
-                        { label: "Post a Job" },
+                        { label: "Edit Job" },
                     ]}
                 />
 
                 {/* Page Header */}
                 <PageHeader
-                    title="Post a New Job"
-                    description="Create a compelling job posting to attract top talent. Our AI will help match you with the best candidates."
+                    title="Edit Job"
+                    description="Edit a job posting and let our AI match you with the best candidates. Fill out the job details and requirements."
                 />
 
                 {/* Job Posting Form */}
@@ -345,28 +377,26 @@ export default function EditJob({ job }: { job: string }) {
                                 }
                             />
 
-                            <FormField
-                                label="Requirements"
-                                name="requirements"
-                                as="textarea"
-                                rows={4}
-                                placeholder="List the required skills, experience, and qualifications..."
+                            <MultiSelect
+                                label="Primary Skills"
+                                name="primarySkills"
+                                options={SKILLS_OPTIONS}
+                                selected={form.requirements || []}
+                                onChange={(selected) => setForm({ ...form, requirements: selected })}
+                                placeholder="Select your primary skills"
                                 required
-                                value={form.requirements}
-                                onChange={(e) =>
-                                    setForm({ ...form, requirements: e.target.value })
-                                }
                             />
 
-                            <FormField
+                            <MultiSelect
                                 label="Nice to Have"
                                 name="niceToHave"
-                                as="textarea"
-                                rows={3}
-                                placeholder="Optional skills or experience that would be a plus..."
-                                value={form.optional}
-                                onChange={(e) => setForm({ ...form, optional: e.target.value })}
+                                options={SKILLS_OPTIONS}
+                                selected={form.optional || []}
+                                onChange={(selected) => setForm({ ...form, optional: selected })}
+                                placeholder="Select your nice to have skills"
                             />
+
+
                         </div>
                     </section>
 

@@ -2,7 +2,7 @@
 
 import { useEffect } from "react"
 import { useAuthStore } from "@/store/authStore"
-
+import { useJobStore } from "@/store/jobStore"
 import { useCandidateStore } from "@/store/candidateStore"
 import { useRecruiterStore } from "@/store/RecuiterStore"
 import { SessionProvider } from "next-auth/react"
@@ -12,6 +12,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const setRecruiterProfile = useRecruiterStore((s) => s.setRecuiterProfile)
   const setCandidateProfile = useCandidateStore((s) => s.setCandidateProfile)
   const { setIsLoggedIn } = useAuthStore()
+  const { setJobs } = useJobStore()
 
   useEffect(() => {
     async function loadUser() {
@@ -24,10 +25,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setCandidateProfile(data?.user)
       }
       setIsLoggedIn(data.user ? true : false)
+      const res1 = await fetch("/api/getjob")
+      const data1 = await res1.json()
+      console.log(data1)
+      setJobs(data1.job)
     }
 
     loadUser()
-  }, [setUser, setRecruiterProfile, setCandidateProfile])
+  }, [setUser, setRecruiterProfile, setCandidateProfile, setJobs])
 
   return <SessionProvider>{children}</SessionProvider>
 }
