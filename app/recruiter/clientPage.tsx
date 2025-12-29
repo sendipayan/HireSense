@@ -24,6 +24,7 @@ export default function RecruiterDashboardPage() {
 
     const [verfiy, setVerfiy] = useState(false)
     const router = useRouter()
+    const [initialLoad, setInitialLoad] = useState(true);
     const { RecuiterProfile } = useRecruiterStore()
     const { isLoggedIn } = useAuthStore()
     const { jobs, setJobs } = useJobStore()
@@ -51,6 +52,7 @@ export default function RecruiterDashboardPage() {
             const data = await res.data
             console.log(data)
             setJobs(data.job)
+            setInitialLoad(false);
         }
         fetch()
     }, [setJobs])
@@ -118,11 +120,18 @@ export default function RecruiterDashboardPage() {
                     <h2 id="stats-heading" className="sr-only">
                         Hiring Statistics
                     </h2>
-                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                    {!initialLoad ? <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                         {stats.map((stat) => (
                             <StatCard key={stat.title} {...stat} />
                         ))}
-                    </div>
+                    </div> :
+                        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                            {[1, 2, 3, 4].map((id) => (
+                                <div className="bg-muted-foreground/50 border border-border rounded-lg p-6 mb-8 animate-pulse h-35" key={id}>
+
+                                </div>
+                            ))}
+                        </div>}
                 </section>
 
                 {/* Two Column Layout */}
@@ -137,7 +146,7 @@ export default function RecruiterDashboardPage() {
                                 <Link href="/recruiter/post-job">View all <ArrowRight className="ml-1 h-4 w-4" aria-hidden="true" /></Link>
                             </Button>
                         </div>
-                        <div className="space-y-3">
+                        {!initialLoad ? <div className="space-y-3">
                             {jobs?.map((job) => (
                                 <article
                                     key={job.id}
@@ -165,7 +174,15 @@ export default function RecruiterDashboardPage() {
                                     </Link>
                                 </article>
                             ))}
-                        </div>
+                        </div> :
+                            <div className="space-y-3">
+                                {[1, 2, 3, 4, 5].map((id) => (
+                                    <div className="bg-muted-foreground/50 border border-border rounded-lg p-6 mb-8 animate-pulse h-25" key={id}>
+
+                                    </div>
+                                ))}
+                            </div>}
+
                         <Button variant="outline" className="w-full mt-4 bg-transparent" asChild>
                             <Link href="/recruiter/post-job">
                                 <Plus className="mr-2 h-4 w-4" aria-hidden="true" />
@@ -187,16 +204,23 @@ export default function RecruiterDashboardPage() {
                                 </Link>
                             </Button>
                         </div>
-                        <div className="space-y-4">
+                        {!initialLoad ? <div className="space-y-4">
                             {mockCandidates.slice(0, 3).map((candidate) => (
                                 <CandidateCard key={candidate.id} {...candidate} />
                             ))}
-                        </div>
+                        </div> :
+                            <div className="space-y-4">
+                                {[1, 2, 3].map((id) => (
+                                    <div className="bg-muted-foreground/50 border border-border rounded-lg p-6 mb-8 animate-pulse h-50" key={id}>
+
+                                    </div>
+                                ))}
+                            </div>}
                     </section>
                 </div>
 
                 {/* Recent Activity */}
-                <section className="mt-8" aria-labelledby="activity-heading">
+                {/*<section className="mt-8" aria-labelledby="activity-heading">
                     <h2 id="activity-heading" className="text-lg font-semibold mb-4">
                         Recent Activity
                     </h2>
@@ -222,7 +246,7 @@ export default function RecruiterDashboardPage() {
                             </div>
                         ))}
                     </div>
-                </section>
+                </section>*/}
             </div>
         </main>
     )

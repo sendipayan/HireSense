@@ -88,6 +88,7 @@ const AVAILABILITY_OPTIONS = [
 export default function CandidateProfileClientPage() {
   const { candidateProfile, setCandidateProfile } = useCandidateStore()
   const { user } = useAuthStore()
+  const [initialLoad, setInitialLoad] = useState(true)
   const [formData, setFormData] = useState<CandidateFormData>({
     fullName: "",
     email: "",
@@ -152,6 +153,12 @@ export default function CandidateProfileClientPage() {
   const [isSaved, setIsSaved] = useState(false)
   const [isError, setIsError] = useState(false)
 
+  useEffect(() => {
+    if (formData.fullName) {
+      setInitialLoad(false)
+    }
+  }, [formData])
+
   // Calculate profile completion
   const totalFields = 16
   const completedFields = Object.values(formData).filter((v) => {
@@ -213,12 +220,15 @@ export default function CandidateProfileClientPage() {
         <PageHeader title="Candidate Profile" description="Showcase your skills and unlock matching opportunities" />
 
         {/* Profile Completion Card */}
-        <div className="bg-card border border-border rounded-lg p-6 mb-8">
+        {!initialLoad ? <div className="bg-card border border-border rounded-lg p-6 mb-8">
           <ProfileCompletionIndicator completedFields={completedFields} totalFields={totalFields} />
-        </div>
+        </div> :
+          <div className="bg-muted-foreground/50 border border-border rounded-lg p-6 mb-8 animate-pulse h-20">
+
+          </div>}
 
         {/* Missing Fields Alert */}
-        {completedFields < totalFields && (
+        {completedFields < totalFields && !initialLoad && (
           <div className="bg-warning/10 border border-warning/30 rounded-lg p-4 mb-6 flex gap-3">
             <AlertCircle className="w-5 h-5 text-warning flex-shrink-0 mt-0.5" />
             <div>
@@ -246,7 +256,7 @@ export default function CandidateProfileClientPage() {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="bg-card border border-border rounded-lg p-6 space-y-6">
+        {!initialLoad ? <form onSubmit={handleSubmit} className="bg-card border border-border rounded-lg p-6 space-y-6">
           {/* Basic Information Section */}
           <FormSection title="Basic Information" description="Your personal contact details">
             <FormField
@@ -479,7 +489,8 @@ export default function CandidateProfileClientPage() {
               Save Changes
             </Button>
           </div>
-        </form>
+        </form> :
+          <div className="bg-muted-foreground/50 border border-border rounded-lg p-6 space-y-6 animate-pulse h-[50vh]"></div>}
       </div>
     </main>
   )

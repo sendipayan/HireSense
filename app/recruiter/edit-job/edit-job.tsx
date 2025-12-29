@@ -59,6 +59,7 @@ export default function EditJob({ job }: { job: string }) {
     const [loading, setLoading] = useState(false);
     const { RecuiterProfile } = useRecruiterStore()
     const [open, setOpen] = useState(false);
+    const [initialLoad, setInitialLoad] = useState(true);
     const [form, setForm] = useState<formType>({
         id: "",
         title: "",
@@ -149,6 +150,12 @@ export default function EditJob({ job }: { job: string }) {
 
     }, [job, jobs]);
 
+    useEffect(() => {
+        if (form.id.trim() !== "") {
+            setInitialLoad(false);
+        }
+    }, [form]);
+
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
@@ -219,7 +226,7 @@ export default function EditJob({ job }: { job: string }) {
                 />
 
                 {/* Job Posting Form */}
-                {form.id && <form className="mt-8 space-y-8" onSubmit={handleSubmit}>
+                {!initialLoad ? <form className="mt-8 space-y-8" onSubmit={handleSubmit}>
 
                     {/* Basic Information */}
                     <section aria-labelledby="basic-info-heading">
@@ -522,7 +529,9 @@ export default function EditJob({ job }: { job: string }) {
                             </Button>
                         </div>
                     </div>
-                </form>}
+                </form> : <div className="bg-muted-foreground/50 border border-border rounded-lg p-6 mb-8 animate-pulse h-[70vh]">
+
+                </div>}
             </div>
         </main>
     );

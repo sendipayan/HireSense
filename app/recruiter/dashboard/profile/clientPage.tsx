@@ -68,6 +68,7 @@ export function RecruiterProfileClientPage() {
 
   const { RecuiterProfile, setRecuiterProfile } = useRecruiterStore()
   const { user } = useAuthStore()
+  const [initialLoad, setInitialLoad] = useState(true)
 
   const [formData, setFormData] = useState<RecruiterFormData>({
     fullName: "",
@@ -111,6 +112,12 @@ export function RecruiterProfileClientPage() {
       }
     }
   }, [RecuiterProfile])
+
+  useEffect(() => {
+    if (formData.fullName) {
+      setInitialLoad(false)
+    }
+  }, [formData])
 
 
 
@@ -191,12 +198,15 @@ export function RecruiterProfileClientPage() {
         <PageHeader title="Recruiter Profile" description="Establish your company legitimacy and hiring intent" />
 
         {/* Profile Completion Card */}
-        <div className="bg-card border border-border rounded-lg p-6 mb-8">
+        {!initialLoad ? <div className="bg-card border border-border rounded-lg p-6 mb-8">
           <ProfileCompletionIndicator completedFields={completedFields} totalFields={totalFields} />
-        </div>
+        </div> :
+          <div className="bg-muted-foreground/50 border border-border rounded-lg p-6 mb-8 animate-pulse h-20">
+
+          </div>}
 
         {/* Warning for unverified actions */}
-        {completedFields < totalFields && (
+        {completedFields < totalFields && !initialLoad && (
           <div className="bg-warning/10 border border-warning/30 rounded-lg p-4 mb-6 flex gap-3">
             <AlertCircle className="w-5 h-5 text-warning flex-shrink-0 mt-0.5" />
             <div>
@@ -224,7 +234,7 @@ export function RecruiterProfileClientPage() {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="bg-card border border-border rounded-lg p-6 space-y-6">
+        {!initialLoad ? <form onSubmit={handleSubmit} className="bg-card border border-border rounded-lg p-6 space-y-6">
           {/* Basic Information Section */}
           <FormSection title="Basic Information" description="Your personal details as a recruiter">
             <FormField
@@ -372,7 +382,10 @@ export function RecruiterProfileClientPage() {
               Save Changes
             </Button>
           </div>
-        </form>
+        </form> :
+          <div className="bg-muted-foreground/50 border border-border rounded-lg p-6 mb-8 animate-pulse h-[50vh]">
+
+          </div>}
       </div>
     </main>
   )

@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { MapPin, Clock, DollarSign, Building2, Bookmark } from "lucide-react"
+import { MapPin, Clock, DollarSign, Building2, Bookmark, IndianRupee } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 
@@ -46,7 +46,7 @@ export function JobCard({ id, title, company, location, salary, type, posted, ta
               {location}
             </span>
             <span className="flex items-center gap-1">
-              <DollarSign className="h-4 w-4" aria-hidden="true" />
+              <IndianRupee className="h-4 w-4" aria-hidden="true" />
               {salary}
             </span>
             <span className="flex items-center gap-1">

@@ -16,6 +16,7 @@ export interface Job {
   benifits: string[];
   createdAt: string;
   updatedAt: string;
+  recruiter?: string;
 }
 
 interface JobStore {

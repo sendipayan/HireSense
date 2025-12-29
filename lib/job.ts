@@ -33,10 +33,23 @@ export async function getJob() {
       });
     } else {
       job = await prisma.postJob.findMany({
+        include: {
+          recruiter: {
+            select: {
+              companyName: true,
+            },
+          },
+        },
         orderBy: {
           createdAt: "desc",
         },
-        take: 5,
+        take: 4,
+      });
+      job = job.map((data) => {
+        return {
+          ...data,
+          recruiter: data.recruiter.companyName,
+        };
       });
     }
 
@@ -47,6 +60,8 @@ export async function getJob() {
         )
       );
     });
+
+    console.log(job);
 
     return job;
   } catch (error) {
