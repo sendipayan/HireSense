@@ -15,6 +15,7 @@ import { useRouter } from "next/navigation";
 import { Users, Briefcase, Target, TrendingUp, Plus, ArrowRight, Eye, Clock, CheckCircle2 } from "lucide-react"
 import { useEffect, useState } from "react"
 import { useJobStore } from "@/store/jobStore"
+import axios from "axios"
 
 
 
@@ -25,7 +26,7 @@ export default function RecruiterDashboardPage() {
     const router = useRouter()
     const { RecuiterProfile } = useRecruiterStore()
     const { isLoggedIn } = useAuthStore()
-    const { setJobs, jobs } = useJobStore()
+    const { jobs, setJobs } = useJobStore()
 
     useEffect(() => {
 
@@ -43,6 +44,16 @@ export default function RecruiterDashboardPage() {
     useEffect(() => {
         console.log(verfiy)
     }, [verfiy])
+
+    useEffect(() => {
+        const fetch = async () => {
+            const res = await axios.get("/api/getjob")
+            const data = await res.data
+            console.log(data)
+            setJobs(data.job)
+        }
+        fetch()
+    }, [setJobs])
 
 
 
@@ -123,7 +134,7 @@ export default function RecruiterDashboardPage() {
                                 Active Jobs
                             </h2>
                             <Button variant="ghost" size="sm" asChild>
-                                <Link href="/recruiter/post-job">Manage</Link>
+                                <Link href="/recruiter/post-job">View all <ArrowRight className="ml-1 h-4 w-4" aria-hidden="true" /></Link>
                             </Button>
                         </div>
                         <div className="space-y-3">

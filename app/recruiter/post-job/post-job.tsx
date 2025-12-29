@@ -74,6 +74,7 @@ export default function PostJob() {
     const SKILLS_OPTIONS = [
         { value: "NONE", label: "NONE" },
         { value: "react", label: "React" },
+        { value: "react-native", label: "React Native" },
         { value: "typescript", label: "TypeScript" },
         { value: "nodejs", label: "Node.js" },
         { value: "python", label: "Python" },

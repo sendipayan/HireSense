@@ -29,14 +29,14 @@ export async function getJob() {
         orderBy: {
           createdAt: "desc",
         },
-        take: 10,
+        take: 5,
       });
     } else {
       job = await prisma.postJob.findMany({
         orderBy: {
           createdAt: "desc",
         },
-        take: 10,
+        take: 5,
       });
     }
 
