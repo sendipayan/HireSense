@@ -61,8 +61,6 @@ export async function getJob() {
       );
     });
 
-    console.log(job);
-
     return job;
   } catch (error) {
     console.log(error);

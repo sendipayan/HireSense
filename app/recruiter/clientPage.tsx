@@ -8,7 +8,7 @@ import { PageHeader } from "@/components/page-header"
 import { StatCard } from "@/components/stat-card"
 import { CandidateCard } from "@/components/candidate-card"
 import { Badge } from "@/components/ui/badge"
-import { mockCandidates, mockJobs } from "@/lib/mock-data"
+import { mockCandidates } from "@/lib/mock-data"
 import { useAuthStore } from "@/store/authStore"
 import { useRecruiterStore } from "@/store/RecuiterStore"
 import { useRouter } from "next/navigation";
@@ -42,15 +42,12 @@ export default function RecruiterDashboardPage() {
         }
     }, [RecuiterProfile])
 
-    useEffect(() => {
-        console.log(verfiy)
-    }, [verfiy])
+
 
     useEffect(() => {
         const fetch = async () => {
             const res = await axios.get("/api/getjob")
             const data = await res.data
-            console.log(data)
             setJobs(data.job)
             setInitialLoad(false);
         }
@@ -59,11 +56,6 @@ export default function RecruiterDashboardPage() {
 
 
 
-    useEffect(() => {
-        if (jobs) {
-            console.log(jobs)
-        }
-    }, [jobs])
     // Mock company data
     const company = {
         name: "TechCorp Inc.",
@@ -84,12 +76,6 @@ export default function RecruiterDashboardPage() {
     ]
 
     // Mock active jobs with stats
-    const activeJobs = mockJobs.slice(0, 4).map((job, index) => ({
-        ...job,
-        applicants: 15 + index * 8,
-        newApplicants: 3 + index,
-        status: index === 0 ? "Active" : index === 1 ? "Reviewing" : "Active",
-    }))
 
 
 

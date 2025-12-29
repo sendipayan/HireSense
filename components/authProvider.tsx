@@ -27,7 +27,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setIsLoggedIn(data.user ? true : false)
       const res1 = await fetch("/api/getjob")
       const data1 = await res1.json()
-      console.log(data1)
       setJobs(data1.job)
     }
 

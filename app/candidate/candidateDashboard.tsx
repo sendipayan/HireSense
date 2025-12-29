@@ -44,10 +44,6 @@ export default function CandidateClientDashboardPage() {
         }
         fetch()
     }, [setJobs])
-
-    useEffect(() => {
-        console.log(jobs)
-    }, [])
     // Mock user data
     const user = {
         name: "Sarah Chen",
