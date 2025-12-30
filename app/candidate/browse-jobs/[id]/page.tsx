@@ -1,20 +1,21 @@
 "use client"
 
 import { notFound } from "next/navigation"
-import Link from "next/link"
 import { ArrowLeft, MapPin, DollarSign, Building2, Globe, Calendar, Briefcase } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { mockJobs } from "@/lib/mock-data"
-
+import { useRouter } from "next/navigation"
 import { useState } from "react"
 import { useParams } from "next/navigation"
+import { Button } from "@/components/ui/button"
 
 
 
 export default function JobDetailsPage() {
     const params = useParams()
     const id = params.id as string
+    const router = useRouter()
     const job = mockJobs.find((j) => j.id === id)
     const [applyingJob, setApplyingJob] = useState<(typeof mockJobs)[0] | null>(null)
 
@@ -25,13 +26,13 @@ export default function JobDetailsPage() {
     return (
         <main className="min-h-screen bg-background py-8 sm:py-12">
             <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
-                <Link
-                    href="/candidate/browse-jobs"
-                    className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors mb-8"
+                <Button
+                    onClick={() => router.back()}
+                    className="inline-flex items-center gap-2 text-sm text-muted-foreground bg-transparent hover:bg-transparent hover:text-primary transition-colors cursor-pointer mb-8"
                 >
                     <ArrowLeft className="h-4 w-4" />
-                    Back to all jobs
-                </Link>
+                    Back
+                </Button>
 
                 <div className="rounded-xl border border-border bg-card p-6 sm:p-8 shadow-sm">
                     <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-6">
