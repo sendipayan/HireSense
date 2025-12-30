@@ -11,11 +11,13 @@ import { PageHeader } from "@/components/page-header"
 import { mockJobs } from "@/lib/mock-data"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { ApplyJobModal } from "@/components/apply-job-modal"
+import { useRouter } from "next/navigation"
 
 const jobTypes = ["Full-time", "Part-time", "Contract", "Remote"]
 const experienceLevels = ["Entry Level", "Mid Level", "Senior Level", "Lead"]
 
 export function JobsBrowser() {
+    const router = useRouter()
     const [searchQuery, setSearchQuery] = useState("")
     const [selectedTypes, setSelectedTypes] = useState<string[]>([])
     const [selectedExperience, setSelectedExperience] = useState<string[]>([])
@@ -138,7 +140,7 @@ export function JobsBrowser() {
                         <div className="relative flex-1">
                             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                             <Input
-                                placeholder="Search by job title, company, or keywords..."
+                                placeholder="Search by job title or company..."
                                 className="pl-10"
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -163,7 +165,8 @@ export function JobsBrowser() {
                             filteredJobs.map((job) => (
                                 <article
                                     key={job.id}
-                                    className="group rounded-xl border border-border bg-card p-6 transition-all hover:border-primary/50 hover:shadow-lg hover:shadow-primary/5"
+                                    className="group rounded-xl border border-border bg-card p-6 transition-all hover:border-primary/50 hover:shadow-lg hover:shadow-primary/5 "
+
                                 >
                                     <div className="flex flex-col md:flex-row md:items-start justify-between gap-6">
                                         <div className="flex-1 space-y-4">
@@ -205,11 +208,11 @@ export function JobsBrowser() {
                                         </div>
 
                                         <div className="flex flex-col gap-3 min-w-[120px]">
-                                            <Button className="w-full" onClick={() => setApplyingJob(job)}>
+                                            <Button className="w-full cursor-pointer" onClick={() => setApplyingJob(job)}>
                                                 Apply Now
                                             </Button>
-                                            <Button variant="outline" className="w-full bg-transparent">
-                                                Save Job
+                                            <Button variant="outline" className="w-full bg-transparent cursor-pointer" onClick={() => router.push(`/candidate/browse-jobs/${job.id}`)}>
+                                                View Details
                                             </Button>
                                         </div>
                                     </div>
