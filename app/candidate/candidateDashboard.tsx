@@ -226,7 +226,7 @@ export default function CandidateClientDashboardPage() {
                                 Recommended Jobs
                             </h2>
                             <Button variant="ghost" size="sm" asChild>
-                                <Link href="/match-results">
+                                <Link href="/candidate/browse-jobs">
                                     View All
                                     <ArrowRight className="ml-1 h-4 w-4" aria-hidden="true" />
                                 </Link>
