@@ -129,7 +129,7 @@ export default function RecruiterDashboardPage() {
                                 Active Jobs
                             </h2>
                             <Button variant="ghost" size="sm" asChild>
-                                <Link href="/recruiter/post-job">View all <ArrowRight className="ml-1 h-4 w-4" aria-hidden="true" /></Link>
+                                <Link href="/recruiter/jobs">View all <ArrowRight className="ml-1 h-4 w-4" aria-hidden="true" /></Link>
                             </Button>
                         </div>
                         {!initialLoad ? <div className="space-y-3">
