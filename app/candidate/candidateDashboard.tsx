@@ -183,7 +183,7 @@ export default function CandidateClientDashboardPage() {
                                 Recent Applications
                             </h2>
                             <Button variant="ghost" size="sm" asChild>
-                                <Link href="/candidate/applications">View All</Link>
+                                <Link href="/candidate/applications">View All <ArrowRight className="h-4 w-4" /></Link>
                             </Button>
                         </div>
                         {!initialLoad ? <div className="space-y-3">

@@ -15,21 +15,27 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { useToast } from "@/hooks/use-toast"
+import { useAuthStore } from "@/store/authStore"
 import { CheckCircle2, Upload, FileText } from "lucide-react"
 
 interface Job {
     id: string
     title: string
-    company: string
+    recruiter: string
+}
+interface User {
+    name: string
+    email: string
 }
 
 interface ApplyJobModalProps {
     job: Job
+    user: User | null
     open: boolean
     onOpenChange: (open: boolean) => void
 }
 
-export function ApplyJobModal({ job, open, onOpenChange }: ApplyJobModalProps) {
+export function ApplyJobModal({ job, user, open, onOpenChange }: ApplyJobModalProps) {
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [isSuccess, setIsSuccess] = useState(false)
     const { toast } = useToast()
@@ -46,7 +52,7 @@ export function ApplyJobModal({ job, open, onOpenChange }: ApplyJobModalProps) {
 
         toast({
             title: "Application Sent!",
-            description: `Your application for ${job.title} at ${job.company} has been submitted successfully.`,
+            description: `Your application for ${job.title} at ${job.recruiter} has been submitted successfully.`,
         })
     }
 
@@ -76,7 +82,7 @@ export function ApplyJobModal({ job, open, onOpenChange }: ApplyJobModalProps) {
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="sm:max-w-lg">
                 <DialogHeader>
-                    <DialogTitle>Apply to {job.company}</DialogTitle>
+                    <DialogTitle>Apply to {job.recruiter}</DialogTitle>
                     <DialogDescription>
                         Position: <strong>{job.title}</strong>
                     </DialogDescription>
@@ -88,14 +94,14 @@ export function ApplyJobModal({ job, open, onOpenChange }: ApplyJobModalProps) {
                             <label htmlFor="full-name" className="text-sm font-medium">
                                 Full Name
                             </label>
-                            <Input id="full-name" defaultValue="Sarah Chen" required />
+                            <Input id="full-name" disabled value={user?.name} required />
                         </div>
 
                         <div className="grid gap-2">
                             <label htmlFor="email" className="text-sm font-medium">
                                 Email Address
                             </label>
-                            <Input id="email" type="email" defaultValue="sarah.chen@email.com" required />
+                            <Input id="email" disabled type="email" value={user?.email} required />
                         </div>
 
                         <div className="grid gap-2">

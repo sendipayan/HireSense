@@ -1,41 +1,78 @@
 "use client"
 
 import { useState, useMemo } from "react"
-import { Search, Filter, MapPin, Briefcase, DollarSign, Clock } from "lucide-react"
+import { Search, Filter, MapPin, Briefcase, DollarSign, Clock, IndianRupee } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Breadcrumbs } from "@/components/breadcrumbs"
 import { PageHeader } from "@/components/page-header"
-import { mockJobs } from "@/lib/mock-data"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { ApplyJobModal } from "@/components/apply-job-modal"
 import { useRouter } from "next/navigation"
-
-const jobTypes = ["Full-time", "Part-time", "Contract", "Remote"]
+import axios from "axios"
+import { useEffect } from "react"
+import { useJobStore } from "@/store/jobStore"
+import { useAuthStore } from "@/store/authStore"
+const jobTypes = ["FULL_TIME", "BOTH", "INTERNSHIP"]
 const experienceLevels = ["Entry Level", "Mid Level", "Senior Level", "Lead"]
+
+interface Job {
+    id: string,
+    title: string,
+    recruiter: string,
+
+}
+
+interface User {
+    name: string
+    email: string
+}
 
 export function JobsBrowser() {
     const router = useRouter()
+    const { jobs, setJobs } = useJobStore()
+    const { user } = useAuthStore()
+    const [initialLoad, setInitialLoad] = useState(true)
     const [searchQuery, setSearchQuery] = useState("")
     const [selectedTypes, setSelectedTypes] = useState<string[]>([])
     const [selectedExperience, setSelectedExperience] = useState<string[]>([])
     const [sortBy, setSortBy] = useState("newest")
-    const [applyingJob, setApplyingJob] = useState<(typeof mockJobs)[0] | null>(null)
+    const [applyingJob, setApplyingJob] = useState<Job | null>(null)
+    const [users, setUsers] = useState<User | null>(null)
+
+
+    useEffect(() => {
+        const fetch = async () => {
+            const res = await axios.get("/api/getjob")
+            const data = await res.data
+            setJobs(data.job)
+            setInitialLoad(false);
+        }
+        fetch()
+    }, [setJobs])
+
+    useEffect(() => {
+        if (!user) return
+        console.log(user)
+        setUsers({ ...users, name: user?.name || "", email: user?.email || "" })
+    }, [user])
 
     const filteredJobs = useMemo(() => {
-        return mockJobs.filter((job) => {
+        console.log(jobs)
+
+        return jobs.filter((job) => {
             const matchesSearch =
                 job.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                job.company.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                job.recruiter?.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 job.description.toLowerCase().includes(searchQuery.toLowerCase())
 
-            const matchesType = selectedTypes.length === 0 || selectedTypes.includes(job.type)
+            const matchesType = selectedTypes.length === 0 || selectedTypes.includes(job.jobType)
 
             return matchesSearch && matchesType
         })
-    }, [searchQuery, selectedTypes])
+    }, [searchQuery, selectedTypes, jobs])
 
     const toggleType = (type: string) => {
         setSelectedTypes((prev) => (prev.includes(type) ? prev.filter((t) => t !== type) : [...prev, type]))
@@ -178,7 +215,7 @@ export function JobsBrowser() {
                                                     <h3 className="font-semibold text-lg group-hover:text-primary transition-colors">
                                                         {job.title}
                                                     </h3>
-                                                    <p className="text-muted-foreground">{job.company}</p>
+                                                    <p className="text-muted-foreground">{job.recruiter}</p>
                                                 </div>
                                             </div>
 
@@ -188,18 +225,18 @@ export function JobsBrowser() {
                                                     {job.location}
                                                 </span>
                                                 <span className="flex items-center gap-1.5">
-                                                    <DollarSign className="h-4 w-4" aria-hidden="true" />
-                                                    {job.salary}
+                                                    <IndianRupee className="h-4 w-4" aria-hidden="true" />
+                                                    {job.minSalary} - {job.maxSalary}
                                                 </span>
                                                 <span className="flex items-center gap-1.5">
                                                     <Clock className="h-4 w-4" aria-hidden="true" />
-                                                    {job.posted}
+                                                    {new Date(job.createdAt).toISOString().split("T")[0]}
                                                 </span>
                                             </div>
 
                                             <div className="flex flex-wrap gap-2">
-                                                <Badge variant="secondary">{job.type}</Badge>
-                                                {job.tags.map((tag) => (
+                                                <Badge variant="secondary">{job.jobType}</Badge>
+                                                {job.requirements.map((tag) => (
                                                     <Badge key={tag} variant="outline" className="font-normal">
                                                         {tag}
                                                     </Badge>
@@ -208,7 +245,7 @@ export function JobsBrowser() {
                                         </div>
 
                                         <div className="flex flex-col gap-3 min-w-[120px]">
-                                            <Button className="w-full cursor-pointer" onClick={() => setApplyingJob(job)}>
+                                            <Button className="w-full cursor-pointer" onClick={() => setApplyingJob({ title: job.title, recruiter: job.recruiter || "", id: job.id })}>
                                                 Apply Now
                                             </Button>
                                             <Button variant="outline" className="w-full bg-transparent cursor-pointer" onClick={() => router.push(`/candidate/browse-jobs/${job.id}`)}>
@@ -237,7 +274,7 @@ export function JobsBrowser() {
             </div>
 
             {applyingJob && (
-                <ApplyJobModal job={applyingJob} open={!!applyingJob} onOpenChange={(open) => !open && setApplyingJob(null)} />
+                <ApplyJobModal user={users} job={applyingJob} open={!!applyingJob} onOpenChange={(open) => !open && setApplyingJob(null)} />
             )}
         </>
     )
