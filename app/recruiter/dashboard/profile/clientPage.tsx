@@ -16,6 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useRecruiterStore } from "@/store/RecuiterStore"
 import { useAuthStore } from "@/store/authStore"
 import axios from "axios"
+import { Spinner } from "@/components/ui/spinner"
 
 type verificationStatus = "PENDING" | "APPROVED" | "REJECTED";
 
@@ -69,6 +70,7 @@ export function RecruiterProfileClientPage() {
   const { RecuiterProfile, setRecuiterProfile } = useRecruiterStore()
   const { user } = useAuthStore()
   const [initialLoad, setInitialLoad] = useState(true)
+  const [loading, setLoading] = useState(false)
 
   const [formData, setFormData] = useState<RecruiterFormData>({
     fullName: "",
@@ -164,6 +166,7 @@ export function RecruiterProfileClientPage() {
       companyName: formData.companyName,
     };
     try {
+      setLoading(true)
       const res = await axios.patch("/api/recruiter/update_profile", payload, { withCredentials: true })
       const res1 = await axios.post("/api/recruiter/verify", payload1, { withCredentials: true })
       console.log(res1)
@@ -182,6 +185,8 @@ export function RecruiterProfileClientPage() {
       setTimeout(() => {
         setIsError(false)
       }, 3000)
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -378,8 +383,8 @@ export function RecruiterProfileClientPage() {
           <div className="flex justify-end gap-3 pt-4  border-border">
             <Button variant="outline">Cancel</Button>
             <Button className="gap-2">
-              <Save className="w-4 h-4" />
-              Save Changes
+              {!loading && <Save className="w-4 h-4" />}
+              {loading ? <Spinner className="w-4 h-4" /> : "Save Changes"}
             </Button>
           </div>
         </form> :

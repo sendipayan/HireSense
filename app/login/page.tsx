@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { sendOtp } from "../actions/send-otp";
 import axios from "axios";
 import { signIn } from "next-auth/react"
+import { Spinner } from "@/components/ui/spinner";
 import {
   Sparkles,
   Eye,
@@ -66,10 +67,13 @@ export default function LoginPage() {
     e.preventDefault();
     // Frontend-only: form submission would be handled by backend
     if (isSignUp) {
+      setLoading(true)
       await sendOtp(formData.email)
       setIsNext(true);
       setTimer(true)
+      setLoading(false)
     } else {
+      setLoading(true)
       const res = await axios.post("/api/auth/login", {
         email: formData.email,
         password: formData.password,
@@ -90,6 +94,7 @@ export default function LoginPage() {
         router.push(`/${path}/dashboard`)
 
       }
+      setLoading(false)
     }
     console.log("Form submitted:", formData);
   };
@@ -98,6 +103,7 @@ export default function LoginPage() {
     e.preventDefault();
     // Frontend-only: form submission would be handled by backend
     if (Otp.length === 6) {
+      setLoading(true)
       try {
         const res = await axios.post("/api/auth/signup", {
           email: formData.email,
@@ -124,6 +130,8 @@ export default function LoginPage() {
       } catch (error: any) {
         console.log(error)
         alert(error)
+      } finally {
+        setLoading(false)
       }
     }
 
@@ -207,6 +215,7 @@ export default function LoginPage() {
               aria-label={
                 isSignUp ? "Sign up with Google" : "Sign in with Google"
               }
+              disabled={loading}
               onClick={() => signIn("google", { callbackUrl: "/auth/redirect" })}
             >
               <svg
@@ -232,7 +241,7 @@ export default function LoginPage() {
                   fill="#EA4335"
                 />
               </svg>
-              Continue with Google
+              {loading ? <Spinner className="h-5 w-5" /> : "Continue with Google"}
             </Button>
 
             {/* GitHub OAuth Button */}
@@ -240,6 +249,7 @@ export default function LoginPage() {
               variant="outline"
               size="lg"
               className="w-full justify-center gap-3 bg-transparent"
+              disabled={loading}
               aria-label={
                 isSignUp ? "Sign up with GitHub" : "Sign in with GitHub"
               }
@@ -257,7 +267,7 @@ export default function LoginPage() {
                   clipRule="evenodd"
                 />
               </svg>
-              Continue with GitHub
+              {loading ? <Spinner className="h-5 w-5" /> : "Continue with GitHub"}
             </Button>
           </div>}
 
@@ -287,9 +297,10 @@ export default function LoginPage() {
               <Button
                 type="submit"
                 size="lg"
+                disabled={loading}
                 className="w-full h-11 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-semibold shadow-lg shadow-emerald-500/25"
               >
-                Sign Up
+                {loading ? <Spinner className="w-5 h-5" /> : "Sign Up"}
               </Button>
             </form>
           ) : (
@@ -432,10 +443,12 @@ export default function LoginPage() {
               <Button
                 type="submit"
                 size="lg"
+                disabled={loading}
                 className="w-full h-11 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-semibold shadow-lg shadow-emerald-500/25"
               >
-                {isSignUp ? "Next ->" : "Sign In"}
+                {loading ? <Spinner className="h-5 w-5" /> : (isSignUp ? "Next ->" : "Sign In")}
               </Button>
+
             </form>
           )}
 

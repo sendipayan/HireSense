@@ -20,6 +20,7 @@ import { useRouter } from "next/navigation";
 import axios from "axios";
 import { useState, useEffect } from "react";
 import { useRecruiterStore } from "@/store/RecuiterStore";
+import { Spinner } from "@/components/ui/spinner";
 
 type Department =
     | "ENGINEERING"
@@ -142,6 +143,7 @@ export default function PostJob() {
         }
 
         try {
+            setLoading(true)
             const res = await axios.post("/api/recruiter/post_job", form, { withCredentials: true });
             if (res.status === 201) {
                 console.log("Form submitted: ", res.data);
@@ -150,6 +152,8 @@ export default function PostJob() {
 
         } catch (err) {
             console.error("Form submission error: ", err);
+        } finally {
+            setLoading(false)
         }
     };
     return (
@@ -460,7 +464,7 @@ export default function PostJob() {
                         </Button>
                         <div className="flex flex-col gap-3 sm:flex-row">
                             <Button type="submit" size="lg">
-                                Publish Job
+                                {loading ? <Spinner className="w-4 h-4" /> : "Publish Job"}
                             </Button>
                         </div>
                     </div>

@@ -21,7 +21,7 @@ import axios from "axios";
 import { useState, useEffect } from "react";
 import { useRecruiterStore } from "@/store/RecuiterStore";
 import { useJobStore } from "@/store/jobStore";
-
+import { Spinner } from "@/components/ui/spinner";
 type Department =
     | "ENGINEERING"
     | "DESIGN"
@@ -55,7 +55,7 @@ type formType = {
 };
 
 export default function EditJob({ job }: { job: string }) {
-    const { jobs, updateJob } = useJobStore()
+    const { jobs, setJobs, updateJob } = useJobStore()
     const [loading, setLoading] = useState(false);
     const { RecuiterProfile } = useRecruiterStore()
     const [open, setOpen] = useState(false);
@@ -120,6 +120,31 @@ export default function EditJob({ job }: { job: string }) {
     ];
 
     useEffect(() => {
+        const fetchJob = async () => {
+            const response = await fetch(`/api/getjob/${job}`);
+            const data = await response.json();
+            const jobData = data.job;
+            console.log(jobData);
+            setForm(prev => ({
+                ...prev,
+                id: jobData.id ?? "",
+                title: jobData.title ?? "",
+                description: jobData.description ?? "",
+                location: jobData.location ?? "",
+                jobType: jobData.jobType ?? "NONE",
+                experienceRequired: jobData.experienceRequired ?? "NONE",
+                department: jobData.department ?? "NONE",
+                requirements: jobData.requirements ?? [],
+                optional: jobData.optional ?? [],
+                benifits: jobData.benifits ?? [],
+                minSalary: jobData.minSalary ?? 0,
+                maxSalary: Number(jobData.maxSalary ?? 0),
+            }));
+        }
+        fetchJob();
+    }, []);
+
+    useEffect(() => {
 
         const fetch = () => {
             const data = jobs.find(j => j.id === job);
@@ -148,7 +173,7 @@ export default function EditJob({ job }: { job: string }) {
 
 
 
-    }, [job, jobs]);
+    }, [job]);
 
     useEffect(() => {
         if (form.id.trim() !== "") {
@@ -178,6 +203,7 @@ export default function EditJob({ job }: { job: string }) {
         }
 
         try {
+            setLoading(true);
             const res = await axios.patch("/api/recruiter/update_job", form, { withCredentials: true });
             if (res.status === 200) {
                 console.log("Form submitted: ", res.data);
@@ -187,6 +213,8 @@ export default function EditJob({ job }: { job: string }) {
 
         } catch (err) {
             console.error("Form submission error: ", err);
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -195,6 +223,7 @@ export default function EditJob({ job }: { job: string }) {
             return
         }
         try {
+            setLoading(true);
             const res = await axios.delete(`/api/recruiter/delete_job/${form.id}`, { withCredentials: true });
             if (res.status === 200) {
                 console.log("Form submitted: ", res.data);
@@ -204,6 +233,8 @@ export default function EditJob({ job }: { job: string }) {
 
         } catch (err) {
             console.error("Form submission error: ", err);
+        } finally {
+            setLoading(false);
         }
     }
     return (
@@ -519,13 +550,13 @@ export default function EditJob({ job }: { job: string }) {
                             Back to Dashboard
                         </Button>
                         <div className="flex flex-col gap-3 sm:flex-row">
-                            <Button type="button" size="lg" variant="destructive" onClick={() => { deleteJob() }}>
-                                <Trash2 className="mr-2 h-4 w-4" aria-hidden="true" />
-                                Delete Job
+                            <Button type="button" className="cursor-pointer" size="lg" variant="destructive" onClick={() => { deleteJob() }} disabled={loading}>
+                                {!loading && <Trash2 className="mr-2 h-4 w-4" aria-hidden="true" />}
+                                {loading ? <Spinner className="mr-2 h-4 w-4" aria-hidden="true" /> : "Delete Job"}
                             </Button>
-                            <Button type="submit" size="lg">
-                                <Save className="mr-2 h-4 w-4" aria-hidden="true" />
-                                Save Changes
+                            <Button type="submit" className="cursor-pointer" size="lg" disabled={loading}>
+                                {!loading && <Save className="mr-2 h-4 w-4" aria-hidden="true" />}
+                                {loading ? <Spinner className="mr-2 h-4 w-4" aria-hidden="true" /> : "Save Changes"}
                             </Button>
                         </div>
                     </div>

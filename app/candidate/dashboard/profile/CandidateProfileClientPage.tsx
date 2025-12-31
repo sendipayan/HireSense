@@ -15,6 +15,7 @@ import { useCandidateStore } from "@/store/candidateStore"
 import { useAuthStore } from "@/store/authStore"
 import axios from "axios"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Spinner } from "@/components/ui/spinner"
 
 interface CandidateFormData {
   fullName?: string | null;
@@ -89,6 +90,7 @@ export default function CandidateProfileClientPage() {
   const { candidateProfile, setCandidateProfile } = useCandidateStore()
   const { user } = useAuthStore()
   const [initialLoad, setInitialLoad] = useState(true)
+  const [loading, setLoading] = useState(false)
   const [formData, setFormData] = useState<CandidateFormData>({
     fullName: "",
     email: "",
@@ -188,6 +190,7 @@ export default function CandidateProfileClientPage() {
     }
     console.log(payload)
     try {
+      setLoading(true)
       const res = await axios.patch("/api/candidate/update_profile", payload, { withCredentials: true })
       if (res.status === 200) {
         const res2 = await fetch("/api/auth/me")
@@ -204,6 +207,8 @@ export default function CandidateProfileClientPage() {
       setTimeout(() => {
         setIsError(false)
       }, 3000)
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -485,8 +490,8 @@ export default function CandidateProfileClientPage() {
           <div className="flex justify-end gap-3 pt-4  border-border">
             <Button variant="outline">Cancel</Button>
             <Button className="gap-2">
-              <Save className="w-4 h-4" />
-              Save Changes
+              {!loading && <Save className="w-4 h-4" />}
+              {loading ? <Spinner className="w-4 h-4" /> : "Save Changes"}
             </Button>
           </div>
         </form> :
