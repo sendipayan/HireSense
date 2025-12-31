@@ -32,7 +32,7 @@ import axios from "axios"
 export function RecruiterJobsClient() {
     const [searchQuery, setSearchQuery] = useState("")
     const [statusFilter, setStatusFilter] = useState("all")
-    const { jobs, setJobs } = useJobStore()
+    const { jobs, setJobs, removeJob } = useJobStore()
     const [initialLoad, setInitialLoad] = useState(true)
     const [loading, setLoading] = useState(false)
     const [jobToDelete, setJobToDelete] = useState<string | null>(null)
@@ -74,10 +74,12 @@ export function RecruiterJobsClient() {
             const res = await axios.delete(`/api/recruiter/delete_job/${jobToDelete}`, { withCredentials: true });
             if (res.status === 200) {
                 console.log("Form submitted: ", res.data);
+                removeJob(jobToDelete || "")
             }
 
         } catch (err) {
             console.error("Form submission error: ", err);
+
         } finally {
             setLoading(false);
         }

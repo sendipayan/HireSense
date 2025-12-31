@@ -25,6 +25,7 @@ interface JobStore {
   setJobs: (jobs: Job[]) => void;
   addJob: (job: Job) => void;
   updateJob: (job: Job) => void;
+  removeJob: (id: string) => void;
   clear: () => void;
 }
 
@@ -37,14 +38,14 @@ export const useJobStore = create<JobStore>((set) => ({
     set((state) => ({
       jobs: [...state.jobs, job],
     })),
+  removeJob: (id) =>
+    set((state) => ({
+      jobs: state.jobs.filter((j) => j.id !== id),
+    })),
 
   updateJob: (job) =>
     set((state) => ({
       jobs: state.jobs.map((j) => (j.id === job.id ? job : j)),
-    })),
-  removeJob: (id) =>
-    set((state) => ({
-      jobs: state.jobs.filter((j) => j.id !== id),
     })),
 
   clear: () => set({ jobs: [] }),
