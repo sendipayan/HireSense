@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import Link from "next/link"
 import { Search, Filter, MoreHorizontal, Pencil, Trash2, Users, Eye, Calendar, AlertCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -25,20 +25,35 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { mockJobs } from "@/lib/mock-data"
+import { Spinner } from "./ui/spinner"
+import { useJobStore } from "@/store/jobStore"
+import axios from "axios"
 
 export function RecruiterJobsClient() {
     const [searchQuery, setSearchQuery] = useState("")
     const [statusFilter, setStatusFilter] = useState("all")
-    const [jobs, setJobs] = useState(
-        mockJobs.map((job) => ({
-            ...job,
-            status: Math.random() > 0.3 ? "Active" : "Closed",
-            applicants: Math.floor(Math.random() * 50) + 5,
-            views: Math.floor(Math.random() * 500) + 100,
-        })),
-    )
+    const { jobs, setJobs } = useJobStore()
+    const [initialLoad, setInitialLoad] = useState(true)
+    const [loading, setLoading] = useState(false)
     const [jobToDelete, setJobToDelete] = useState<string | null>(null)
+
+    useEffect(() => {
+        const fetch = async () => {
+            const res = await axios.get("/api/getjob")
+            const data = await res.data
+            setJobs(data.job)
+            console.log(data.job)
+            setInitialLoad(false);
+        }
+        fetch()
+
+    }, [setJobs])
+
+    useEffect(() => {
+        if (jobs)
+            console.log(jobs)
+
+    }, [jobs])
 
     const filteredJobs = useMemo(() => {
         return jobs.filter((job) => {
@@ -50,12 +65,24 @@ export function RecruiterJobsClient() {
         })
     }, [searchQuery, statusFilter, jobs])
 
-    const handleDelete = () => {
-        if (jobToDelete) {
-            setJobs(jobs.filter((j) => j.id !== jobToDelete))
-            setJobToDelete(null)
+    const deleteJob = async () => {
+        if (jobToDelete?.trim() === "") {
+            return
+        }
+        try {
+            setLoading(true);
+            const res = await axios.delete(`/api/recruiter/delete_job/${jobToDelete}`, { withCredentials: true });
+            if (res.status === 200) {
+                console.log("Form submitted: ", res.data);
+            }
+
+        } catch (err) {
+            console.error("Form submission error: ", err);
+        } finally {
+            setLoading(false);
         }
     }
+
 
     return (
         <div className="space-y-6">
@@ -79,8 +106,8 @@ export function RecruiterJobsClient() {
                             </SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="all">All Statuses</SelectItem>
-                                <SelectItem value="active">Active</SelectItem>
-                                <SelectItem value="closed">Closed</SelectItem>
+                                <SelectItem value="ACTIVE">Active</SelectItem>
+                                <SelectItem value="CLOSED">Closed</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
@@ -88,7 +115,7 @@ export function RecruiterJobsClient() {
             </div>
 
             {/* Jobs Grid */}
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {!initialLoad ? <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {filteredJobs.length > 0 ? (
                     filteredJobs.map((job) => (
                         <div
@@ -101,7 +128,7 @@ export function RecruiterJobsClient() {
                                         {job.title}
                                     </h3>
                                     <p className="text-sm text-muted-foreground">
-                                        {job.location} • {job.type}
+                                        {job.location} • {job.jobType}
                                     </p>
                                 </div>
                                 <DropdownMenu>
@@ -113,7 +140,7 @@ export function RecruiterJobsClient() {
                                     <DropdownMenuContent align="end">
                                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
                                         <DropdownMenuItem asChild>
-                                            <Link href={`/recruiter/post-job?edit=${job.id}`}>
+                                            <Link href={`/recruiter/edit-job?job=${job.id}`}>
                                                 <Pencil className="mr-2 h-4 w-4" /> Edit Job
                                             </Link>
                                         </DropdownMenuItem>
@@ -134,9 +161,9 @@ export function RecruiterJobsClient() {
                             </div>
 
                             <div className="flex flex-wrap gap-2 mb-6">
-                                <Badge variant={job.status === "Active" ? "default" : "secondary"}>{job.status}</Badge>
+                                <Badge variant={job.status === "ACTIVE" ? "default" : "secondary"}>{job.status}</Badge>
                                 <Badge variant="outline" className="bg-muted/50">
-                                    {job.salary}
+                                    {job.minSalary} - {job.maxSalary}
                                 </Badge>
                             </div>
 
@@ -145,14 +172,14 @@ export function RecruiterJobsClient() {
                                     <p className="text-xs text-muted-foreground uppercase font-medium">Applicants</p>
                                     <div className="flex items-center gap-2">
                                         <Users className="h-4 w-4 text-primary" />
-                                        <span className="font-semibold">{job.applicants}</span>
+                                        <span className="font-semibold">15</span>
                                     </div>
                                 </div>
                                 <div className="space-y-1">
                                     <p className="text-xs text-muted-foreground uppercase font-medium">Views</p>
                                     <div className="flex items-center gap-2">
                                         <Eye className="h-4 w-4 text-blue-500" />
-                                        <span className="font-semibold">{job.views}</span>
+                                        <span className="font-semibold">450</span>
                                     </div>
                                 </div>
                             </div>
@@ -160,7 +187,7 @@ export function RecruiterJobsClient() {
                             <div className="flex items-center justify-between text-xs text-muted-foreground">
                                 <div className="flex items-center gap-1">
                                     <Calendar className="h-3 w-3" />
-                                    <span>Posted {job.posted}</span>
+                                    <span>Posted {new Date(job.createdAt).toISOString().split("T")[0]}</span>
                                 </div>
                                 <Link
                                     href={`/match-results?job=${job.id}`}
@@ -190,7 +217,15 @@ export function RecruiterJobsClient() {
                         </Button>
                     </div>
                 )}
-            </div>
+            </div> :
+
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    {[1, 2, 3, 4, 5, 6].map((item) => (
+                        <div key={item} className="bg-muted-foreground/50 border border-border rounded-lg p-6 mb-8 animate-pulse h-[30vh]" >
+
+                        </div>
+                    ))}
+                </div>}
 
             {/* Delete Confirmation */}
             <AlertDialog open={!!jobToDelete} onOpenChange={(open) => !open && setJobToDelete(null)}>
@@ -205,10 +240,10 @@ export function RecruiterJobsClient() {
                     <AlertDialogFooter>
                         <AlertDialogCancel className="bg-transparent">Cancel</AlertDialogCancel>
                         <AlertDialogAction
-                            onClick={handleDelete}
+                            onClick={deleteJob}
                             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                         >
-                            Delete Job
+                            {loading ? <Spinner className="h-5 w-5" /> : "Delete Job"}
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>

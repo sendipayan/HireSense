@@ -17,6 +17,7 @@ export interface Job {
   createdAt: string;
   updatedAt: string;
   recruiter?: string;
+  status: string;
 }
 
 interface JobStore {
@@ -40,6 +41,10 @@ export const useJobStore = create<JobStore>((set) => ({
   updateJob: (job) =>
     set((state) => ({
       jobs: state.jobs.map((j) => (j.id === job.id ? job : j)),
+    })),
+  removeJob: (id) =>
+    set((state) => ({
+      jobs: state.jobs.filter((j) => j.id !== id),
     })),
 
   clear: () => set({ jobs: [] }),

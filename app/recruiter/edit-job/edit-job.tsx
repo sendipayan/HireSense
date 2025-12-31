@@ -14,6 +14,16 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { Checkbox } from "@/components/ui/checkbox";
 import { Sparkles, Eye, Save, ArrowLeft, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -60,6 +70,7 @@ export default function EditJob({ job }: { job: string }) {
     const { RecuiterProfile } = useRecruiterStore()
     const [open, setOpen] = useState(false);
     const [initialLoad, setInitialLoad] = useState(true);
+    const [jobToDelete, setJobToDelete] = useState<string | null>(null)
     const [form, setForm] = useState<formType>({
         id: "",
         title: "",
@@ -547,10 +558,10 @@ export default function EditJob({ job }: { job: string }) {
                             onClick={() => router.back()}
                         >
                             <ArrowLeft className="mr-2 h-4 w-4" aria-hidden="true" />
-                            Back to Dashboard
+                            Back
                         </Button>
                         <div className="flex flex-col gap-3 sm:flex-row">
-                            <Button type="button" className="cursor-pointer" size="lg" variant="destructive" onClick={() => { deleteJob() }} disabled={loading}>
+                            <Button type="button" className="cursor-pointer" size="lg" variant="destructive" onClick={() => setJobToDelete(form.id)} disabled={loading}>
                                 {!loading && <Trash2 className="mr-2 h-4 w-4" aria-hidden="true" />}
                                 {loading ? <Spinner className="mr-2 h-4 w-4" aria-hidden="true" /> : "Delete Job"}
                             </Button>
@@ -564,6 +575,27 @@ export default function EditJob({ job }: { job: string }) {
 
                 </div>}
             </div>
+            {/* Delete Confirmation */}
+            <AlertDialog open={!!jobToDelete} onOpenChange={(open) => !open && setJobToDelete(null)}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            This action cannot be undone. This will permanently delete the job posting and remove all associated
+                            application data.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel className="bg-transparent">Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={deleteJob}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        >
+                            Delete Job
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </main>
     );
 }
