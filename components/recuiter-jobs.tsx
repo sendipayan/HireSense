@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect } from "react"
 import Link from "next/link"
-import { Search, Filter, MoreHorizontal, Pencil, Trash2, Users, Eye, Calendar, AlertCircle } from "lucide-react"
+import { Search, Filter, MoreHorizontal, Pencil, Trash2, Users, Eye, Calendar, AlertCircle, IndianRupee } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
@@ -165,7 +165,7 @@ export function RecruiterJobsClient() {
                             <div className="flex flex-wrap gap-2 mb-6">
                                 <Badge variant={job.status === "ACTIVE" ? "default" : "secondary"}>{job.status}</Badge>
                                 <Badge variant="outline" className="bg-muted/50">
-                                    {job.minSalary} - {job.maxSalary}
+                                    <IndianRupee className="h-4 w-4" />{job.minSalary} - <IndianRupee className="h-4 w-4 ml-2" />{job.maxSalary}
                                 </Badge>
                             </div>
 
