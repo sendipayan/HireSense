@@ -178,6 +178,9 @@ model Application {
   jobId       String
   status      ApplicationStatus @default(PENDING)
   score       Int               @default(0)
+  createdAt   DateTime          @default(now())
+
+  @@unique([jobId, candidateId])
 }
 
 enum ApplicationStatus {

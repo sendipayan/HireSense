@@ -16,7 +16,8 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { useToast } from "@/hooks/use-toast"
 import { useAuthStore } from "@/store/authStore"
-import { CheckCircle2, Upload, FileText } from "lucide-react"
+import { CheckCircle2, Upload, FileText, XCircle } from "lucide-react"
+import axios, { AxiosError } from "axios"
 
 interface Job {
     id: string
@@ -24,6 +25,7 @@ interface Job {
     recruiter: string
 }
 interface User {
+    id: string;
     name: string
     email: string
 }
@@ -38,22 +40,36 @@ interface ApplyJobModalProps {
 export function ApplyJobModal({ job, user, open, onOpenChange }: ApplyJobModalProps) {
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [isSuccess, setIsSuccess] = useState(false)
+    const [isError, setIsError] = useState(false)
+    const [errormessg, setErrormessg] = useState("")
     const { toast } = useToast()
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
-        setIsSubmitting(true)
+        if (!user || !job) return;
 
-        // Simulate API call
-        await new Promise((resolve) => setTimeout(resolve, 1500))
 
-        setIsSubmitting(false)
-        setIsSuccess(true)
+        console.log(user)
+        console.log(job)
 
-        toast({
-            title: "Application Sent!",
-            description: `Your application for ${job.title} at ${job.recruiter} has been submitted successfully.`,
-        })
+        try {
+            setIsSubmitting(true)
+            const response = await axios.post("/api/candidate/apply-job", {
+                jobId: job.id,
+                candidateId: user.id,
+            }, { withCredentials: true })
+            console.log(response.data)
+            setIsSuccess(true)
+        } catch (error: any) {
+            console.log(error.response.data.error)
+            if (error.response?.status === 500) {
+                setErrormessg(`We were unable to process your application for ${job.title} at ${job.recruiter}. Please try again later.`)
+            }
+            setErrormessg(error.response.data.error)
+            setIsError(true)
+        } finally {
+            setIsSubmitting(false)
+        }
     }
 
     if (isSuccess) {
@@ -72,6 +88,27 @@ export function ApplyJobModal({ job, user, open, onOpenChange }: ApplyJobModalPr
                     </DialogHeader>
                     <DialogFooter className="sm:justify-center mt-6">
                         <Button onClick={() => onOpenChange(false)}>Close</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+        )
+    }
+
+    if (isError) {
+        return (
+            <Dialog open={open} onOpenChange={onOpenChange}>
+                <DialogContent className="sm:max-w-md text-center py-10 bg-destructive-foreground">
+                    <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-destructive/30 mb-4">
+                        <XCircle className="h-10 w-10 text-destructive" />
+                    </div>
+                    <DialogHeader>
+                        <DialogTitle className="text-center text-2xl text-destructive">Submission Failed!</DialogTitle>
+                        <DialogDescription className="text-center text-base pt-2 text-destructive">
+                            {errormessg}
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter className="sm:justify-center mt-6">
+                        <Button variant="destructive" onClick={() => onOpenChange(false)}>Close</Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
@@ -112,14 +149,14 @@ export function ApplyJobModal({ job, user, open, onOpenChange }: ApplyJobModalPr
                                     <p className="font-medium">sarah_chen_resume.pdf</p>
                                     <p className="text-muted-foreground text-xs">Uploaded 2 days ago</p>
                                 </div>
-                                <Button variant="ghost" size="sm" type="button" className="text-primary hover:text-primary/80">
+                                {/*<Button variant="ghost" size="sm" type="button" className="text-primary hover:text-primary/80">
                                     <Upload className="h-4 w-4 mr-2" />
                                     Change
-                                </Button>
+                                </Button>*/}
                             </div>
                         </div>
 
-                        <div className="grid gap-2">
+                        {/*<div className="grid gap-2">
                             <label htmlFor="cover-letter" className="text-sm font-medium">
                                 Cover Letter (Optional)
                             </label>
@@ -128,7 +165,7 @@ export function ApplyJobModal({ job, user, open, onOpenChange }: ApplyJobModalPr
                                 placeholder="Why are you a good fit for this role?"
                                 className="min-h-[120px]"
                             />
-                        </div>
+                        </div>*/}
                     </div>
 
                     <DialogFooter>

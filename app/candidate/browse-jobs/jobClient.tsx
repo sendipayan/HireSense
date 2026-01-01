@@ -14,6 +14,7 @@ import { useRouter } from "next/navigation"
 import axios from "axios"
 import { useEffect } from "react"
 import { useJobStore } from "@/store/jobStore"
+import { useCandidateStore } from "@/store/candidateStore"
 import { useAuthStore } from "@/store/authStore"
 const jobTypes = ["FULL_TIME", "BOTH", "INTERNSHIP"]
 const experienceLevels = ["Entry Level", "Mid Level", "Senior Level", "Lead"]
@@ -26,6 +27,7 @@ interface Job {
 }
 
 interface User {
+    id: string;
     name: string
     email: string
 }
@@ -34,6 +36,7 @@ export function JobsBrowser() {
     const router = useRouter()
     const { jobs, setJobs } = useJobStore()
     const { user } = useAuthStore()
+    const { candidateProfile } = useCandidateStore()
     const [initialLoad, setInitialLoad] = useState(true)
     const [searchQuery, setSearchQuery] = useState("")
     const [selectedTypes, setSelectedTypes] = useState<string[]>([])
@@ -56,7 +59,7 @@ export function JobsBrowser() {
     useEffect(() => {
         if (!user) return
         console.log(user)
-        setUsers({ ...users, name: user?.name || "", email: user?.email || "" })
+        setUsers({ id: candidateProfile?.id || "", name: user?.name || "", email: user?.email || "" })
     }, [user])
 
     const filteredJobs = useMemo(() => {
