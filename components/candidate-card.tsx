@@ -51,7 +51,7 @@ export function CandidateCard({
           <div className="flex items-start justify-between gap-4">
             <div>
               <h3 className="font-semibold text-lg group-hover:text-primary transition-colors">
-                <Link href={`/match-results?candidate=${id}`} className="hover:underline">
+                <Link href={`/recruiter/match-results?candidate=${id}`} className="hover:underline">
                   {name}
                 </Link>
               </h3>
@@ -92,7 +92,7 @@ export function CandidateCard({
 
           <div className="mt-4 flex gap-2">
             <Button size="sm" asChild>
-              <Link href={`/match-results?candidate=${id}`}>View Profile</Link>
+              <Link href={`/recruiter/match-results?candidate=${id}`}>View Profile</Link>
             </Button>
             <Button size="sm" variant="outline">
               Message
