@@ -12,6 +12,7 @@ import { useAuthStore } from "@/store/authStore"
 import { useRouter } from "next/navigation";
 import { useJobStore } from "@/store/jobStore"
 import { useEffect, useState } from "react"
+import { useApplicationsStore } from "@/store/candidateApplication"
 import axios from "axios"
 import {
     FileText,
@@ -33,17 +34,33 @@ export default function CandidateClientDashboardPage() {
     const { isLoggedIn } = useAuthStore()
     const [initialLoad, setInitialLoad] = useState(true)
     const { jobs, setJobs } = useJobStore()
+    const { applications, setApplications } = useApplicationsStore()
 
     useEffect(() => {
         const fetch = async () => {
+            console.log("fetching jobs")
             const res = await axios.get("/api/getjob")
+            const res1 = await axios.get("/api/candidate/get_applications")
             const data = await res.data
-            console.log(data)
+            const data1 = await res1.data
+            setApplications(data1.applications)
             setJobs(data.job)
             setInitialLoad(false);
         }
+
+
         fetch()
-    }, [setJobs])
+
+    }, [])
+
+
+
+    useEffect(() => {
+
+        if (applications?.length > 0) {
+            console.log(applications)
+        }
+    }, [applications])
     // Mock user data
     const user = {
         name: "Sarah Chen",
@@ -52,7 +69,7 @@ export default function CandidateClientDashboardPage() {
     }
 
     const stats = [
-        { title: "Applications", value: 12, icon: Briefcase, trend: { value: 20, positive: true } },
+        { title: "Applications", value: `${applications?.length}`, icon: Briefcase, description: "Based on your profile" },
         { title: "Job Matches", value: 47, icon: Target, description: "Based on your profile" },
         { title: "Profile Views", value: 89, icon: TrendingUp, trend: { value: 15, positive: true } },
         { title: "Resume Score", value: `${user.resumeScore}%`, icon: FileText, description: "Good standing" },
@@ -61,9 +78,9 @@ export default function CandidateClientDashboardPage() {
     // Get status badge variant
     const getStatusVariant = (status: string) => {
         switch (status) {
-            case "Interview Scheduled":
+            case "ACCEPTED":
                 return "default"
-            case "Under Review":
+            case "PENDING":
                 return "secondary"
             default:
                 return "outline"
@@ -72,9 +89,9 @@ export default function CandidateClientDashboardPage() {
 
     const getStatusIcon = (status: string) => {
         switch (status) {
-            case "Interview Scheduled":
+            case "ACCEPTED":
                 return CheckCircle2
-            case "Under Review":
+            case "PENDING":
                 return Clock
             default:
                 return AlertCircle
@@ -187,7 +204,7 @@ export default function CandidateClientDashboardPage() {
                             </Button>
                         </div>
                         {!initialLoad ? <div className="space-y-3">
-                            {mockApplications.map((app) => {
+                            {applications.map((app) => {
                                 const StatusIcon = getStatusIcon(app.status)
                                 return (
                                     <article
@@ -196,9 +213,9 @@ export default function CandidateClientDashboardPage() {
                                     >
                                         <div className="flex items-start justify-between gap-3">
                                             <div className="min-w-0">
-                                                <h3 className="font-medium truncate">{app.jobTitle}</h3>
-                                                <p className="text-sm text-muted-foreground">{app.company}</p>
-                                                <p className="text-xs text-muted-foreground mt-1">{app.appliedDate}</p>
+                                                <h3 className="font-medium truncate">{app.job.title}</h3>
+                                                <p className="text-sm text-muted-foreground">{app.job.recruiter.companyName}</p>
+                                                <p className="text-xs text-muted-foreground mt-1">{new Date(app.createdAt).toISOString().split("T")[0]}</p>
                                             </div>
                                             <Badge variant={getStatusVariant(app.status)} className="shrink-0 gap-1">
                                                 <StatusIcon className="h-3 w-3" aria-hidden="true" />

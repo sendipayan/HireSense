@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import Link from "next/link"
 import { Search, Filter, Calendar, Building2, ChevronRight, ArrowLeft } from "lucide-react"
 import { Input } from "@/components/ui/input"
@@ -9,21 +9,47 @@ import { Card, CardContent, CardDescription, CardTitle } from "@/components/ui/c
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { mockApplications } from "@/lib/mock-data"
+import { useApplicationsStore } from "@/store/candidateApplication"
+import axios from "axios"
 
 export default function ApplicationsPage() {
     const [searchQuery, setSearchQuery] = useState("")
     const [statusFilter, setStatusFilter] = useState("all")
+    const { applications, setApplications } = useApplicationsStore()
+    const [initialLoad, setInitialLoad] = useState(true)
+
+    useEffect(() => {
+
+        const fetchApplications = async () => {
+            try {
+                const response = await axios.get('/api/candidate/get_applications', { withCredentials: true })
+                const data = await response.data
+                setApplications(data.applications)
+            } catch (error) {
+                console.log(error)
+            } finally {
+                setInitialLoad(false)
+            }
+        }
+        fetchApplications()
+    }, [])
+
+    useEffect(() => {
+        if (applications.length > 0) {
+            console.log(applications)
+        }
+    }, [applications])
 
     const filteredApplications = useMemo(() => {
-        return mockApplications.filter((app) => {
+        return applications.filter((app) => {
             const matchesSearch =
-                app.jobTitle.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                app.company.toLowerCase().includes(searchQuery.toLowerCase())
+                app.job.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                app.job.recruiter.companyName?.toLowerCase().includes(searchQuery.toLowerCase())
             const matchesStatus = statusFilter === "all" || app.status === statusFilter
 
             return matchesSearch && matchesStatus
         })
-    }, [searchQuery, statusFilter])
+    }, [searchQuery, statusFilter, applications])
 
     const getStatusBadge = (status: string) => {
         switch (status) {
@@ -104,7 +130,7 @@ export default function ApplicationsPage() {
                 </div>
 
                 {/* Applications List */}
-                <div className="grid gap-4">
+                {!initialLoad ? <div className="grid gap-4">
                     {filteredApplications.length > 0 ? (
                         filteredApplications.map((app) => (
                             <Card key={app.id} className="overflow-hidden transition-all hover:border-primary/50">
@@ -115,24 +141,24 @@ export default function ApplicationsPage() {
                                                 {getStatusBadge(app.status)}
                                                 <div className="flex items-center gap-1 text-sm font-medium text-primary">
                                                     <span className="text-muted-foreground">Match Score:</span>
-                                                    {app.matchScore}%
+                                                    {app.score}%
                                                 </div>
                                             </div>
-                                            <h3 className="text-xl font-semibold">{app.jobTitle}</h3>
+                                            <h3 className="text-xl font-semibold">{app.job.title}</h3>
                                             <div className="mt-2 flex flex-wrap gap-x-6 gap-y-2 text-sm text-muted-foreground">
                                                 <div className="flex items-center gap-1.5">
                                                     <Building2 className="h-4 w-4" />
-                                                    {app.company}
+                                                    {app.job.recruiter.companyName}
                                                 </div>
                                                 <div className="flex items-center gap-1.5">
                                                     <Calendar className="h-4 w-4" />
-                                                    Applied on {app.appliedDate}
+                                                    Applied on {new Date(app.createdAt).toISOString().split("T")[0]}
                                                 </div>
                                             </div>
                                         </div>
                                         <div className="border-t border-border bg-muted/30 p-4 md:border-l md:border-t-0 md:p-6">
                                             <Button asChild variant="outline" className="w-full md:w-auto bg-transparent">
-                                                <Link href={`/candidate/browse-jobs/${app.id}`}>
+                                                <Link href={`/candidate/browse-jobs/${app.job.id}`}>
                                                     View Job Details
                                                     <ChevronRight className="ml-2 h-4 w-4" />
                                                 </Link>
@@ -161,7 +187,15 @@ export default function ApplicationsPage() {
                             </Button>
                         </Card>
                     )}
-                </div>
+                </div> :
+
+                    <div className="grid gap-4">
+                        {[1, 2, 3].map((item) => (
+                            <div className="bg-muted-foreground/50 border border-border rounded-lg p-6 mb-8 animate-pulse h-40" key={item}>
+
+                            </div>
+                        ))}
+                    </div>}
             </main>
         </div>
     )
