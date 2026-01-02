@@ -7,15 +7,13 @@ import { Breadcrumbs } from "@/components/breadcrumbs"
 import { PageHeader } from "@/components/page-header"
 import { StatCard } from "@/components/stat-card"
 import { CandidateCard } from "@/components/candidate-card"
-import { Badge } from "@/components/ui/badge"
-import { mockCandidates } from "@/lib/mock-data"
-import { useAuthStore } from "@/store/authStore"
 import { useRecruiterStore } from "@/store/RecuiterStore"
 import { useRouter } from "next/navigation";
 import { Users, Briefcase, Target, TrendingUp, Plus, ArrowRight, Eye, Clock, CheckCircle2 } from "lucide-react"
 import { useEffect, useState } from "react"
 import { useJobStore } from "@/store/jobStore"
 import axios from "axios"
+import { useRecruiterApplicationsStore } from "@/store/recruiterApplication"
 
 
 
@@ -26,8 +24,8 @@ export default function RecruiterDashboardPage() {
     const router = useRouter()
     const [initialLoad, setInitialLoad] = useState(true);
     const { RecuiterProfile } = useRecruiterStore()
-    const { isLoggedIn } = useAuthStore()
     const { jobs, setJobs } = useJobStore()
+    const { applications, setApplications } = useRecruiterApplicationsStore()
 
     useEffect(() => {
 
@@ -49,25 +47,20 @@ export default function RecruiterDashboardPage() {
             const res = await axios.get("/api/getjob")
             const data = await res.data
             setJobs(data.job)
+            const res1 = await axios.get("/api/recruiter/get_applications")
+            const data1 = await res1.data
+            setApplications(data1.applications)
             setInitialLoad(false);
         }
         fetch()
     }, [setJobs])
 
 
-
-    // Mock company data
-    const company = {
-        name: "TechCorp Inc.",
-        activeJobs: 8,
-        totalCandidates: 234,
-    }
-
     const stats = [
-        { title: "Active Jobs", value: company.activeJobs, icon: Briefcase, description: "Currently hiring" },
+        { title: "Active Jobs", value: `${jobs.length}`, icon: Briefcase, description: "Currently hiring" },
         {
             title: "Total Candidates",
-            value: company.totalCandidates,
+            value: "21",
             icon: Users,
             trend: { value: 12, positive: true },
         },
@@ -89,7 +82,7 @@ export default function RecruiterDashboardPage() {
                 {/* Page Header */}
                 <section aria-labelledby="dashboard-heading">
                     <PageHeader
-                        title={`${company.name} Dashboard`}
+                        title={`${RecuiterProfile?.companyName + "'s"} Dashboard`}
                         description="Manage your hiring pipeline and discover top talent with AI."
                     >
                         <Button disabled={!verfiy} onClick={() => router.push("/recruiter/post-job")}>
@@ -191,8 +184,18 @@ export default function RecruiterDashboardPage() {
                             </Button>
                         </div>
                         {!initialLoad ? <div className="space-y-4">
-                            {mockCandidates.slice(0, 3).map((candidate) => (
-                                <CandidateCard key={candidate.id} {...candidate} />
+                            {applications?.map((candidate) => (
+                                <CandidateCard key={candidate.id}
+                                    id={candidate.id}
+                                    name={candidate.candidate.user.name}
+                                    title={candidate.job.title}
+                                    location={candidate.candidate.institution}
+                                    experience={candidate.candidate.experienceLevel}
+                                    education={candidate.candidate.degree}
+                                    skills={candidate.candidate.primarySkills}
+                                    matchScore={candidate.score}
+                                    avatar=""
+                                />
                             ))}
                         </div> :
                             <div className="space-y-4">

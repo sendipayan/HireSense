@@ -16,7 +16,7 @@ export function TopMatchesClient() {
     const [searchQuery, setSearchQuery] = useState("")
     const [minScore, setMinScore] = useState("80")
 
-    const currentJob = mockJobs.find((j) => j.id === selectedJob) || mockJobs[0]
+    const currentJob = mockJobs.find((j) => j.id === selectedJob) || mockJobs
 
     const filteredCandidates = useMemo(() => {
         return mockCandidates
