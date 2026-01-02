@@ -241,7 +241,7 @@ export default function LoginPage() {
                   fill="#EA4335"
                 />
               </svg>
-              {loading ? <Spinner className="h-5 w-5" /> : "Continue with Google"}
+              {"Continue with Google"}
             </Button>
 
             {/* GitHub OAuth Button */}
@@ -267,7 +267,7 @@ export default function LoginPage() {
                   clipRule="evenodd"
                 />
               </svg>
-              {loading ? <Spinner className="h-5 w-5" /> : "Continue with GitHub"}
+              {"Continue with GitHub"}
             </Button>
           </div>}
 

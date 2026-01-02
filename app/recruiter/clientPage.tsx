@@ -9,12 +9,13 @@ import { StatCard } from "@/components/stat-card"
 import { CandidateCard } from "@/components/candidate-card"
 import { useRecruiterStore } from "@/store/RecuiterStore"
 import { useRouter } from "next/navigation";
-import { Users, Briefcase, Target, TrendingUp, Plus, ArrowRight, Eye, Clock, CheckCircle2 } from "lucide-react"
+import { Users, Briefcase, Target, TrendingUp, Plus, ArrowRight, Eye, Clock, CheckCircle2, SearchX, Inbox } from "lucide-react"
 import { useEffect, useState } from "react"
 import { useJobStore } from "@/store/jobStore"
 import axios from "axios"
 import { useRecruiterApplicationsStore } from "@/store/recruiterApplication"
-
+import { Card, CardContent } from "@/components/ui/card"
+import { useAuthStore } from "@/store/authStore"
 
 
 
@@ -25,6 +26,7 @@ export default function RecruiterDashboardPage() {
     const [initialLoad, setInitialLoad] = useState(true);
     const { RecuiterProfile } = useRecruiterStore()
     const { jobs, setJobs } = useJobStore()
+    const { user } = useAuthStore()
     const { applications, setApplications } = useRecruiterApplicationsStore()
 
     useEffect(() => {
@@ -82,7 +84,7 @@ export default function RecruiterDashboardPage() {
                 {/* Page Header */}
                 <section aria-labelledby="dashboard-heading">
                     <PageHeader
-                        title={`${RecuiterProfile?.companyName + "'s"} Dashboard`}
+                        title={`${user?.name + "'s"} Dashboard`}
                         description="Manage your hiring pipeline and discover top talent with AI."
                     >
                         <Button disabled={!verfiy} onClick={() => router.push("/recruiter/post-job")}>
@@ -121,12 +123,12 @@ export default function RecruiterDashboardPage() {
                             <h2 id="active-jobs-heading" className="text-lg font-semibold">
                                 Active Jobs
                             </h2>
-                            <Button variant="ghost" size="sm" asChild>
+                            {jobs.length > 0 && <Button variant="ghost" size="sm" asChild>
                                 <Link href="/recruiter/jobs">View all <ArrowRight className="ml-1 h-4 w-4" aria-hidden="true" /></Link>
-                            </Button>
+                            </Button>}
                         </div>
                         {!initialLoad ? <div className="space-y-3">
-                            {jobs?.map((job) => (
+                            {jobs?.length > 0 ? (jobs?.map((job) => (
                                 <article
                                     key={job.id}
                                     className="rounded-xl border border-border bg-card p-4 transition-colors hover:border-primary/50"
@@ -152,7 +154,20 @@ export default function RecruiterDashboardPage() {
                                         </div>
                                     </Link>
                                 </article>
-                            ))}
+                            ))) : (
+                                <Card className="border-dashed bg-transparent py-4">
+                                    <CardContent className="flex flex-col items-center text-center">
+                                        <div className="h-16 w-16 rounded-full bg-muted/20 flex items-center justify-center mb-4">
+                                            <Inbox className="h-8 w-8 text-muted-foreground" />
+                                        </div>
+                                        <h3 className="text-xl font-semibold">No Job posted</h3>
+                                        <p className="text-muted-foreground mt-2 max-w-sm">
+                                            Try posting a job to get started.
+                                        </p>
+                                    </CardContent>
+                                </Card>
+                            )
+                            }
                         </div> :
                             <div className="space-y-3">
                                 {[1, 2, 3, 4, 5].map((id) => (
@@ -176,15 +191,15 @@ export default function RecruiterDashboardPage() {
                             <h2 id="top-candidates-heading" className="text-lg font-semibold">
                                 Top Matched Candidates
                             </h2>
-                            <Button variant="ghost" size="sm" asChild>
+                            {applications.length > 0 && <Button variant="ghost" size="sm" asChild>
                                 <Link href="/recruiter/top-matches">
                                     View All
                                     <ArrowRight className="ml-1 h-4 w-4" aria-hidden="true" />
                                 </Link>
-                            </Button>
+                            </Button>}
                         </div>
                         {!initialLoad ? <div className="space-y-4">
-                            {applications?.map((candidate) => (
+                            {applications?.length > 0 ? (applications?.map((candidate) => (
                                 <CandidateCard key={candidate.id}
                                     id={candidate.job.id}
                                     name={candidate.candidate.user.name}
@@ -196,7 +211,21 @@ export default function RecruiterDashboardPage() {
                                     matchScore={candidate.score}
                                     avatar=""
                                 />
-                            ))}
+                            ))) : (
+                                (
+                                    <Card className="border-dashed bg-transparent py-4">
+                                        <CardContent className="flex flex-col items-center text-center">
+                                            <div className="h-16 w-16 rounded-full bg-muted/20 flex items-center justify-center mb-4">
+                                                <SearchX className="h-8 w-8 text-muted-foreground" />
+                                            </div>
+                                            <h3 className="text-xl font-semibold">No matches found</h3>
+                                            <p className="text-muted-foreground mt-2 max-w-sm">
+                                                No candidates matched your job requirements.
+                                            </p>
+                                        </CardContent>
+                                    </Card>
+                                )
+                            )}
                         </div> :
                             <div className="space-y-4">
                                 {[1, 2, 3].map((id) => (

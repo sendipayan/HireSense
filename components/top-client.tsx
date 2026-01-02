@@ -27,7 +27,9 @@ export function TopMatchesClient() {
             const res = await axios.get("/api/getjob")
             const data = await res.data
             setJobs(data.job)
-            setSelectedJob(data.job[0].id)
+            if (data.job.length > 0) {
+                setSelectedJob(data.job[0]?.id)
+            }
             setJobload(false)
             console.log(data.job)
         }
@@ -39,7 +41,10 @@ export function TopMatchesClient() {
     useEffect(() => {
         console.log("working: ", selectedJob)
         const fetchApplications = async () => {
-            if (selectedJob.trim() === "") return
+            if (selectedJob?.trim() === "") {
+                setLoading(false)
+                return
+            }
 
             setLoading(true)
             const response = await axios.get(`/api/recruiter/get_applications/${selectedJob}`)

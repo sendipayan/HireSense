@@ -15,6 +15,8 @@ import { useRouter } from "next/navigation"
 import { signOut } from "next-auth/react"
 import { useJobStore } from "@/store/jobStore"
 import axios from "axios"
+import { useRecruiterApplicationsStore } from "@/store/recruiterApplication"
+import { useApplicationsStore } from "@/store/candidateApplication"
 /**
  * Main navigation component
  * - Semantic <header> and <nav> elements for accessibility and SEO
@@ -29,6 +31,8 @@ export function Navbar() {
   const clearRecruiter = useRecruiterStore((s) => s.clearRecuiterProfile)
   const clearCandidate = useCandidateStore((s) => s.clearCandidateProfile)
   const clearJob = useJobStore((s) => s.clear)
+  const clearApplications = useRecruiterApplicationsStore((s) => s.clear)
+  const clearCandidateApplications = useApplicationsStore((s) => s.clear)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const { isLoggedIn, user } = useAuthStore()
   const navigation = [
@@ -88,6 +92,8 @@ export function Navbar() {
                   clearRecruiter()
                   clearCandidate()
                   clearJob()
+                  clearApplications()
+                  clearCandidateApplications()
                 }
                 await signOut({
                   redirect: false,
@@ -151,6 +157,8 @@ export function Navbar() {
                   clearRecruiter()
                   clearCandidate()
                   clearJob()
+                  clearApplications()
+                  clearCandidateApplications()
                 }
                 await signOut({
                   redirect: false,
