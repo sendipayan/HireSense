@@ -186,7 +186,7 @@ export default function RecruiterDashboardPage() {
                         {!initialLoad ? <div className="space-y-4">
                             {applications?.map((candidate) => (
                                 <CandidateCard key={candidate.id}
-                                    id={candidate.id}
+                                    id={candidate.job.id}
                                     name={candidate.candidate.user.name}
                                     title={candidate.job.title}
                                     location={candidate.candidate.institution}

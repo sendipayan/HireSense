@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { Search, Target, Sparkles, Filter, BrainCircuit, Trophy, LayoutGrid, List } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -9,26 +9,59 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent } from "@/components/ui/card"
 import { CandidateCard } from "@/components/candidate-card"
 import { Breadcrumbs } from "@/components/breadcrumbs"
-import { mockCandidates, mockJobs } from "@/lib/mock-data"
+import { useRecruiterApplicationsStore } from "@/store/recruiterApplication"
+import { useJobStore } from "@/store/jobStore"
+import axios from "axios"
 
 export function TopMatchesClient() {
-    const [selectedJob, setSelectedJob] = useState(mockJobs[0].id)
+    const { jobs, setJobs } = useJobStore()
+    const [selectedJob, setSelectedJob] = useState("")
     const [searchQuery, setSearchQuery] = useState("")
-    const [minScore, setMinScore] = useState("80")
+    const [minScore, setMinScore] = useState("0")
+    const { applications, setApplications } = useRecruiterApplicationsStore()
+    const [loading, setLoading] = useState(true)
+    const [jobload, setJobload] = useState(true)
 
-    const currentJob = mockJobs.find((j) => j.id === selectedJob) || mockJobs
+    useEffect(() => {
+        const fetch = async () => {
+            const res = await axios.get("/api/getjob")
+            const data = await res.data
+            setJobs(data.job)
+            setSelectedJob(data.job[0].id)
+            setJobload(false)
+            console.log(data.job)
+        }
+        fetch()
+
+    }, [setJobs])
+
+
+    useEffect(() => {
+        console.log("working: ", selectedJob)
+        const fetchApplications = async () => {
+            if (selectedJob.trim() === "") return
+
+            setLoading(true)
+            const response = await axios.get(`/api/recruiter/get_applications/${selectedJob}`)
+            console.log(response.data)
+            setApplications(response.data.applications)
+            setLoading(false)
+        }
+        fetchApplications()
+    }, [selectedJob])
+
 
     const filteredCandidates = useMemo(() => {
-        return mockCandidates
+        return applications
             .filter((c) => {
                 const matchesSearch =
-                    c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                    c.title.toLowerCase().includes(searchQuery.toLowerCase())
-                const matchesScore = c.matchScore >= Number.parseInt(minScore)
+                    c.job.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                    c.job.title.toLowerCase().includes(searchQuery.toLowerCase())
+                const matchesScore = c.score >= Number.parseInt(minScore)
                 return matchesSearch && matchesScore
             })
-            .sort((a, b) => b.matchScore - a.matchScore)
-    }, [searchQuery, minScore])
+            .sort((a, b) => b.score - a.score)
+    }, [searchQuery, minScore, applications])
 
     return (
         <main className="min-h-screen bg-background text-foreground py-8 sm:py-12">
@@ -36,7 +69,7 @@ export function TopMatchesClient() {
                 <Breadcrumbs items={[{ label: "Recruiter", href: "/recruiter/dashboard" }, { label: "Top Matches" }]} />
 
                 {/* Hero Section with AI Accent */}
-                <div className="relative mt-8 overflow-hidden rounded-3xl bg-linear-to-br from-primary/10 via-background to-background border border-border/50 p-8 sm:p-12">
+                {!jobload ? <div className="relative mt-8 overflow-hidden rounded-3xl bg-linear-to-br from-primary/10 via-background to-background border border-border/50 p-8 sm:p-12">
                     <div className="relative z-10 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-8">
                         <div className="max-w-2xl">
                             <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-1.5 text-sm font-medium text-primary mb-6 border border-primary/20">
@@ -60,7 +93,7 @@ export function TopMatchesClient() {
                                         <SelectValue placeholder="Select a job..." />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        {mockJobs.map((job) => (
+                                        {jobs.map((job) => (
                                             <SelectItem key={job.id} value={job.id}>
                                                 {job.title}
                                             </SelectItem>
@@ -79,12 +112,14 @@ export function TopMatchesClient() {
                         </div>
                     </div>
 
+
+
                     {/* Decorative background element */}
                     <div className="absolute top-0 right-0 -translate-y-1/2 translate-x-1/2 w-96 h-96 bg-primary/20 blur-[120px] rounded-full pointer-events-none" />
-                </div>
+                </div> : <div className="bg-muted-foreground/50 border border-border rounded-3xl p-6 mb-8 animate-pulse h-70"></div>}
 
                 {/* Filters & Actions Bar */}
-                <div className="mt-12 flex flex-col md:flex-row gap-4 items-center justify-between bg-card/50 backdrop-blur-md p-4 rounded-2xl border border-border shadow-sm">
+                {!jobload ? <div className="mt-12 flex flex-col md:flex-row gap-4 items-center justify-between bg-card/50 backdrop-blur-md p-4 rounded-2xl border border-border shadow-sm">
                     <div className="relative w-full md:max-w-md">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                         <Input
@@ -120,10 +155,10 @@ export function TopMatchesClient() {
                             </Button>
                         </div>
                     </div>
-                </div>
+                </div> : <div className="bg-muted-foreground/50 border border-border rounded-2xl p-6 mb-8 animate-pulse h-20"></div>}
 
                 {/* Results Section */}
-                <div className="mt-8 grid gap-6 lg:grid-cols-1">
+                {!loading ? <div className="mt-8 grid gap-6 lg:grid-cols-1">
                     {filteredCandidates.length > 0 ? (
                         <div className="space-y-4">
                             {filteredCandidates.map((candidate, index) => (
@@ -135,7 +170,17 @@ export function TopMatchesClient() {
                                             </Badge>
                                         </div>
                                     )}
-                                    <CandidateCard {...candidate} />
+                                    <CandidateCard key={candidate.id}
+                                        id={candidate.job.id}
+                                        name={candidate.candidate.user.name}
+                                        title={candidate.job.title}
+                                        location={candidate.candidate.institution}
+                                        experience={candidate.candidate.experienceLevel}
+                                        education={candidate.candidate.degree}
+                                        skills={candidate.candidate.primarySkills}
+                                        matchScore={candidate.score}
+                                        avatar=""
+                                    />
                                 </div>
                             ))}
                         </div>
@@ -162,7 +207,11 @@ export function TopMatchesClient() {
                             </CardContent>
                         </Card>
                     )}
-                </div>
+                </div> : <div className="mt-8 grid gap-6 lg:grid-cols-1">
+                    {[1, 2, 3].map((id) => (
+                        <div className="bg-muted-foreground/50 border border-border rounded-lg p-6 mb-8 animate-pulse h-50" key={id}></div>
+                    ))}
+                </div>}
             </div>
         </main>
     )
