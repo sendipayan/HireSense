@@ -108,9 +108,11 @@ export default function MatchResultsClientPage({ candidateId, jobId }: { candida
             const res = await axios.get("/api/getjob")
             const data = await res.data
             setJobs(data.job)
-            const res1 = await axios.get("/api/recruiter/get_applications")
+            const res1 = await axios.get(`/api/recruiter/get_applications/unique?jobId=${jobId}&candidateId=${candidateId}`)
             const data1 = await res1.data
+            console.log("candidate applications: ", data1)
             setApplications(data1.applications)
+            setUniqueApplication({ ...data1.applications })
 
         }
         fetch()
@@ -119,7 +121,7 @@ export default function MatchResultsClientPage({ candidateId, jobId }: { candida
 
 
     useEffect(() => {
-        if (!jobs || !applications) {
+        if (!jobs) {
             return
         }
         const uniqueJob = jobs.find((job) => job.id === jobId)
@@ -127,13 +129,8 @@ export default function MatchResultsClientPage({ candidateId, jobId }: { candida
         if (uniqueJob) {
             setUniqueJob({ ...uniqueJob })
         }
-        const uniqueApplication = applications.find((application) => application.job.id === jobId && application.candidate.id === candidateId)
-        console.log("uniqueApplication: ", uniqueApplication)
-        if (uniqueApplication) {
-            setUniqueApplication({ ...uniqueApplication })
-        }
         setInitialLoad(false);
-    }, [applications, jobs])
+    }, [jobs])
 
     return (
         <main className="py-8 sm:py-12">

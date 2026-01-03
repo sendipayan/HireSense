@@ -57,6 +57,9 @@ export function TopMatchesClient() {
 
 
     const filteredCandidates = useMemo(() => {
+        if (!applications || !Array.isArray(applications)) {
+            return []
+        }
         return applications
             .filter((c) => {
                 const matchesSearch =
