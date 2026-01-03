@@ -128,7 +128,7 @@ export default function RecruiterDashboardPage() {
                             </Button>}
                         </div>
                         {!initialLoad ? <div className="space-y-3">
-                            {jobs?.length > 0 ? (jobs?.map((job) => (
+                            {jobs?.length > 0 ? (jobs?.slice(0, 5).map((job) => (
                                 <article
                                     key={job.id}
                                     className="rounded-xl border border-border bg-card p-4 transition-colors hover:border-primary/50"

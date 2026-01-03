@@ -49,11 +49,6 @@ export function RecruiterJobsClient() {
 
     }, [setJobs])
 
-    useEffect(() => {
-        if (jobs)
-            console.log(jobs)
-
-    }, [jobs])
 
     const filteredJobs = useMemo(() => {
         return jobs.filter((job) => {
@@ -147,7 +142,7 @@ export function RecruiterJobsClient() {
                                             </Link>
                                         </DropdownMenuItem>
                                         <DropdownMenuItem asChild>
-                                            <Link href={`/match-results?job=${job.id}`}>
+                                            <Link href={"/recruiter/top-matches"}>
                                                 <Users className="mr-2 h-4 w-4" /> View Matches
                                             </Link>
                                         </DropdownMenuItem>

@@ -7,9 +7,7 @@ import { PageHeader } from "@/components/page-header"
 import { StatCard } from "@/components/stat-card"
 import { JobCard } from "@/components/job-card"
 import { Badge } from "@/components/ui/badge"
-import { mockJobs, mockApplications } from "@/lib/mock-data"
 import { useAuthStore } from "@/store/authStore"
-import { useRouter } from "next/navigation";
 import { useJobStore } from "@/store/jobStore"
 import { useEffect, useState } from "react"
 import { useApplicationsStore } from "@/store/candidateApplication"
@@ -32,8 +30,7 @@ import { Inbox } from "lucide-react"
 
 
 export default function CandidateClientDashboardPage() {
-    const router = useRouter()
-    const { isLoggedIn } = useAuthStore()
+    const { user } = useAuthStore()
     const [initialLoad, setInitialLoad] = useState(true)
     const { jobs, setJobs } = useJobStore()
     const { applications, setApplications } = useApplicationsStore()
@@ -64,17 +61,13 @@ export default function CandidateClientDashboardPage() {
         }
     }, [applications])
     // Mock user data
-    const user = {
-        name: "Sarah Chen",
-        resumeScore: 85,
-        profileComplete: 92,
-    }
+
 
     const stats = [
         { title: "Applications", value: `${applications?.length}`, icon: Briefcase, description: "Based on your profile" },
         { title: "Job Matches", value: 47, icon: Target, description: "Based on your profile" },
         { title: "Profile Views", value: 89, icon: TrendingUp, trend: { value: 15, positive: true } },
-        { title: "Resume Score", value: `${user.resumeScore}%`, icon: FileText, description: "Good standing" },
+        { title: "Resume Score", value: "85%", icon: FileText, description: "Good standing" },
     ]
 
     // Get status badge variant
@@ -111,7 +104,7 @@ export default function CandidateClientDashboardPage() {
                 {/* Page Header with h1 */}
                 <section aria-labelledby="dashboard-heading">
                     <PageHeader
-                        title={`Welcome back, ${user.name.split(" ")[0]}`}
+                        title={`Welcome back, ${user ? user?.name.split(" ")[0] : "..."}`}
                         description="Here's what's happening with your job search."
                     >
                         <Button asChild>
