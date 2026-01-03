@@ -17,6 +17,7 @@ export interface Job {
   createdAt: string;
   updatedAt: string;
   recruiter?: string;
+  applied?: boolean;
   status: string;
 }
 

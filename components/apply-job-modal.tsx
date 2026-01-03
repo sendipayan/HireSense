@@ -18,6 +18,7 @@ import { useToast } from "@/hooks/use-toast"
 import { useAuthStore } from "@/store/authStore"
 import { CheckCircle2, Upload, FileText, XCircle } from "lucide-react"
 import axios, { AxiosError } from "axios"
+import { useJobStore } from "@/store/jobStore"
 
 interface Job {
     id: string
@@ -42,6 +43,7 @@ export function ApplyJobModal({ job, user, open, onOpenChange }: ApplyJobModalPr
     const [isSuccess, setIsSuccess] = useState(false)
     const [isError, setIsError] = useState(false)
     const [errormessg, setErrormessg] = useState("")
+    const { jobs } = useJobStore()
     const { toast } = useToast()
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -60,6 +62,11 @@ export function ApplyJobModal({ job, user, open, onOpenChange }: ApplyJobModalPr
             }, { withCredentials: true })
             console.log(response.data)
             setIsSuccess(true)
+            const match = jobs.find((j) => j.id === job.id);
+
+            if (match) {
+                match.applied = true;
+            }
         } catch (error: any) {
             console.log(error.response.data.error)
             if (error.response?.status === 500) {

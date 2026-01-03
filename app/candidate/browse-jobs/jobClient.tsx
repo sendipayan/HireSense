@@ -21,7 +21,7 @@ const experienceLevels = ["Entry Level", "Mid Level", "Senior Level", "Lead"]
 
 interface Job {
     id: string,
-    title: string,
+    title: string
     recruiter: string,
 
 }
@@ -44,17 +44,44 @@ export function JobsBrowser() {
     const [sortBy, setSortBy] = useState("newest")
     const [applyingJob, setApplyingJob] = useState<Job | null>(null)
     const [users, setUsers] = useState<User | null>(null)
+    const [appliedJobs, setAppliedJobs] = useState<string[]>([])
 
 
     useEffect(() => {
+
         const fetch = async () => {
+
             const res = await axios.get("/api/getjob")
             const data = await res.data
             setJobs(data.job)
-            setInitialLoad(false);
+            if (!candidateProfile) return
+            const res1 = await axios.post("/api/candidate/applied_jobs", {
+                candidateId: candidateProfile.id
+            }, { withCredentials: true })
+            const data1 = await res1.data
+
+            setAppliedJobs([
+                ...data1.applications.map((job: any) => job.jobId)
+            ]);
+
+
         }
         fetch()
-    }, [setJobs])
+    }, [setJobs, candidateProfile])
+
+    useEffect(() => {
+        if (appliedJobs.length === 0) return
+
+        console.log("appliedJobs: ", appliedJobs)
+        appliedJobs.map((jobId) => {
+            const job = jobs.find((job) => job.id === jobId)
+            if (job) {
+                job.applied = true
+            }
+        })
+        setInitialLoad(false);
+    }, [appliedJobs])
+
 
     useEffect(() => {
         if (!user) return
@@ -65,7 +92,7 @@ export function JobsBrowser() {
     const filteredJobs = useMemo(() => {
         console.log(jobs)
 
-        return jobs.filter((job) => {
+        return jobs?.filter((job) => {
             const matchesSearch =
                 job.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 job.recruiter?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -248,8 +275,8 @@ export function JobsBrowser() {
                                         </div>
 
                                         <div className="flex flex-col gap-3 min-w-[120px]">
-                                            <Button className="w-full cursor-pointer" onClick={() => setApplyingJob({ title: job.title, recruiter: job.recruiter || "", id: job.id })}>
-                                                Apply Now
+                                            <Button className="w-full cursor-pointer" onClick={() => setApplyingJob({ title: job.title, recruiter: job.recruiter || "", id: job.id })} disabled={job.applied}>
+                                                {job.applied ? "Applied" : "Apply Now"}
                                             </Button>
                                             <Button variant="outline" className="w-full bg-transparent cursor-pointer" onClick={() => router.push(`/candidate/browse-jobs/${job.id}`)}>
                                                 View Details

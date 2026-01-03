@@ -186,12 +186,7 @@ export function RecruiterJobsClient() {
                                     <Calendar className="h-3 w-3" />
                                     <span>Posted {new Date(job.createdAt).toISOString().split("T")[0]}</span>
                                 </div>
-                                <Link
-                                    href={`/match-results?job=${job.id}`}
-                                    className="text-primary font-medium hover:underline inline-flex items-center"
-                                >
-                                    View Matches
-                                </Link>
+
                             </div>
                         </div>
                     ))
