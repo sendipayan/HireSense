@@ -35,7 +35,7 @@ export function FormField({
   name,
   type,
   placeholder,
-  required = false,
+  required,
   description,
   error,
   className,

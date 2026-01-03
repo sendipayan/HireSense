@@ -26,6 +26,8 @@ import {
     CheckCircle2,
     AlertCircle,
 } from "lucide-react"
+import { Card, CardContent } from "@/components/ui/card"
+import { Inbox } from "lucide-react"
 
 
 
@@ -199,12 +201,12 @@ export default function CandidateClientDashboardPage() {
                             <h2 id="applications-heading" className="text-lg font-semibold">
                                 Recent Applications
                             </h2>
-                            <Button variant="ghost" size="sm" asChild>
+                            {applications.length > 0 && <Button variant="ghost" size="sm" asChild>
                                 <Link href="/candidate/applications">View All <ArrowRight className="h-4 w-4" /></Link>
-                            </Button>
+                            </Button>}
                         </div>
                         {!initialLoad ? <div className="space-y-3">
-                            {applications.map((app) => {
+                            {applications.length > 0 ? (applications.map((app) => {
                                 const StatusIcon = getStatusIcon(app.status)
                                 return (
                                     <article
@@ -224,7 +226,17 @@ export default function CandidateClientDashboardPage() {
                                         </div>
                                     </article>
                                 )
-                            })}
+                            })) : (<Card className="border-dashed bg-transparent py-4">
+                                <CardContent className="flex flex-col items-center text-center">
+                                    <div className="h-16 w-16 rounded-full bg-muted/20 flex items-center justify-center mb-4">
+                                        <Inbox className="h-8 w-8 text-muted-foreground" />
+                                    </div>
+                                    <h3 className="text-xl font-semibold">No Applications submitted</h3>
+                                    <p className="text-muted-foreground mt-2 max-w-sm">
+                                        Try submitting an application to get started.
+                                    </p>
+                                </CardContent>
+                            </Card>)}
                         </div> :
                             <div className="space-y-3">
                                 {[1, 2, 3, 4].map((id) => (
@@ -242,12 +254,12 @@ export default function CandidateClientDashboardPage() {
                             <h2 id="recommended-jobs-heading" className="text-lg font-semibold">
                                 Recommended Jobs
                             </h2>
-                            <Button variant="ghost" size="sm" asChild>
+                            {jobs.length > 0 && <Button variant="ghost" size="sm" asChild>
                                 <Link href="/candidate/browse-jobs">
                                     View All
                                     <ArrowRight className="ml-1 h-4 w-4" aria-hidden="true" />
                                 </Link>
-                            </Button>
+                            </Button>}
                         </div>
                         {!initialLoad ? <div className="space-y-4">
                             {jobs?.map((job, index) => (

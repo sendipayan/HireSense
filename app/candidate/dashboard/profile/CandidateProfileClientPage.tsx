@@ -33,6 +33,7 @@ interface CandidateFormData {
   linkedinUrl?: string | null;
   portfolioUrl?: string | null;
   jobTypePreference?: string | null;
+  isVerified: boolean;
   openToWork: boolean;
   availability?: string | null;
 };
@@ -107,6 +108,7 @@ export default function CandidateProfileClientPage() {
     portfolioUrl: "",
     linkedinUrl: "",
     jobTypePreference: "",
+    isVerified: false,
     openToWork: true,
     availability: "",
   })
@@ -130,6 +132,7 @@ export default function CandidateProfileClientPage() {
         linkedinUrl: candidateProfile.linkedinUrl,
         jobTypePreference: candidateProfile.jobTypePreference,
         openToWork: candidateProfile.openToWork,
+        isVerified: candidateProfile.isVerified,
         availability: candidateProfile.availability,
       })
     }
@@ -233,13 +236,13 @@ export default function CandidateProfileClientPage() {
           </div>}
 
         {/* Missing Fields Alert */}
-        {completedFields < totalFields && !initialLoad && (
+        {!formData.isVerified && !initialLoad && (
           <div className="bg-warning/10 border border-warning/30 rounded-lg p-4 mb-6 flex gap-3">
             <AlertCircle className="w-5 h-5 text-warning flex-shrink-0 mt-0.5" />
             <div>
               <p className="text-sm font-medium text-foreground">Complete your profile</p>
               <p className="text-sm text-muted-foreground">
-                Fill in all sections to get better job matches and recommendations.
+                Fill in all sections marked with <span className="text-red-700">*</span> to apply for jobs.
               </p>
             </div>
           </div>
@@ -296,12 +299,12 @@ export default function CandidateProfileClientPage() {
           {/* Education Section */}
           <FormSection title="Education" description="Your educational background">
             <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground">Current Status</label>
-              <Select value={formData.status || "NONE"} onValueChange={(value) => handleChange("status", value)}>
+              <label className="text-sm font-medium text-foreground" aria-required={true}>Current Status</label>
+              <Select value={formData.status || "NONE"} onValueChange={(value) => handleChange("status", value)} required={true}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select current status" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent >
                   {CURRENT_STATUS_OPTIONS.map((option) => (
                     <SelectItem key={option.value} value={option.value}>
                       {option.label}
@@ -315,6 +318,7 @@ export default function CandidateProfileClientPage() {
               label="Institution Name"
               name="institution"
               placeholder="e.g., University of California, Berkeley"
+              required
               value={formData.institution || ""}
               onChange={(e) => handleChange("institution", e.target.value)}
             />
@@ -322,6 +326,7 @@ export default function CandidateProfileClientPage() {
               label="Degree"
               name="degree"
               placeholder="e.g., Bachelor of Science in Computer Science"
+              required
               value={formData.degree || ""}
               onChange={(e) => handleChange("degree", e.target.value)}
             />
@@ -330,6 +335,7 @@ export default function CandidateProfileClientPage() {
               name="graduationYear"
               type="number"
               placeholder="2024"
+              required
               value={formData.graduationYear || ""}
               onChange={(e) => handleChange("graduationYear", e.target.value)}
             />
@@ -495,7 +501,7 @@ export default function CandidateProfileClientPage() {
             </Button>
           </div>
         </form> :
-          <div className="bg-muted-foreground/50 border border-border rounded-lg p-6 space-y-6 animate-pulse h-[50vh]"></div>}
+          <div className="bg-muted-foreground/50 border border-border rounded-lg p-6 space-y-6 animate-pulse h-[70vh]"></div>}
       </div>
     </main>
   )

@@ -32,7 +32,20 @@ export async function POST(req: NextRequest) {
       where: {
         id: candidateId,
       },
+      select: {
+        isVerified: true,
+      },
     });
+
+    if (!candidate?.isVerified) {
+      return NextResponse.json(
+        {
+          error:
+            "Candidate is not verified yet. Please verify your profile first",
+        },
+        { status: 400 }
+      );
+    }
 
     const job = await prisma.postJob.findUnique({
       where: {

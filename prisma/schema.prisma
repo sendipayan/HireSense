@@ -88,6 +88,7 @@ model Candidate {
   portfolioUrl      String?
   jobTypePreference JobType?
   openToWork        Boolean          @default(true)
+  isVerified        Boolean          @default(false)
   availability      Availability?
   applications      Application[]
   createdAt         DateTime         @default(now())

@@ -67,7 +67,18 @@ export async function PATCH(req: NextRequest) {
       );
     }
 
-    console.log(jobTypePreference);
+    let isVerified = false;
+
+    if (
+      institution.trim() !== "" &&
+      degree.trim() !== "" &&
+      graduationYear.trim() !== "" &&
+      primarySkills.length > 0 &&
+      experienceLevel.trim() !== "" &&
+      preferredRoles.length > 0
+    ) {
+      isVerified = true;
+    }
 
     // 3️⃣ Use a transaction to keep data consistent
     await prisma.$transaction([
@@ -92,6 +103,7 @@ export async function PATCH(req: NextRequest) {
           linkedinUrl,
           jobTypePreference,
           openToWork,
+          isVerified,
           availability,
         },
       }),

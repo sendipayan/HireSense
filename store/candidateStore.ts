@@ -24,6 +24,7 @@ type CandidateProfile = {
   portfolioUrl?: string | null;
   jobTypePreference?: string | null;
   openToWork: boolean;
+  isVerified: boolean;
   availability?: string | null;
 };
 
