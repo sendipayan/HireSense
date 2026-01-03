@@ -46,6 +46,7 @@ export async function GET(
         createdAt: true,
         candidate: {
           select: {
+            id: true,
             institution: true,
             experienceLevel: true,
             degree: true,

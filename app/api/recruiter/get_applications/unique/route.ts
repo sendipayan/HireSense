@@ -2,7 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { verifyJwt } from "@/lib/jwt";
 
-export async function GET(req: NextRequest) {
+export async function GET(
+  req: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) {
   const token = req.cookies.get("auth_token")?.value;
 
   if (!token) {
@@ -17,18 +20,23 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const recruiter = await prisma.recruiter.findUnique({
-      where: { userId: payload.userId },
-    });
+    const { searchParams } = new URL(req.url);
 
-    if (!recruiter) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const jobId = searchParams.get("jobId");
+    const candidateId = searchParams.get("candidateId");
+
+    if (!jobId || !candidateId) {
+      return NextResponse.json(
+        { error: "Invalid job ID or candidate ID" },
+        { status: 400 }
+      );
     }
 
-    const applications = await prisma.application.findMany({
+    const applications = await prisma.application.findUnique({
       where: {
-        job: {
-          recruiterId: recruiter.id,
+        jobId_candidateId: {
+          jobId,
+          candidateId,
         },
       },
       select: {
@@ -58,10 +66,6 @@ export async function GET(req: NextRequest) {
           },
         },
       },
-      orderBy: {
-        score: "desc",
-      },
-      take: 3,
     });
 
     return NextResponse.json({ applications }, { status: 200 });

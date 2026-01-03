@@ -6,6 +6,7 @@ type ApplicationJob = {
 };
 
 type Candidate = {
+  id: string;
   institution: string;
   experienceLevel: string;
   degree: string;

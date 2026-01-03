@@ -176,7 +176,8 @@ export function TopMatchesClient() {
                                         </div>
                                     )}
                                     <CandidateCard key={candidate.id}
-                                        id={candidate.job.id}
+                                        Jid={candidate.job.id}
+                                        Cid={candidate.candidate.id}
                                         name={candidate.candidate.user.name}
                                         title={candidate.job.title}
                                         location={candidate.candidate.institution}

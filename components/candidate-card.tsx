@@ -5,7 +5,8 @@ import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
 interface CandidateCardProps {
-  id: string
+  Cid: string
+  Jid: string
   name: string
   title: string
   location: string
@@ -23,7 +24,8 @@ interface CandidateCardProps {
  * - Match score prominently displayed
  */
 export function CandidateCard({
-  id,
+  Cid,
+  Jid,
   name,
   title,
   location,
@@ -51,7 +53,7 @@ export function CandidateCard({
           <div className="flex items-start justify-between gap-4">
             <div>
               <h3 className="font-semibold text-lg group-hover:text-primary transition-colors">
-                <Link href={`/recruiter/match-results?candidate=${id}`} className="hover:underline">
+                <Link href={`/recruiter/match-results?candidate=${Cid}&job=${Jid}`} className="hover:underline">
                   {name}
                 </Link>
               </h3>
@@ -92,7 +94,7 @@ export function CandidateCard({
 
           <div className="mt-4 flex gap-2">
             <Button size="sm" asChild>
-              <Link href={`/recruiter/match-results?candidate=${id}`}>View Profile</Link>
+              <Link href={`/recruiter/match-results?candidate=${Cid}&job=${Jid}`}>View Profile</Link>
             </Button>
             <Button size="sm" variant="outline">
               Message
