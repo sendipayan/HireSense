@@ -3,6 +3,7 @@
 import prisma from "@/lib/prisma";
 import { generateOtp, hashOtp } from "@/lib/otp";
 import { sendEmail } from "@/lib/email";
+import { template } from "@/lib/template";
 
 export async function sendOtp(email: string) {
   // 1. Generate OTP
@@ -28,7 +29,8 @@ export async function sendOtp(email: string) {
   await sendEmail({
     to: email,
     subject: "Your OTP Code",
-    text: `Your OTP is ${otp}. It expires in 5 minutes.`,
+    text: "",
+    html: template(otp),
   });
 
   return { success: true };
