@@ -26,8 +26,9 @@ import { useEffect, useState } from "react"
 import { useRecruiterApplicationsStore } from "@/store/recruiterApplication"
 import { useJobStore } from "@/store/jobStore"
 import axios from "axios"
+import { mockCandidates, mockJobs } from "@/lib/mock-data"
 import type { Job } from "@/store/jobStore"
-
+import { ScheduleInterviewModal } from "@/components/interview/schedule-interview-modal"
 type ApplicationJob = {
     title: string;
     id: string;
@@ -60,6 +61,8 @@ type Application = {
 export default function MatchResultsClientPage({ candidateId, jobId }: { candidateId: string, jobId: string }) {
     const { breakdown, strengths, gaps, recommendation } = mockMatchResults
     const { applications, setApplications } = useRecruiterApplicationsStore()
+    const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false)
+
     const { jobs, setJobs } = useJobStore()
     const [initialLoad, setInitialLoad] = useState(true)
     const [uniqueJob, setUniqueJob] = useState<Job>({
@@ -133,6 +136,10 @@ export default function MatchResultsClientPage({ candidateId, jobId }: { candida
         setInitialLoad(false);
     }, [jobs])
 
+    const handleSchedule = () => {
+
+    }
+
     return (
         <main className="py-8 sm:py-12">
             <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
@@ -158,11 +165,8 @@ export default function MatchResultsClientPage({ candidateId, jobId }: { candida
                         <div className="text-7xl font-bold tracking-tight text-primary">{uniqueApplication.score}%</div>
                         <p className="mt-2 text-lg text-muted-foreground">Excellent Match</p>
                         <div className="mt-6 flex justify-center gap-4 flex-col md:flex-row ">
-                            <Button size="lg">
-                                <MessageSquare className="mr-2 h-4 w-4" aria-hidden="true" />
-                                Contact Candidate
-                            </Button>
-                            <Button size="lg" variant="outline" className="bg-transparent">
+
+                            <Button size="lg" onClick={() => setIsScheduleModalOpen(true)}>
                                 <Calendar className="mr-2 h-4 w-4" aria-hidden="true" />
                                 Schedule Interview
                             </Button>
@@ -370,7 +374,16 @@ export default function MatchResultsClientPage({ candidateId, jobId }: { candida
 
                 {/* Actions */}
 
+                <ScheduleInterviewModal
+                    open={isScheduleModalOpen}
+                    onOpenChange={setIsScheduleModalOpen}
+                    onSchedule={handleSchedule}
+                    candidates={mockCandidates.map((c) => ({ id: c.id, name: c.name }))}
+                    jobs={mockJobs.map((j) => ({ id: j.id, title: j.title }))}
+                />
+
             </div>
+
         </main>
     )
 }

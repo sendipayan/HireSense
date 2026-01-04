@@ -76,12 +76,13 @@ export function ScheduleInterviewModal({
                 </DialogHeader>
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid lg:grid-cols-2 gap-4">
                             <FormField
                                 control={form.control}
                                 name="candidateId"
+
                                 render={({ field }) => (
-                                    <FormItem>
+                                    <FormItem className="">
                                         <FormLabel>Candidate</FormLabel>
                                         <Select onValueChange={field.onChange} defaultValue={field.value}>
                                             <FormControl>
@@ -89,7 +90,7 @@ export function ScheduleInterviewModal({
                                                     <SelectValue placeholder="Select candidate" />
                                                 </SelectTrigger>
                                             </FormControl>
-                                            <SelectContent>
+                                            <SelectContent className="w-full border-2">
                                                 {candidates.map((candidate) => (
                                                     <SelectItem key={candidate.id} value={candidate.id}>
                                                         {candidate.name}
@@ -127,7 +128,7 @@ export function ScheduleInterviewModal({
                             />
                         </div>
 
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid lg:grid-cols-2 gap-4">
                             <FormField
                                 control={form.control}
                                 name="type"
@@ -176,7 +177,7 @@ export function ScheduleInterviewModal({
                             />
                         </div>
 
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid lg:grid-cols-2 gap-4">
                             <FormField
                                 control={form.control}
                                 name="date"
@@ -272,7 +273,7 @@ export function ScheduleInterviewModal({
                             name="notes"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Private Notes</FormLabel>
+                                    <FormLabel>Private Notes (optional)</FormLabel>
                                     <FormControl>
                                         <Textarea
                                             placeholder="Add any internal notes for the interviewers..."

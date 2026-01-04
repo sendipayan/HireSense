@@ -96,9 +96,7 @@ export function CandidateCard({
             <Button size="sm" asChild>
               <Link href={`/recruiter/match-results?candidate=${Cid}&job=${Jid}`}>View Profile</Link>
             </Button>
-            <Button size="sm" variant="outline">
-              Message
-            </Button>
+
           </div>
         </div>
       </div>
