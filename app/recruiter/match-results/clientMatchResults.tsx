@@ -15,6 +15,7 @@ import {
     Briefcase,
     MapPin,
     DollarSign,
+    University,
     GraduationCap,
     Star,
     MessageSquare,
@@ -196,7 +197,7 @@ export default function MatchResultsClientPage({ candidateId, jobId }: { candida
 
                             <div className="mt-6 grid gap-4 sm:grid-cols-2">
                                 <div className="flex items-center gap-3 text-sm">
-                                    <MapPin className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+                                    <GraduationCap className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
                                     <span>{uniqueApplication?.candidate.degree}</span>
                                 </div>
                                 <div className="flex items-center gap-3 text-sm">
@@ -204,7 +205,7 @@ export default function MatchResultsClientPage({ candidateId, jobId }: { candida
                                     <span>{uniqueApplication?.candidate.experienceLevel}</span>
                                 </div>
                                 <div className="flex items-center gap-3 text-sm">
-                                    <GraduationCap className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+                                    <University className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
                                     <span>{uniqueApplication?.candidate.institution}</span>
                                 </div>
                                 <div className="flex items-center gap-3 text-sm">

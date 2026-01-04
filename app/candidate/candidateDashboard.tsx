@@ -25,7 +25,8 @@ import {
     AlertCircle,
 } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
-import { Inbox } from "lucide-react"
+import { Inbox, Calendar } from "lucide-react"
+import { InterviewStatusBadge } from "@/components/interview/interview-status-badge"
 
 
 
@@ -188,58 +189,106 @@ export default function CandidateClientDashboardPage() {
 
                 {/* Two Column Layout */}
                 <div className="mt-8 grid gap-8 lg:grid-cols-3">
-                    {/* Recent Applications */}
-                    <section className="lg:col-span-1" aria-labelledby="applications-heading">
-                        <div className="flex items-center justify-between mb-4">
-                            <h2 id="applications-heading" className="text-lg font-semibold">
-                                Recent Applications
-                            </h2>
-                            {applications.length > 0 && <Button variant="ghost" size="sm" asChild>
-                                <Link href="/candidate/applications">View All <ArrowRight className="h-4 w-4" /></Link>
-                            </Button>}
-                        </div>
-                        {!initialLoad ? <div className="space-y-3">
-                            {applications.length > 0 ? (applications.map((app) => {
-                                const StatusIcon = getStatusIcon(app.status)
-                                return (
-                                    <article
-                                        key={app.id}
-                                        className="rounded-xl border border-border bg-card p-4 transition-colors hover:border-primary/50"
-                                    >
-                                        <div className="flex items-start justify-between gap-3">
-                                            <div className="min-w-0">
-                                                <h3 className="font-medium truncate">{app.job.title}</h3>
-                                                <p className="text-sm text-muted-foreground">{app.job.recruiter.companyName}</p>
-                                                <p className="text-xs text-muted-foreground mt-1">{new Date(app.createdAt).toISOString().split("T")[0]}</p>
-                                            </div>
-                                            <Badge variant={getStatusVariant(app.status)} className="shrink-0 gap-1">
-                                                <StatusIcon className="h-3 w-3" aria-hidden="true" />
-                                                {app.status}
-                                            </Badge>
-                                        </div>
-                                    </article>
-                                )
-                            })) : (<Card className="border-dashed bg-transparent py-4">
-                                <CardContent className="flex flex-col items-center text-center">
-                                    <div className="h-16 w-16 rounded-full bg-muted/20 flex items-center justify-center mb-4">
-                                        <Inbox className="h-8 w-8 text-muted-foreground" />
-                                    </div>
-                                    <h3 className="text-xl font-semibold">No Applications submitted</h3>
-                                    <p className="text-muted-foreground mt-2 max-w-sm">
-                                        Try submitting an application to get started.
-                                    </p>
-                                </CardContent>
-                            </Card>)}
-                        </div> :
-                            <div className="space-y-3">
-                                {[1, 2, 3, 4].map((id) => (
-                                    <div className="bg-muted-foreground/50 border border-border rounded-lg p-6 mb-8 animate-pulse h-25" key={id}>
+                    <div className="lg:col-span-1 space-y-8">
 
+
+                        {/* Recent Applications */}
+                        <section className="lg:col-span-1" aria-labelledby="applications-heading">
+                            <div className="flex items-center justify-between mb-4">
+                                <h2 id="applications-heading" className="text-lg font-semibold">
+                                    Recent Applications
+                                </h2>
+                                {applications.length > 0 && <Button variant="ghost" size="sm" asChild>
+                                    <Link href="/candidate/applications">View All <ArrowRight className="h-4 w-4" /></Link>
+                                </Button>}
+                            </div>
+                            {!initialLoad ? <div className="space-y-3">
+                                {applications.length > 0 ? (applications.slice(0, 4).map((app) => {
+                                    const StatusIcon = getStatusIcon(app.status)
+                                    return (
+                                        <article
+                                            key={app.id}
+                                            className="rounded-xl border border-border bg-card p-4 transition-colors hover:border-primary/50"
+                                        >
+                                            <div className="flex items-start justify-between gap-3">
+                                                <div className="min-w-0">
+                                                    <h3 className="font-medium truncate">{app.job.title}</h3>
+                                                    <p className="text-sm text-muted-foreground">{app.job.recruiter.companyName}</p>
+                                                    <p className="text-xs text-muted-foreground mt-1">{new Date(app.createdAt).toISOString().split("T")[0]}</p>
+                                                </div>
+                                                <Badge variant={getStatusVariant(app.status)} className="shrink-0 gap-1">
+                                                    <StatusIcon className="h-3 w-3" aria-hidden="true" />
+                                                    {app.status}
+                                                </Badge>
+                                            </div>
+                                        </article>
+                                    )
+                                })) : (<Card className="border-dashed bg-transparent py-4">
+                                    <CardContent className="flex flex-col items-center text-center">
+                                        <div className="h-16 w-16 rounded-full bg-muted/20 flex items-center justify-center mb-4">
+                                            <Inbox className="h-8 w-8 text-muted-foreground" />
+                                        </div>
+                                        <h3 className="text-xl font-semibold">No Applications submitted</h3>
+                                        <p className="text-muted-foreground mt-2 max-w-sm">
+                                            Try submitting an application to get started.
+                                        </p>
+                                    </CardContent>
+                                </Card>)}
+                            </div> :
+                                <div className="space-y-3">
+                                    {[1, 2, 3, 4].map((id) => (
+                                        <div className="bg-muted-foreground/50 border border-border rounded-lg p-6 mb-8 animate-pulse h-25" key={id}>
+
+                                        </div>
+                                    ))}
+                                </div>}
+
+                        </section>
+
+                        {/* Upcoming Interviews Preview */}
+                        <section aria-labelledby="dashboard-interviews-heading">
+                            <div className="flex items-center justify-between mb-4">
+                                <h2 id="dashboard-interviews-heading" className="text-lg font-semibold">
+                                    Next Interviews
+                                </h2>
+                                <Button variant="ghost" size="sm" asChild>
+                                    <Link href="/candidate/interviews">View All <ArrowRight className="h-4 w-4" /></Link>
+                                </Button>
+                            </div>
+                            {!initialLoad ? <div className="space-y-3">
+                                {[
+                                    {
+                                        company: "TechCorp Inc.",
+                                        title: "Senior Frontend Engineer",
+                                        date: "Today, 2:00 PM",
+                                        status: "confirmed",
+                                    },
+                                ].map((interview, i) => (
+                                    <div
+                                        key={i}
+                                        className="rounded-xl border border-primary/20 bg-primary/5 p-4 relative overflow-hidden group"
+                                    >
+                                        <div className="flex items-start justify-between relative z-10">
+                                            <div>
+                                                <p className="font-semibold text-primary">{interview.company}</p>
+                                                <p className="text-sm font-medium">{interview.title}</p>
+                                                <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
+                                                    <Calendar className="h-3 w-3" />
+                                                    {interview.date}
+                                                </div>
+                                            </div>
+                                            <InterviewStatusBadge status={interview.status as any} />
+                                        </div>
+                                        <Button size="sm" className="w-full mt-4 relative z-10" asChild>
+                                            <Link href="/candidate/interviews">Prepare Now</Link>
+                                        </Button>
                                     </div>
                                 ))}
-                            </div>}
+                            </div> : <div className="bg-muted-foreground/50 border border-border rounded-lg p-6 mb-8 animate-pulse h-25">
 
-                    </section>
+                            </div>}
+                        </section>
+                    </div>
 
                     {/* Recommended Jobs */}
                     <section className="lg:col-span-2" aria-labelledby="recommended-jobs-heading">
@@ -278,6 +327,8 @@ export default function CandidateClientDashboardPage() {
                                 ))}
                             </div>}
                     </section>
+
+
                 </div>
             </div>
         </main>

@@ -16,6 +16,7 @@ import axios from "axios"
 import { useRecruiterApplicationsStore } from "@/store/recruiterApplication"
 import { Card, CardContent } from "@/components/ui/card"
 import { useAuthStore } from "@/store/authStore"
+import { InterviewStatusBadge } from "@/components/interview/interview-status-badge"
 
 
 
@@ -116,9 +117,9 @@ export default function RecruiterDashboardPage() {
                 </section>
 
                 {/* Two Column Layout */}
-                <div className="mt-8 grid gap-8 lg:grid-cols-3">
+                <div className="mt-8 grid gap-8 lg:grid-cols-3 lg:grid-rows-5">
                     {/* Active Jobs */}
-                    <section className="lg:col-span-1" aria-labelledby="active-jobs-heading">
+                    <section className="lg:col-span-1 lg:row-span-3 " aria-labelledby="active-jobs-heading">
                         <div className="flex items-center justify-between mb-4">
                             <h2 id="active-jobs-heading" className="text-lg font-semibold">
                                 Active Jobs
@@ -128,7 +129,7 @@ export default function RecruiterDashboardPage() {
                             </Button>}
                         </div>
                         {!initialLoad ? <div className="space-y-3">
-                            {jobs?.length > 0 ? (jobs?.slice(0, 5).map((job) => (
+                            {jobs?.length > 0 ? (jobs?.slice(0, 3).map((job) => (
                                 <article
                                     key={job.id}
                                     className="rounded-xl border border-border bg-card p-4 transition-colors hover:border-primary/50"
@@ -170,7 +171,7 @@ export default function RecruiterDashboardPage() {
                             }
                         </div> :
                             <div className="space-y-3">
-                                {[1, 2, 3, 4, 5].map((id) => (
+                                {[1, 2, 3].map((id) => (
                                     <div className="bg-muted-foreground/50 border border-border rounded-lg p-6 mb-8 animate-pulse h-25" key={id}>
 
                                     </div>
@@ -186,7 +187,7 @@ export default function RecruiterDashboardPage() {
                     </section>
 
                     {/* Top Candidates */}
-                    <section className="lg:col-span-2" aria-labelledby="top-candidates-heading">
+                    <section className="lg:col-span-2 lg:row-span-5 " aria-labelledby="top-candidates-heading">
                         <div className="flex items-center justify-between mb-4">
                             <h2 id="top-candidates-heading" className="text-lg font-semibold">
                                 Top Matched Candidates
@@ -236,6 +237,62 @@ export default function RecruiterDashboardPage() {
                                 ))}
                             </div>}
                     </section>
+
+
+                    <section aria-labelledby="upcoming-interviews-heading" className="lg:col-span-1 lg:row-span-2 ">
+                        <div className="flex items-center justify-between mb-4">
+                            <h2 id="upcoming-interviews-heading" className="text-lg font-semibold">
+                                Upcoming Interviews
+                            </h2>
+                            <Button variant="ghost" size="sm" asChild>
+                                <Link href="/recruiter/interviews">
+                                    View Schedule
+                                    <ArrowRight className="ml-1 h-4 w-4" aria-hidden="true" />
+                                </Link>
+                            </Button>
+                        </div>
+                        {!initialLoad ? <div className="rounded-xl border border-border bg-card overflow-hidden">
+                            <div className="divide-y divide-border">
+                                {[
+                                    {
+                                        name: "Sarah Chen",
+                                        job: "Senior Frontend Engineer",
+                                        time: "Today at 2:00 PM",
+                                        status: "confirmed",
+                                    },
+                                    {
+                                        name: "Michael Rodriguez",
+                                        job: "Full Stack Developer",
+                                        time: "Tomorrow at 10:00 AM",
+                                        status: "scheduled",
+                                    },
+                                ].map((interview, i) => (
+                                    <div key={i} className="flex items-center justify-between p-4 hover:bg-muted/50 transition-colors">
+                                        <div className="flex items-center gap-4">
+                                            <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold">
+                                                {interview.name
+                                                    .split(" ")
+                                                    .map((n) => n[0])
+                                                    .join("")}
+                                            </div>
+                                            <div>
+                                                <p className="font-medium">{interview.name}</p>
+                                                <p className="text-sm text-muted-foreground">{interview.job}</p>
+                                            </div>
+                                        </div>
+                                        <div className="text-right">
+                                            <p className="text-sm font-medium">{interview.time}</p>
+                                            <InterviewStatusBadge status={interview.status as any} />
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div> : <div className="bg-muted-foreground/50 border border-border rounded-lg p-6 mb-8 animate-pulse h-25">
+
+                        </div>}
+                    </section>
+
+
                 </div>
 
                 {/* Recent Activity */}
