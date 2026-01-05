@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useMemo, useEffect } from "react"
-import { Search, Target, Sparkles, Filter, BrainCircuit, Trophy, LayoutGrid, List } from "lucide-react"
+import { Search, Target, Sparkles, Filter, BrainCircuit, Trophy, LayoutGrid, List, Calendar, UserPlus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
@@ -12,11 +12,15 @@ import { Breadcrumbs } from "@/components/breadcrumbs"
 import { useRecruiterApplicationsStore } from "@/store/recruiterApplication"
 import { useJobStore } from "@/store/jobStore"
 import axios from "axios"
+import { Checkbox } from "@/components/ui/checkbox"
+import { ScheduleInterviewModal } from "./interview/schedule-interview-modal"
 
 export function TopMatchesClient() {
     const { jobs, setJobs } = useJobStore()
     const [selectedJob, setSelectedJob] = useState("")
     const [searchQuery, setSearchQuery] = useState("")
+    const [selectedIds, setSelectedIds] = useState<string[]>([]) // added state for multi-selection
+    const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false) // added state for schedule modal
     const [minScore, setMinScore] = useState("0")
     const { applications, setApplications } = useRecruiterApplicationsStore()
     const [loading, setLoading] = useState(true)
@@ -70,6 +74,28 @@ export function TopMatchesClient() {
             })
             .sort((a, b) => b.score - a.score)
     }, [searchQuery, minScore, applications])
+
+    const toggleSelect = (id: string) => {
+        setSelectedIds((prev) => (prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]))
+    }
+
+    const selectAll = () => {
+        if (selectedIds.length === filteredCandidates.length) {
+            setSelectedIds([])
+        } else {
+            setSelectedIds(filteredCandidates.map((c) => c.id))
+        }
+    }
+
+    const handleBulkSchedule = () => {
+        setIsScheduleModalOpen(true)
+    }
+
+    const handleBulkWaitlist = () => {
+        console.log("[v0] Adding candidates to waitlist:", selectedIds)
+        // In a real app, this would be an API call
+        setSelectedIds([])
+    }
 
     return (
         <main className="min-h-screen bg-background text-foreground py-8 sm:py-12">
@@ -128,21 +154,46 @@ export function TopMatchesClient() {
 
                 {/* Filters & Actions Bar */}
                 {!jobload ? <div className="mt-12 flex flex-col md:flex-row gap-4 items-center justify-between bg-card/50 backdrop-blur-md p-4 rounded-2xl border border-border shadow-sm">
-                    <div className="relative w-full md:max-w-md">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Input
-                            placeholder="Filter by name or skills..."
-                            className="pl-10 bg-background border-border focus:border-primary/50 h-11"
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                        />
+                    <div className="flex flex-col lg:flex-row items-center gap-4 w-full md:max-w-md">
+                        <div className="flex items-center gap-2 px-2 lg:border-r border-border mr-2">
+                            <Checkbox
+                                checked={selectedIds.length === filteredCandidates.length && filteredCandidates.length > 0}
+                                onCheckedChange={selectAll}
+                                className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                            />
+                            <span className="text-sm font-medium text-muted-foreground whitespace-nowrap">
+                                {selectedIds.length === 0 ? "Select All" : `${selectedIds.length} Selected`}
+                            </span>
+                        </div>
+                        <div className="relative flex-1">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                            <Input
+                                placeholder="Filter by name or skills..."
+                                className="pl-10 bg-background border-border focus:border-primary/50 h-11"
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                            />
+                        </div>
                     </div>
 
-                    <div className="flex items-center gap-3 w-full md:w-auto">
+                    <div className="flex flex-col lg:flex-row items-center gap-3 w-full md:w-auto">
+                        {selectedIds.length > 0 && (
+                            <div className="flex items-center gap-2 animate-in fade-in slide-in-from-right-4 duration-200">
+                                <Button size="sm" onClick={handleBulkSchedule} className="h-11 px-4">
+                                    <Calendar className="mr-2 h-4 w-4" />
+                                    Schedule
+                                </Button>
+                                <Button size="sm" variant="outline" onClick={handleBulkWaitlist} className="h-11 px-4 bg-transparent">
+                                    <UserPlus className="mr-2 h-4 w-4" />
+                                    Waitlist
+                                </Button>
+                            </div>
+                        )}
+
                         <div className="flex items-center gap-2 bg-background/50 border border-border rounded-lg px-3 h-11">
                             <Filter className="h-4 w-4 text-muted-foreground" />
                             <span className="text-sm text-muted-foreground">Min Match:</span>
-                            <Select value={minScore} onValueChange={setMinScore} >
+                            <Select value={minScore} onValueChange={setMinScore}>
                                 <SelectTrigger className="w-20 border-0 bg-transparent h-8 focus:ring-0">
                                     <SelectValue />
                                 </SelectTrigger>
@@ -163,28 +214,37 @@ export function TopMatchesClient() {
                     {filteredCandidates.length > 0 ? (
                         <div className="space-y-4">
                             {filteredCandidates.map((candidate, index) => (
-                                <div key={candidate.id} className="relative group">
-                                    {index === 0 && (
-                                        <div className="absolute -top-3 left-6 z-20">
-                                            <Badge className="bg-primary text-primary-foreground flex items-center gap-1.5 px-3 py-1 border-2 border-background">
-                                                <Trophy className="h-3.5 w-3.5" /> Best Match
-                                            </Badge>
-                                        </div>
-                                    )}
-                                    <CandidateCard key={candidate.id}
-                                        id={candidate.id}
-                                        Jid={candidate.job.id}
-                                        Cid={candidate.candidate.id}
-                                        name={candidate.candidate.user.name}
-                                        title={candidate.job.title}
-                                        location={candidate.candidate.institution}
-                                        experience={candidate.candidate.experienceLevel}
-                                        education={candidate.candidate.degree}
-                                        status={candidate.status}
-                                        skills={candidate.candidate.primarySkills}
-                                        matchScore={candidate.score}
-                                        avatar=""
-                                    />
+                                <div key={candidate.id} className="relative group flex items-center gap-4">
+                                    <div className="shrink-0 pt-2">
+                                        <Checkbox
+                                            checked={selectedIds.includes(candidate.id)}
+                                            onCheckedChange={() => toggleSelect(candidate.id)}
+                                            className="h-5 w-5 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                                        />
+                                    </div>
+                                    <div className="relative flex-1">
+                                        {index === 0 && (
+                                            <div className="absolute -top-3 left-6 z-20">
+                                                <Badge className="bg-primary text-primary-foreground flex items-center gap-1.5 px-3 py-1 border-2 border-background">
+                                                    <Trophy className="h-3.5 w-3.5" /> Best Match
+                                                </Badge>
+                                            </div>
+                                        )}
+                                        <CandidateCard key={candidate.id}
+                                            id={candidate.id}
+                                            Jid={candidate.job.id}
+                                            Cid={candidate.candidate.id}
+                                            name={candidate.candidate.user.name}
+                                            title={candidate.job.title}
+                                            location={candidate.candidate.institution}
+                                            experience={candidate.candidate.experienceLevel}
+                                            education={candidate.candidate.degree}
+                                            status={candidate.status}
+                                            skills={candidate.candidate.primarySkills}
+                                            matchScore={candidate.score}
+                                            avatar=""
+                                        />
+                                    </div>
                                 </div>
                             ))}
                         </div>
@@ -217,6 +277,18 @@ export function TopMatchesClient() {
                     ))}
                 </div>}
             </div>
+            <ScheduleInterviewModal
+                open={isScheduleModalOpen}
+                onOpenChange={setIsScheduleModalOpen}
+                onSchedule={(values) => {
+                    console.log("[v0] Scheduling interviews for:", selectedIds, values)
+                    setSelectedIds([])
+                }}
+                candidates={filteredCandidates.filter((c) => selectedIds.includes(c.id)).map((c) => ({ id: c.id, name: c.candidate.user.name }))}
+                jobs={jobs}
+                selectedCandidateIds={selectedIds}
+                selectedJobId={selectedJob}
+            />
         </main>
     )
 }

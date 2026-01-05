@@ -380,8 +380,10 @@ export default function MatchResultsClientPage({ candidateId, jobId }: { candida
                     open={isScheduleModalOpen}
                     onOpenChange={setIsScheduleModalOpen}
                     onSchedule={handleSchedule}
-                    candidates={mockCandidates.map((c) => ({ id: c.id, name: c.name }))}
-                    jobs={mockJobs.map((j) => ({ id: j.id, title: j.title }))}
+                    selectedJobId={uniqueJob.id}
+                    selectedCandidateIds={[uniqueApplication.candidate.id]}
+                    candidates={[{ id: uniqueApplication.candidate.id, name: uniqueApplication.candidate.user.name }]}
+                    jobs={[{ id: uniqueJob.id, title: uniqueJob.title }]}
                 />
 
             </div>

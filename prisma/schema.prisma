@@ -53,6 +53,7 @@ model Recruiter {
   isVerified      verificationStatus @default(PENDING)
   failedReasons   Json?
   postJob         PostJob[]
+  interviews      Interview[]
   createdAt       DateTime           @default(now())
   updatedAt       DateTime           @updatedAt
 }
@@ -180,6 +181,7 @@ model Application {
   status      ApplicationStatus @default(PENDING)
   score       Int               @default(0)
   createdAt   DateTime          @default(now())
+  interview   Interview?
 
   @@unique([jobId, candidateId])
 }
@@ -190,4 +192,36 @@ enum ApplicationStatus {
   ACCEPTED
   SCHEDULED
   REJECTED
+}
+
+model Interview {
+  id            String          @id @default(uuid())
+  application   Application     @relation(fields: [applicationId], references: [id])
+  applicationId String          @unique
+  recruiter     Recruiter       @relation(fields: [recruiterId], references: [id])
+  recruiterId   String
+  type          InterviewType
+  status        InterviewStatus @default(SCHEDULED)
+  startTime     DateTime
+  duration      Int
+  location      String?
+  meetingLink   String?
+  notes         String?
+  phno          String?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+}
+
+enum InterviewType {
+  ONLINE
+  IN_PERSON
+  PHONE
+}
+
+enum InterviewStatus {
+  SCHEDULED
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+  NO_SHOW
 }

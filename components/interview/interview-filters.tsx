@@ -40,9 +40,9 @@ export function InterviewFilters({
 
     return (
         <div className="flex flex-col gap-4 bg-card p-4 rounded-xl border border-border">
-            <div className="flex flex-col lg:flex-row gap-4">
+            <div className="flex flex-col flex-wrap justify-between lg:flex-row gap-4">
                 {/* Search */}
-                <div className="relative flex-1 lg:max-w-xs">
+                <div className="relative w-full flex-1 lg:max-w-xs">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
                         placeholder="Search candidate..."
@@ -53,11 +53,11 @@ export function InterviewFilters({
                 </div>
 
                 {/* Filters */}
-                <div className="flex flex-wrap items-center gap-3 flex-1">
-                    <div className="flex items-center gap-2">
-                        <Filter className="h-4 w-4 text-muted-foreground shrink-0" />
+                <div className="flex flex-wrap items-center justify-center gap-3 flex-1">
+                    <div className="flex w-full md:w-[200px] items-center gap-2">
+                        <Filter className="h-4 w-4 text-muted-foreground shrink-0 hidden md:block" />
                         <Select value={jobFilter} onValueChange={onJobChange}>
-                            <SelectTrigger className="w-[180px]">
+                            <SelectTrigger className=" w-full">
                                 <SelectValue placeholder="All Jobs" />
                             </SelectTrigger>
                             <SelectContent>
@@ -72,7 +72,7 @@ export function InterviewFilters({
                     </div>
 
                     <Select value={statusFilter} onValueChange={onStatusChange}>
-                        <SelectTrigger className="w-[140px]">
+                        <SelectTrigger className="md:w-[200px] w-full">
                             <SelectValue placeholder="All Status" />
                         </SelectTrigger>
                         <SelectContent>
@@ -89,7 +89,7 @@ export function InterviewFilters({
                             <Button
                                 id="date"
                                 variant={"outline"}
-                                className={cn("w-[260px] justify-start text-left font-normal", !dateRange && "text-muted-foreground")}
+                                className={cn("md:w-[260px] w-full justify-start text-left font-normal", !dateRange && "text-muted-foreground")}
                             >
                                 <CalendarIcon className="mr-2 h-4 w-4" />
                                 {dateRange?.from ? (

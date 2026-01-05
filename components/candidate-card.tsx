@@ -71,8 +71,8 @@ export function CandidateCard({
   }
   return (
     <article className="group rounded-xl border border-border bg-card p-6 transition-all hover:border-primary/50 hover:shadow-lg hover:shadow-primary/5">
-      <div className="flex items-start gap-4">
-        <Avatar className="h-14 w-14">
+      <div className="flex flex-col lg:flex-row items-center lg:items-start gap-4">
+        <Avatar className="h-14 w-14 flex ">
           <AvatarImage src={avatar || ""} alt={`${name}'s profile picture`} />
           <AvatarFallback className="bg-primary/10 text-primary font-semibold">{initials}</AvatarFallback>
         </Avatar>
@@ -85,7 +85,7 @@ export function CandidateCard({
                   {name}
                 </Link>
               </h3>
-              <p className="text-muted-foreground"><strong className="group-hover:text-primary">For Role:</strong> {title}</p>
+              <p className="text-muted-foreground text-sm"><strong className="group-hover:text-primary">For Role:</strong> {title}</p>
             </div>
             <div className="text-right shrink-0">
               <div className="flex items-center gap-1">

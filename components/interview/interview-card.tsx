@@ -82,15 +82,11 @@ export function InterviewCard({ interview, onConfirm, onReschedule, onAddToCalen
             <CardFooter className="pt-2 pb-5 flex flex-wrap gap-2 justify-between">
                 <div className="flex flex-col lg:flex-row gap-2 justify-between  w-full">
                     {interview.status === "scheduled" && onConfirm && (
-                        <Button size="sm" onClick={() => onConfirm(interview)}>
+                        <Button size="sm" onClick={() => onConfirm(interview)} className="w-full">
                             Confirm
                         </Button>
                     )}
-                    {interview.status === "scheduled" && onReschedule && (
-                        <Button size="sm" variant="outline" className="h-9" onClick={() => onReschedule(interview)}>
-                            Reschedule
-                        </Button>
-                    )}
+
                 </div>
                 <Button size="sm" variant="outline" className="h-9 px-2 w-full" onClick={() => onAddToCalendar?.(interview)}>
                     <Calendar className="mr-2 h-4 w-4" />

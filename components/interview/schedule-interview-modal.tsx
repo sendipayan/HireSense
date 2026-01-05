@@ -20,9 +20,11 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar"
 import { format } from "date-fns"
 import { cn } from "@/lib/utils"
+import { Badge } from "@/components/ui/badge"
+import { useEffect } from "react"
 
 const formSchema = z.object({
-    candidateId: z.string({ required_error: "Candidate is required" }),
+    candidateIds: z.array(z.string()).min(1, "At least one candidate is required"),
     jobId: z.string({ required_error: "Job is required" }),
     type: z.enum(["online", "phone", "in-person"], { required_error: "Interview type is required" }),
     date: z.date({ required_error: "Date is required" }),
@@ -36,9 +38,11 @@ const formSchema = z.object({
 interface ScheduleInterviewModalProps {
     open: boolean
     onOpenChange: (open: boolean) => void
-    onSchedule: (values: z.infer<typeof formSchema>) => void
+    onSchedule: (values: any) => void
     candidates: { id: string; name: string }[]
     jobs: { id: string; title: string }[]
+    selectedCandidateIds?: string[]
+    selectedJobId?: string
 }
 
 export function ScheduleInterviewModal({
@@ -47,10 +51,17 @@ export function ScheduleInterviewModal({
     onSchedule,
     candidates,
     jobs,
+    selectedCandidateIds = [],
+    selectedJobId = "",
 }: ScheduleInterviewModalProps) {
+    const isMultiSelectLocked = selectedCandidateIds.length > 0
+    const isJobLocked = !!selectedJobId
+
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
         defaultValues: {
+            candidateIds: selectedCandidateIds,
+            jobId: selectedJobId,
             type: "online",
             duration: "30",
             location: "",
@@ -58,6 +69,13 @@ export function ScheduleInterviewModal({
             notes: "",
         },
     })
+
+    useEffect(() => {
+        if (open) {
+            form.setValue("candidateIds", selectedCandidateIds)
+            form.setValue("jobId", selectedJobId)
+        }
+    }, [open, selectedCandidateIds, selectedJobId, form])
 
     function onSubmit(values: z.infer<typeof formSchema>) {
         onSchedule(values)
@@ -72,32 +90,82 @@ export function ScheduleInterviewModal({
             <DialogContent className="sm:max-w-[550px] max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                     <DialogTitle>Schedule Interview</DialogTitle>
-                    <DialogDescription>Fill in the details to schedule a new interview with a candidate.</DialogDescription>
+                    <DialogDescription>
+                        {isMultiSelectLocked
+                            ? `Scheduling interviews for ${selectedCandidateIds.length} pre-selected candidates.`
+                            : "Select candidates and job details to schedule a new interview."}
+                    </DialogDescription>
                 </DialogHeader>
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
-                        <div className="grid lg:grid-cols-2 gap-4">
+                        <div className="grid md:grid-cols-2 gap-4">
                             <FormField
                                 control={form.control}
-                                name="candidateId"
-
+                                name="candidateIds"
                                 render={({ field }) => (
-                                    <FormItem className="">
-                                        <FormLabel>Candidate</FormLabel>
-                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                            <FormControl>
-                                                <SelectTrigger>
-                                                    <SelectValue placeholder="Select candidate" />
-                                                </SelectTrigger>
-                                            </FormControl>
-                                            <SelectContent className="w-full border-2">
-                                                {candidates.map((candidate) => (
-                                                    <SelectItem key={candidate.id} value={candidate.id}>
-                                                        {candidate.name}
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
+                                    <FormItem>
+                                        <FormLabel>Candidates</FormLabel>
+                                        {isMultiSelectLocked ? (
+                                            <div className="flex flex-wrap gap-2 p-2 border rounded-md bg-muted/50 min-h-[40px]">
+                                                {candidates
+                                                    .filter((c) => selectedCandidateIds.includes(c.id)).slice(0, 3)
+                                                    .map((c) => (
+                                                        <Badge
+                                                            key={c.id}
+                                                            variant="secondary"
+                                                            className="bg-primary/10 text-primary border-primary/20 flex items-center gap-1"
+                                                        >
+                                                            {c.name}
+                                                        </Badge>
+                                                    ))}
+                                                {selectedCandidateIds.length > 3 && (
+                                                    <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20 flex items-center gap-1">
+                                                        +{selectedCandidateIds.length - 3} more
+                                                    </Badge>
+                                                )}
+                                            </div>
+                                        ) : (
+                                            <Select
+                                                onValueChange={(value) => field.onChange([...field.value, value])}
+                                                value={field.value[field.value.length - 1] || ""}
+                                            >
+                                                <FormControl>
+                                                    <SelectTrigger>
+                                                        <SelectValue placeholder="Add candidate..." />
+                                                    </SelectTrigger>
+                                                </FormControl>
+                                                <SelectContent>
+                                                    {candidates
+                                                        .filter((c) => !field.value.includes(c.id))
+                                                        .map((c) => (
+                                                            <SelectItem key={c.id} value={c.id}>
+                                                                {c.name}
+                                                            </SelectItem>
+                                                        ))}
+                                                </SelectContent>
+                                            </Select>
+                                        )}
+                                        {!isMultiSelectLocked && field.value.length > 0 && (
+                                            <div className="flex flex-wrap gap-2 mt-2">
+                                                {field.value.map((id) => {
+                                                    const candidate = candidates.find((c) => c.id === id)
+                                                    return (
+                                                        <Badge key={id} variant="secondary" className="pr-1">
+                                                            {candidate?.name}
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => field.onChange(field.value.filter((i: string) => i !== id))}
+                                                                className="ml-1 hover:text-destructive transition-colors"
+                                                            >
+                                                                <Badge className="p-0 h-3 w-3 inline-flex items-center justify-center bg-transparent text-current border-0 hover:bg-transparent">
+                                                                    ×
+                                                                </Badge>
+                                                            </button>
+                                                        </Badge>
+                                                    )
+                                                })}
+                                            </div>
+                                        )}
                                         <FormMessage />
                                     </FormItem>
                                 )}
@@ -108,27 +176,43 @@ export function ScheduleInterviewModal({
                                 render={({ field }) => (
                                     <FormItem>
                                         <FormLabel>Job Position</FormLabel>
-                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                            <FormControl>
-                                                <SelectTrigger>
-                                                    <SelectValue placeholder="Select job" />
-                                                </SelectTrigger>
-                                            </FormControl>
-                                            <SelectContent>
-                                                {jobs.map((job) => (
-                                                    <SelectItem key={job.id} value={job.id}>
-                                                        {job.title}
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
+                                        {isJobLocked ? (
+                                            <div className="flex flex-wrap gap-2 p-2 border rounded-md bg-muted/50 min-h-[40px]">
+                                                {jobs
+                                                    .filter((j) => j.id === selectedJobId)
+                                                    .map((j) => (
+                                                        <Badge
+                                                            key={j.id}
+                                                            variant="secondary"
+                                                            className="bg-primary/10 text-primary border-primary/20"
+                                                        >
+                                                            {j.title}
+                                                        </Badge>
+                                                    ))}
+                                            </div>
+                                        ) : (
+                                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                <FormControl>
+                                                    <SelectTrigger>
+                                                        <SelectValue placeholder="Select job" />
+                                                    </SelectTrigger>
+                                                </FormControl>
+                                                <SelectContent>
+                                                    {jobs.map((job) => (
+                                                        <SelectItem key={job.id} value={job.id}>
+                                                            {job.title}
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                        )}
                                         <FormMessage />
                                     </FormItem>
                                 )}
                             />
                         </div>
 
-                        <div className="grid lg:grid-cols-2 gap-4">
+                        <div className="grid grid-cols-2 gap-4">
                             <FormField
                                 control={form.control}
                                 name="type"
@@ -142,7 +226,7 @@ export function ScheduleInterviewModal({
                                                 </SelectTrigger>
                                             </FormControl>
                                             <SelectContent>
-                                                <SelectItem value="online">Online Meeting</SelectItem>
+                                                <SelectItem value="online">Online</SelectItem>
                                                 <SelectItem value="phone">Phone Call</SelectItem>
                                                 <SelectItem value="in-person">In-Person</SelectItem>
                                             </SelectContent>
@@ -177,7 +261,7 @@ export function ScheduleInterviewModal({
                             />
                         </div>
 
-                        <div className="grid lg:grid-cols-2 gap-4">
+                        <div className="grid md:grid-cols-2 gap-4">
                             <FormField
                                 control={form.control}
                                 name="date"
@@ -273,7 +357,7 @@ export function ScheduleInterviewModal({
                             name="notes"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Private Notes (optional)</FormLabel>
+                                    <FormLabel>Private Notes</FormLabel>
                                     <FormControl>
                                         <Textarea
                                             placeholder="Add any internal notes for the interviewers..."

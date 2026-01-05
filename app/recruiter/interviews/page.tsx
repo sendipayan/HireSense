@@ -7,11 +7,14 @@ import { Plus, Calendar, Clock, CheckCircle2, XCircle } from "lucide-react"
 import { StatCard } from "@/components/stat-card"
 import { InterviewTable } from "@/components/interview/interview-table"
 import { InterviewFilters } from "@/components/interview/interview-filters"
+import { WaitingList } from "@/components/interview/waiting-list"
 import { ScheduleInterviewModal } from "@/components/interview/schedule-interview-modal"
 import { InterviewDetailModal, type InterviewDetail } from "@/components/interview/interview-detail-modal"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { mockJobs, mockCandidates } from "@/lib/mock-data"
-import type { DateRange } from "react-day-picker"
+import { Badge } from "@/components/ui/badge"
 import { isWithinInterval, parseISO, format } from "date-fns"
+import type { DateRange } from "react-day-picker" // Import DateRange
 
 // Mock interviews data for the recruiter
 const mockInterviews: InterviewDetail[] = [
@@ -89,8 +92,12 @@ const mockInterviews: InterviewDetail[] = [
 
 export default function RecruiterInterviewsPage() {
     const [interviews, setInterviews] = useState(mockInterviews)
+    const [activeTab, setActiveTab] = useState("interviews")
     const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false)
     const [selectedInterview, setSelectedInterview] = useState<InterviewDetail | null>(null)
+
+    const [selectedCandidateIds, setSelectedCandidateIds] = useState<string[]>([])
+    const [selectedJobId, setSelectedJobId] = useState<string>("")
 
     // Filter states
     const [searchQuery, setSearchQuery] = useState("")
@@ -130,28 +137,38 @@ export default function RecruiterInterviewsPage() {
     ]
 
     const handleSchedule = (values: any) => {
-        const candidate = mockCandidates.find((c) => c.id === values.candidateId)
-        const job = mockJobs.find((j) => j.id === values.jobId)
+        const newInterviews = values.candidateIds.map((cid: string) => {
+            const candidate = mockCandidates.find((c) => c.id === cid)
+            const job = mockJobs.find((j) => j.id === values.jobId)
 
-        const newInterview: InterviewDetail = {
-            id: `int-${Date.now()}`,
-            candidateName: candidate?.name || "Unknown Candidate",
-            recruiterName: "Alex Rivera",
-            jobTitle: job?.title || "Unknown Position",
-            date: format(values.date, "MMM dd, yyyy"),
-            time: values.time,
-            duration: values.duration,
-            type: values.type,
-            status: "scheduled",
-            meetingLink: values.meetingLink,
-            location: values.location,
-            notes: values.notes,
-            activityLog: [
-                { action: "Interview Scheduled", user: "Alex Rivera", timestamp: format(new Date(), "MMM dd, hh:mm a") },
-            ],
-        }
+            return {
+                id: `int-${cid}-${Date.now()}`,
+                candidateName: candidate?.name || "Unknown Candidate",
+                recruiterName: "Alex Rivera",
+                jobTitle: job?.title || "Unknown Position",
+                date: format(values.date, "MMM dd, yyyy"),
+                time: values.time,
+                duration: values.duration,
+                type: values.type,
+                status: "scheduled",
+                meetingLink: values.meetingLink,
+                location: values.location,
+                notes: values.notes,
+                activityLog: [
+                    { action: "Interview Scheduled", user: "Alex Rivera", timestamp: format(new Date(), "MMM dd, hh:mm a") },
+                ],
+            }
+        })
 
-        setInterviews([newInterview, ...interviews])
+        setInterviews([...newInterviews, ...interviews])
+        setSelectedCandidateIds([])
+        setSelectedJobId("")
+    }
+
+    const openScheduleModal = (candidateIds: string[] = [], jobId = "") => {
+        setSelectedCandidateIds(candidateIds)
+        setSelectedJobId(jobId)
+        setIsScheduleModalOpen(true)
     }
 
     return (
@@ -163,10 +180,10 @@ export default function RecruiterInterviewsPage() {
                     title="Interview Management"
                     description="Schedule and manage your candidate interviews in one place."
                 >
-                    <Button onClick={() => setIsScheduleModalOpen(true)}>
+                    {/* <Button onClick={() => openScheduleModal()}>
                         <Plus className="mr-2 h-4 w-4" />
                         Schedule Interview
-                    </Button>
+                    </Button> */}
                 </PageHeader>
 
                 {/* Stats */}
@@ -176,41 +193,75 @@ export default function RecruiterInterviewsPage() {
                     ))}
                 </div>
 
-                {/* Filters */}
-                <div className="mt-8">
-                    <InterviewFilters
-                        searchQuery={searchQuery}
-                        onSearchChange={setSearchQuery}
-                        statusFilter={statusFilter}
-                        onStatusChange={setStatusFilter}
-                        jobFilter={jobFilter}
-                        onJobChange={setJobFilter}
-                        dateRange={dateRange}
-                        onDateRangeChange={setDateRange}
-                        jobs={mockJobs.map((j) => ({ id: j.id, title: j.title }))}
-                        onClear={() => {
-                            setSearchQuery("")
-                            setStatusFilter("all")
-                            setJobFilter("all")
-                            setDateRange(undefined)
-                        }}
-                    />
-                </div>
+                {/* Tabs */}
+                <Tabs defaultValue="interviews" className="mt-12" onValueChange={setActiveTab}>
+                    <div className="flex items-center justify-between mb-6">
+                        <TabsList className="grid w-[400px] grid-cols-2">
+                            <TabsTrigger value="interviews" className="flex items-center gap-2">
+                                <Calendar className="h-4 w-4" />
+                                Interviews
+                            </TabsTrigger>
+                            <TabsTrigger value="waiting-list" className="flex items-center gap-2">
+                                <Clock className="h-4 w-4" />
+                                Waiting List
+                            </TabsTrigger>
+                        </TabsList>
+                    </div>
 
-                {/* Table */}
-                <div className="mt-6">
-                    <InterviewTable
-                        interviews={filteredInterviews}
-                        onViewDetails={(int) => setSelectedInterview(int as InterviewDetail)}
-                        onReschedule={(int) => setSelectedInterview(int as InterviewDetail)}
-                        onCancel={(int) => {
-                            setInterviews(interviews.map((i) => (i.id === int.id ? { ...i, status: "canceled" } : i)))
-                        }}
-                        onMarkCompleted={(int) => {
-                            setInterviews(interviews.map((i) => (i.id === int.id ? { ...i, status: "completed" } : i)))
-                        }}
-                    />
-                </div>
+                    <TabsContent value="waiting-list" className="mt-0 border-none p-0">
+                        <WaitingList
+                            candidates={mockCandidates}
+                            jobs={mockJobs}
+                            onScheduleBatch={(candidateIds) => {
+                                openScheduleModal(candidateIds, "")
+                            }}
+                        />
+                    </TabsContent>
+
+                    <TabsContent value="interviews" className="mt-0 border-none p-0">
+                        {/* Filters */}
+                        <div className="flex flex-col gap-4">
+                            <div className="flex items-center justify-between">
+                                <h2 className="text-2xl font-bold tracking-tight">Upcoming Interviews</h2>
+                                <Badge variant="outline" className="font-medium">
+                                    {filteredInterviews.length} Scheduled
+                                </Badge>
+                            </div>
+                            <InterviewFilters
+                                searchQuery={searchQuery}
+                                onSearchChange={setSearchQuery}
+                                statusFilter={statusFilter}
+                                onStatusChange={setStatusFilter}
+                                jobFilter={jobFilter}
+                                onJobChange={setJobFilter}
+                                dateRange={dateRange}
+                                onDateRangeChange={setDateRange}
+                                jobs={mockJobs.map((j) => ({ id: j.id, title: j.title }))}
+                                onClear={() => {
+                                    setSearchQuery("")
+                                    setStatusFilter("all")
+                                    setJobFilter("all")
+                                    setDateRange(undefined)
+                                }}
+                            />
+                        </div>
+
+                        {/* Table */}
+                        <div className="mt-6">
+                            <InterviewTable
+                                interviews={filteredInterviews}
+                                onViewDetails={(int) => setSelectedInterview(int as InterviewDetail)}
+                                onReschedule={(int) => setSelectedInterview(int as InterviewDetail)}
+                                onCancel={(int) => {
+                                    setInterviews(interviews.map((i) => (i.id === int.id ? { ...i, status: "canceled" } : i)))
+                                }}
+                                onMarkCompleted={(int) => {
+                                    setInterviews(interviews.map((i) => (i.id === int.id ? { ...i, status: "completed" } : i)))
+                                }}
+                            />
+                        </div>
+                    </TabsContent>
+                </Tabs>
 
                 {/* Modals */}
                 <ScheduleInterviewModal
@@ -219,6 +270,8 @@ export default function RecruiterInterviewsPage() {
                     onSchedule={handleSchedule}
                     candidates={mockCandidates.map((c) => ({ id: c.id, name: c.name }))}
                     jobs={mockJobs.map((j) => ({ id: j.id, title: j.title }))}
+                    selectedCandidateIds={selectedCandidateIds}
+                    selectedJobId={selectedJobId}
                 />
 
                 <InterviewDetailModal
