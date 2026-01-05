@@ -17,7 +17,7 @@ export default function RecruiterJobsPage() {
                 <PageHeader
                     title="Manage My Jobs"
                     description="Track your hiring progress, update job details, or manage existing postings."
-                />
+                ></PageHeader>
                 <div className="mt-8">
                     <RecruiterJobsClient />
                 </div>

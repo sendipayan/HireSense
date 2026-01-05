@@ -30,6 +30,7 @@ export async function GET(req: NextRequest) {
         job: {
           recruiterId: recruiter.id,
         },
+        status: "PENDING",
       },
       select: {
         id: true,

@@ -13,6 +13,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    if (payload.role !== "RECRUITER" || !payload.isVerified) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const { id } = await req.json();
     if (!id) {
       return NextResponse.json(

@@ -38,6 +38,7 @@ export async function GET(
     const applications = await prisma.application.findMany({
       where: {
         jobId: id,
+        status: "PENDING",
       },
       select: {
         id: true,

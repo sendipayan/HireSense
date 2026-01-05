@@ -22,6 +22,7 @@ export function TopMatchesClient() {
     const [selectedIds, setSelectedIds] = useState<string[]>([]) // added state for multi-selection
     const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false) // added state for schedule modal
     const [minScore, setMinScore] = useState("0")
+    const [trigger, setTrigger] = useState(false)
     const { applications, setApplications } = useRecruiterApplicationsStore()
     const [loading, setLoading] = useState(true)
     const [jobload, setJobload] = useState(true)
@@ -39,7 +40,7 @@ export function TopMatchesClient() {
         }
         fetch()
 
-    }, [setJobs])
+    }, [setJobs, trigger])
 
 
     useEffect(() => {
@@ -91,9 +92,21 @@ export function TopMatchesClient() {
         setIsScheduleModalOpen(true)
     }
 
-    const handleBulkWaitlist = () => {
+    const handleBulkWaitlist = async () => {
+        if (selectedIds.length === 0) {
+            return
+        }
         console.log("[v0] Adding candidates to waitlist:", selectedIds)
-        // In a real app, this would be an API call
+
+        try {
+            const response = await axios.post("/api/recruiter/add_waitlist", { ids: selectedIds }, { withCredentials: true })
+            console.log("Response:", response.data)
+            if (response.status === 200) {
+                setTrigger(!trigger)
+            }
+        } catch (err) {
+            console.log("Error adding candidates to waitlist:", err)
+        }
         setSelectedIds([])
     }
 

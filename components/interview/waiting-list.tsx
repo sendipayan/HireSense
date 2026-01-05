@@ -63,14 +63,25 @@ export function WaitingList({ candidates, jobs, onScheduleBatch }: WaitingListPr
                         <CardDescription>Qualified candidates waiting to be scheduled for interviews.</CardDescription>
                     </div>
                     {selectedIds.length > 0 && (
-                        <Button
-                            size="sm"
-                            className="w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg shadow-primary/20 animate-in fade-in zoom-in duration-200"
-                            onClick={() => onScheduleBatch(selectedIds)}
-                        >
-                            <Calendar className="mr-2 h-4 w-4" />
-                            Schedule {selectedIds.length} Selected
-                        </Button>
+                        <div className="flex flex-col lg:flex-row items-center gap-2">
+                            <Button
+                                size="sm"
+                                className="w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg shadow-primary/20 animate-in fade-in zoom-in duration-200"
+                                onClick={() => onScheduleBatch(selectedIds)}
+                            >
+                                <Calendar className="mr-2 h-4 w-4" />
+                                Schedule {selectedIds.length} Selected
+                            </Button>
+                            <Button
+                                size="sm"
+                                className="w-full sm:w-auto bg-destructive text-destructive-foreground hover:bg-destructive/90 shadow-lg shadow-destructive/20 animate-in fade-in zoom-in duration-200"
+
+                            >
+                                Remove {selectedIds.length} from Waiting List
+                            </Button>
+                        </div>
+
+
                     )}
                 </div>
 

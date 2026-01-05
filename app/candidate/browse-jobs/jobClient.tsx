@@ -225,7 +225,7 @@ export function JobsBrowser() {
                         </Select>
                     </div>
 
-                    <p className="text-sm text-muted-foreground">Showing {filteredJobs.length} job opportunities</p>
+                    <p className="text-sm text-muted-foreground">Showing {filteredJobs?.length} job opportunities</p>
 
                     <div className="space-y-4">
                         {filteredJobs.length > 0 ? (

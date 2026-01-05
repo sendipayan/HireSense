@@ -52,23 +52,7 @@ export function CandidateCard({
   const [toggle, setToggle] = useState(status == "WAITLIST" ? true : false)
   const [loading, setLoading] = useState(false)
 
-  const handleAddToWaitlist = async () => {
-    if (id.trim() === "") return
 
-    try {
-      setLoading(true)
-      const res = await axios.post(`/api/recruiter/toogle_waitlist`, { id }, { withCredentials: true })
-      const data = await res.data
-      console.log("toggle waitlist response: ", data.status)
-      setToggle(data.status === "WAITLIST" ? true : false)
-
-    } catch (error) {
-      console.error("toggle waitlist error: ", error)
-      setLoading(false)
-    } finally {
-      setLoading(false)
-    }
-  }
   return (
     <article className="group rounded-xl border border-border bg-card p-6 transition-all hover:border-primary/50 hover:shadow-lg hover:shadow-primary/5">
       <div className="flex flex-col lg:flex-row items-center lg:items-start gap-4">
@@ -124,10 +108,7 @@ export function CandidateCard({
             <Button size="sm" asChild>
               <Link href={`/recruiter/match-results?candidate=${Cid}&job=${Jid}`}>View Profile</Link>
             </Button>
-            {(status === "WAITLIST" || status === "PENDING") && <Button disabled={loading} size="sm" variant={toggle ? "destructive" : "outline"} className="cursor-pointer" onClick={() => handleAddToWaitlist()}>
 
-              {toggle ? "Remove from Waitlist" : "Add to Waitlist"}
-            </Button>}
           </div>
         </div>
       </div>
