@@ -11,6 +11,7 @@ import {
     Target,
     CheckCircle2,
     AlertCircle,
+    XCircle,
     ArrowRight,
     Briefcase,
     MapPin,
@@ -20,11 +21,10 @@ import {
     Star,
     MessageSquare,
     Calendar,
-    IndianRupee
+    IndianRupee,
+    Clock
 } from "lucide-react"
 import { useEffect, useState } from "react"
-import { useRecruiterApplicationsStore } from "@/store/recruiterApplication"
-import { useJobStore } from "@/store/jobStore"
 import axios from "axios"
 import { mockCandidates, mockJobs } from "@/lib/mock-data"
 import type { Job } from "@/store/jobStore"
@@ -60,10 +60,7 @@ type Application = {
 
 export default function MatchResultsClientPage({ candidateId, jobId }: { candidateId: string, jobId: string }) {
     const { breakdown, strengths, gaps, recommendation } = mockMatchResults
-    const { applications, setApplications } = useRecruiterApplicationsStore()
     const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false)
-
-    const { jobs, setJobs } = useJobStore()
     const [initialLoad, setInitialLoad] = useState(true)
     const [uniqueJob, setUniqueJob] = useState<Job>({
         id: "",
@@ -109,32 +106,33 @@ export default function MatchResultsClientPage({ candidateId, jobId }: { candida
 
     useEffect(() => {
         const fetch = async () => {
-            const res = await axios.get("/api/getjob")
-            const data = await res.data
-            setJobs(data.job)
+            const res = await axios.get(`/api/getjob/${jobId}`)
             const res1 = await axios.get(`/api/recruiter/get_applications/unique?jobId=${jobId}&candidateId=${candidateId}`)
+            const data = await res.data
+            setUniqueJob({ ...data.job })
             const data1 = await res1.data
-            console.log("candidate applications: ", data1)
-            setApplications(data1.applications)
             setUniqueApplication({ ...data1.applications })
-
+            setInitialLoad(false)
         }
         fetch()
-    }, [setJobs])
+    }, [])
 
 
+    const handleAddToWaitlist = async () => {
+        if (uniqueApplication.id.trim() === "") return
 
-    useEffect(() => {
-        if (!jobs) {
-            return
+        try {
+            const res = await axios.post(`/api/recruiter/toogle_waitlist`, { id: uniqueApplication.id }, { withCredentials: true })
+            const data = await res.data
+            setUniqueApplication((prev) => ({ ...prev, status: data.status }))
+
+        } catch (error) {
+            console.error("toggle waitlist error: ", error)
         }
-        const uniqueJob = jobs.find((job) => job.id === jobId)
-        console.log("uniqueJob: ", uniqueJob)
-        if (uniqueJob) {
-            setUniqueJob({ ...uniqueJob })
-        }
-        setInitialLoad(false);
-    }, [jobs])
+
+    }
+
+
 
     const handleSchedule = () => {
 
@@ -170,6 +168,10 @@ export default function MatchResultsClientPage({ candidateId, jobId }: { candida
                                 <Calendar className="mr-2 h-4 w-4" aria-hidden="true" />
                                 Schedule Interview
                             </Button>
+                            {(uniqueApplication.status === "WAITLIST" || uniqueApplication.status === "PENDING") && <Button size="lg" variant={uniqueApplication.status === "WAITLIST" ? "destructive" : "outline"} className="cursor-pointer" onClick={() => handleAddToWaitlist()}>
+                                {uniqueApplication.status !== "WAITLIST" ? <Clock className="mr-2 h-4 w-4" aria-hidden="true" /> : <XCircle className="mr-2 h-4 w-4" aria-hidden="true" />}
+                                {uniqueApplication.status === "WAITLIST" ? "Remove from Waitlist" : "Add to Waitlist"}
+                            </Button>}
                         </div>
                     </div> :
                         <div className="rounded-2xl bg-muted-foreground/50 border border-border p-6 mb-8 animate-pulse h-[40vh]"></div>}

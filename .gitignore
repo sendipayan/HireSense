@@ -29,3 +29,5 @@ node_modules
 
 /lib/generated/prisma
 .env
+
+migration_lock.toml

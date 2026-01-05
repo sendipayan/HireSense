@@ -1,10 +1,15 @@
+"use clinet"
+
 import Link from "next/link"
-import { MapPin, Briefcase, GraduationCap, Star } from "lucide-react"
+import { MapPin, Briefcase, GraduationCap, Star, Clock, XCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { useState } from "react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import axios from "axios"
 
 interface CandidateCardProps {
+  id: string
   Cid: string
   Jid: string
   name: string
@@ -12,6 +17,7 @@ interface CandidateCardProps {
   location: string
   experience: string
   education: string
+  status: string
   skills: string[]
   matchScore: number
   avatar?: string
@@ -24,11 +30,13 @@ interface CandidateCardProps {
  * - Match score prominently displayed
  */
 export function CandidateCard({
+  id,
   Cid,
   Jid,
   name,
   title,
   location,
+  status,
   experience,
   education,
   skills,
@@ -41,6 +49,26 @@ export function CandidateCard({
     .join("")
     .toUpperCase()
 
+  const [toggle, setToggle] = useState(status == "WAITLIST" ? true : false)
+  const [loading, setLoading] = useState(false)
+
+  const handleAddToWaitlist = async () => {
+    if (id.trim() === "") return
+
+    try {
+      setLoading(true)
+      const res = await axios.post(`/api/recruiter/toogle_waitlist`, { id }, { withCredentials: true })
+      const data = await res.data
+      console.log("toggle waitlist response: ", data.status)
+      setToggle(data.status === "WAITLIST" ? true : false)
+
+    } catch (error) {
+      console.error("toggle waitlist error: ", error)
+      setLoading(false)
+    } finally {
+      setLoading(false)
+    }
+  }
   return (
     <article className="group rounded-xl border border-border bg-card p-6 transition-all hover:border-primary/50 hover:shadow-lg hover:shadow-primary/5">
       <div className="flex items-start gap-4">
@@ -92,11 +120,14 @@ export function CandidateCard({
             {skills.length > 4 && <Badge variant="outline">+{skills.length - 4} more</Badge>}
           </div>
 
-          <div className="mt-4 flex gap-2">
+          <div className="mt-4 flex flex-col lg:flex-row gap-2">
             <Button size="sm" asChild>
               <Link href={`/recruiter/match-results?candidate=${Cid}&job=${Jid}`}>View Profile</Link>
             </Button>
+            {(status === "WAITLIST" || status === "PENDING") && <Button disabled={loading} size="sm" variant={toggle ? "destructive" : "outline"} className="cursor-pointer" onClick={() => handleAddToWaitlist()}>
 
+              {toggle ? "Remove from Waitlist" : "Add to Waitlist"}
+            </Button>}
           </div>
         </div>
       </div>

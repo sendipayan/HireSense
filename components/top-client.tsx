@@ -77,7 +77,7 @@ export function TopMatchesClient() {
                 <Breadcrumbs items={[{ label: "Recruiter", href: "/recruiter/dashboard" }, { label: "Top Matches" }]} />
 
                 {/* Hero Section with AI Accent */}
-                {!jobload ? <div className="relative mt-8 overflow-hidden rounded-3xl bg-linear-to-br from-primary/10 via-background to-background border border-border/50 p-8 sm:p-12">
+                {!jobload ? <div className="relative mt-8 overflow-hidden rounded-3xl bg-linear-to-br from-primary/10 via-background to-background border border-border/50 p-4 lg:p-8">
                     <div className="relative z-10 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-8">
                         <div className="max-w-2xl">
                             <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-1.5 text-sm font-medium text-primary mb-6 border border-primary/20">
@@ -93,8 +93,8 @@ export function TopMatchesClient() {
                             </p>
                         </div>
 
-                        <div className="flex flex-col gap-4 min-w-[320px]">
-                            <div className="bg-card/50 backdrop-blur-xl border border-border p-6 rounded-2xl shadow-sm">
+                        <div className="flex flex-col gap-4 w-full">
+                            <div className="bg-card/50 backdrop-blur-xl border border-border w-full p-2 rounded-2xl shadow-sm">
                                 <p className="text-sm font-medium text-muted-foreground mb-3">Analyzing for Position:</p>
                                 <Select value={selectedJob} onValueChange={setSelectedJob}>
                                     <SelectTrigger className="w-full bg-background border-primary/30 h-12 text-lg">
@@ -108,8 +108,8 @@ export function TopMatchesClient() {
                                         ))}
                                     </SelectContent>
                                 </Select>
-                                <div className="mt-4 flex items-center justify-between text-xs text-muted-foreground">
-                                    <span className="flex items-center gap-1">
+                                <div className="mt-4 flex flex-col lg:flex-row items-center justify-between  text-xs text-muted-foreground">
+                                    <span className="flex items-center gap-1 ">
                                         <Target className="h-3 w-3 text-primary" /> {filteredCandidates.length} Total Matches
                                     </span>
                                     <span className="flex items-center gap-1">
@@ -142,7 +142,7 @@ export function TopMatchesClient() {
                         <div className="flex items-center gap-2 bg-background/50 border border-border rounded-lg px-3 h-11">
                             <Filter className="h-4 w-4 text-muted-foreground" />
                             <span className="text-sm text-muted-foreground">Min Match:</span>
-                            <Select value={minScore} onValueChange={setMinScore}>
+                            <Select value={minScore} onValueChange={setMinScore} >
                                 <SelectTrigger className="w-20 border-0 bg-transparent h-8 focus:ring-0">
                                     <SelectValue />
                                 </SelectTrigger>
@@ -154,14 +154,7 @@ export function TopMatchesClient() {
                             </Select>
                         </div>
 
-                        <div className="flex items-center border border-border rounded-lg p-1 bg-background/50">
-                            <Button variant="ghost" size="icon" className="h-9 w-9 bg-primary/10 text-primary">
-                                <LayoutGrid className="h-4 w-4" />
-                            </Button>
-                            <Button variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground">
-                                <List className="h-4 w-4" />
-                            </Button>
-                        </div>
+
                     </div>
                 </div> : <div className="bg-muted-foreground/50 border border-border rounded-2xl p-6 mb-8 animate-pulse h-20"></div>}
 
@@ -179,6 +172,7 @@ export function TopMatchesClient() {
                                         </div>
                                     )}
                                     <CandidateCard key={candidate.id}
+                                        id={candidate.id}
                                         Jid={candidate.job.id}
                                         Cid={candidate.candidate.id}
                                         name={candidate.candidate.user.name}
@@ -186,6 +180,7 @@ export function TopMatchesClient() {
                                         location={candidate.candidate.institution}
                                         experience={candidate.candidate.experienceLevel}
                                         education={candidate.candidate.degree}
+                                        status={candidate.status}
                                         skills={candidate.candidate.primarySkills}
                                         matchScore={candidate.score}
                                         avatar=""

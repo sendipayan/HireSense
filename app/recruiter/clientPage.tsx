@@ -202,12 +202,14 @@ export default function RecruiterDashboardPage() {
                         {!initialLoad ? <div className="space-y-4">
                             {applications?.length > 0 ? (applications?.map((candidate) => (
                                 <CandidateCard key={candidate.id}
+                                    id={candidate.id}
                                     Jid={candidate.job.id}
                                     Cid={candidate.candidate.id}
                                     name={candidate.candidate.user.name}
                                     title={candidate.job.title}
                                     location={candidate.candidate.institution}
                                     experience={candidate.candidate.experienceLevel}
+                                    status={candidate.status}
                                     education={candidate.candidate.degree}
                                     skills={candidate.candidate.primarySkills}
                                     matchScore={candidate.score}

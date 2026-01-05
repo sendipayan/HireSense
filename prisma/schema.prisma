@@ -186,6 +186,8 @@ model Application {
 
 enum ApplicationStatus {
   PENDING
+  WAITLIST
   ACCEPTED
+  SCHEDULED
   REJECTED
 }
