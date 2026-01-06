@@ -21,14 +21,16 @@ export interface ScheduleBatchProps {
 
 interface WaitingListProps {
     onScheduleBatch: (props: ScheduleBatchProps) => void;
+    setTrigger: (trigger: boolean) => void;
 }
 
-export function WaitingList({ onScheduleBatch }: WaitingListProps) {
+export function WaitingList({ onScheduleBatch, setTrigger }: WaitingListProps) {
     const [searchQuery, setSearchQuery] = useState("")
     const [jobFilter, setJobFilter] = useState("all")
     const [selectedIds, setSelectedIds] = useState<string[]>([])
     const [job, setJob] = useState<ApplicationJob[]>([])
     const { applications } = useRecruiterApplicationsStore()
+    const [selectApplications, setSelectApplications] = useState<string[]>([])
 
     useEffect(() => {
 
@@ -47,8 +49,14 @@ export function WaitingList({ onScheduleBatch }: WaitingListProps) {
         })
     }, [searchQuery, applications])
 
-    const toggleSelect = (id: string) => {
-        setSelectedIds((prev) => (prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]))
+    const toggleSelect = (id: string, Aid: string) => {
+        if (!selectApplications.includes(Aid)) {
+            setSelectedIds((prev) => [...prev, id])
+            setSelectApplications((prev) => [...prev, Aid])
+        } else {
+            setSelectedIds((prev) => prev.filter((i) => i !== id))
+            setSelectApplications((prev) => prev.filter((i) => i !== Aid))
+        }
     }
 
     const allSelected = filteredCandidates.length > 0 && selectedIds.length === filteredCandidates.length
@@ -56,8 +64,28 @@ export function WaitingList({ onScheduleBatch }: WaitingListProps) {
     const selectAll = () => {
         if (allSelected) {
             setSelectedIds([])
+            setSelectApplications([])
         } else {
             setSelectedIds(filteredCandidates.map((c) => c.candidate.id))
+            setSelectApplications(filteredCandidates.map((c) => c.id))
+        }
+    }
+
+    const removeFromWaitingList = async () => {
+        if (selectApplications.length === 0 || !Array.isArray(selectApplications)) {
+            console.log("No applications selected")
+            return;
+        }
+        console.log(selectApplications)
+        try {
+            const response = await axios.post("/api/recruiter/remove_waitlist", { ids: selectApplications }, { withCredentials: true })
+            if (response.status === 200) {
+                setTrigger(true)
+                setSelectedIds([])
+                setSelectApplications([])
+            }
+        } catch (error) {
+            console.log(error)
         }
     }
 
@@ -77,22 +105,22 @@ export function WaitingList({ onScheduleBatch }: WaitingListProps) {
                         </CardTitle>
                         <CardDescription>Qualified candidates waiting to be scheduled for interviews.</CardDescription>
                     </div>
-                    {selectedIds.length > 0 && (
+                    {selectApplications.length > 0 && (
                         <div className="flex flex-col lg:flex-row items-center gap-2">
                             <Button
                                 size="sm"
                                 className="w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg shadow-primary/20 animate-in fade-in zoom-in duration-200"
-                                onClick={() => onScheduleBatch({ candidateIds: selectedIds, jobId: applications.map((a) => a.job.id) })}
+                                onClick={() => onScheduleBatch({ candidateIds: selectedIds, jobId: applications.filter((a) => selectApplications.includes(a.id)).map((a) => a.job.id) })}
                             >
                                 <Calendar className="mr-2 h-4 w-4" />
-                                Schedule {selectedIds.length} Selected
+                                Schedule {selectApplications.length} Selected
                             </Button>
                             <Button
                                 size="sm"
                                 className="w-full sm:w-auto bg-destructive text-destructive-foreground hover:bg-destructive/90 shadow-lg shadow-destructive/20 animate-in fade-in zoom-in duration-200"
-
+                                onClick={removeFromWaitingList}
                             >
-                                Remove {selectedIds.length} from Waiting List
+                                Remove {selectApplications.length} from Waiting List
                             </Button>
                         </div>
 
@@ -146,12 +174,12 @@ export function WaitingList({ onScheduleBatch }: WaitingListProps) {
                         filteredCandidates.map((candidate) => (
                             <div
                                 key={candidate.id}
-                                className={`flex items-center gap-4 p-4 transition-colors hover:bg-muted/20 ${selectedIds.includes(candidate.candidate.id) ? "bg-primary/5" : ""}`}
+                                className={`flex items-center gap-4 p-4 transition-colors hover:bg-muted/20 ${selectApplications.includes(candidate.id) ? "bg-primary/5" : ""}`}
                             >
                                 <div className="flex items-center px-1">
                                     <Checkbox
-                                        checked={selectedIds.includes(candidate.candidate.id)}
-                                        onCheckedChange={() => toggleSelect(candidate.candidate.id)}
+                                        checked={selectApplications.includes(candidate.id)}
+                                        onCheckedChange={() => toggleSelect(candidate.candidate.id, candidate.id)}
                                         className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
                                     />
                                 </div>

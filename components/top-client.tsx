@@ -58,7 +58,7 @@ export function TopMatchesClient() {
             setLoading(false)
         }
         fetchApplications()
-    }, [selectedJob])
+    }, [selectedJob, trigger])
 
 
     const filteredCandidates = useMemo(() => {

@@ -99,6 +99,7 @@ export default function RecruiterInterviewsPage() {
     const { applications, setApplications } = useRecruiterApplicationsStore()
     const [selectedCandidateIds, setSelectedCandidateIds] = useState<string[]>([])
     const [selectedJobId, setSelectedJobId] = useState<string[]>([])
+    const [trigger, setTrigger] = useState(false)
 
     // Filter states
     const [searchQuery, setSearchQuery] = useState("")
@@ -114,7 +115,7 @@ export default function RecruiterInterviewsPage() {
         }
 
         fetch()
-    }, [])
+    }, [trigger])
 
     const filteredInterviews = useMemo(() => {
         return interviews.filter((int) => {
@@ -177,6 +178,7 @@ export default function RecruiterInterviewsPage() {
     }
 
     const openScheduleModal = (candidateIds: string[] = [], jobId: string[] = []) => {
+        console.log("candidateIds", candidateIds)
         setSelectedCandidateIds(candidateIds)
         setSelectedJobId(jobId)
         setIsScheduleModalOpen(true)
@@ -221,7 +223,7 @@ export default function RecruiterInterviewsPage() {
 
                     <TabsContent value="waiting-list" className="mt-0 border-none p-0">
                         <WaitingList
-
+                            setTrigger={setTrigger}
                             onScheduleBatch={(props: ScheduleBatchProps) => {
                                 openScheduleModal(props.candidateIds, props.jobId)
                             }}
