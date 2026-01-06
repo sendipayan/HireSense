@@ -25,7 +25,7 @@ import { useEffect } from "react"
 
 const formSchema = z.object({
     candidateIds: z.array(z.string()).min(1, "At least one candidate is required"),
-    jobId: z.string({ required_error: "Job is required" }),
+    jobIds: z.array(z.string()).min(1, "At least one job is required"),
     type: z.enum(["online", "phone", "in-person"], { required_error: "Interview type is required" }),
     date: z.date({ required_error: "Date is required" }),
     time: z.string({ required_error: "Time is required" }),
@@ -42,7 +42,7 @@ interface ScheduleInterviewModalProps {
     candidates: { id: string; name: string }[]
     jobs: { id: string; title: string }[]
     selectedCandidateIds?: string[]
-    selectedJobId?: string
+    selectedJobIds?: string[]
 }
 
 export function ScheduleInterviewModal({
@@ -52,16 +52,19 @@ export function ScheduleInterviewModal({
     candidates,
     jobs,
     selectedCandidateIds = [],
-    selectedJobId = "",
+    selectedJobIds = [],
 }: ScheduleInterviewModalProps) {
     const isMultiSelectLocked = selectedCandidateIds.length > 0
-    const isJobLocked = !!selectedJobId
+    const isJobLocked = selectedJobIds.length > 0
+
+    const uniqueCandidateIds = Array.from([...new Map(candidates.map((c) => [c.id, c])).values()])
+    const uniqueJobIds = Array.from([...new Map(jobs.map((j) => [j.id, j])).values()])
 
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
         defaultValues: {
             candidateIds: selectedCandidateIds,
-            jobId: selectedJobId,
+            jobIds: selectedJobIds,
             type: "online",
             duration: "30",
             location: "",
@@ -70,12 +73,13 @@ export function ScheduleInterviewModal({
         },
     })
 
+
     useEffect(() => {
         if (open) {
             form.setValue("candidateIds", selectedCandidateIds)
-            form.setValue("jobId", selectedJobId)
+            form.setValue("jobIds", selectedJobIds)
         }
-    }, [open, selectedCandidateIds, selectedJobId, form])
+    }, [open, selectedCandidateIds, selectedJobIds, form])
 
     function onSubmit(values: z.infer<typeof formSchema>) {
         onSchedule(values)
@@ -107,7 +111,7 @@ export function ScheduleInterviewModal({
                                         <FormLabel>Candidates</FormLabel>
                                         {isMultiSelectLocked ? (
                                             <div className="flex flex-wrap gap-2 p-2 border rounded-md bg-muted/50 min-h-[40px]">
-                                                {candidates
+                                                {uniqueCandidateIds
                                                     .filter((c) => selectedCandidateIds.includes(c.id)).slice(0, 3)
                                                     .map((c) => (
                                                         <Badge
@@ -118,9 +122,9 @@ export function ScheduleInterviewModal({
                                                             {c.name}
                                                         </Badge>
                                                     ))}
-                                                {selectedCandidateIds.length > 3 && (
-                                                    <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20 flex items-center gap-1">
-                                                        +{selectedCandidateIds.length - 3} more
+                                                {uniqueCandidateIds.filter((c) => selectedCandidateIds.includes(c.id)).length > 3 && (
+                                                    <Badge variant="outline" className="bg-background">
+                                                        +{uniqueCandidateIds.filter((c) => selectedCandidateIds.includes(c.id)).length - 3} more
                                                     </Badge>
                                                 )}
                                             </div>
@@ -172,14 +176,14 @@ export function ScheduleInterviewModal({
                             />
                             <FormField
                                 control={form.control}
-                                name="jobId"
+                                name="jobIds"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Job Position</FormLabel>
+                                        <FormLabel>Job Positions</FormLabel>
                                         {isJobLocked ? (
                                             <div className="flex flex-wrap gap-2 p-2 border rounded-md bg-muted/50 min-h-[40px]">
-                                                {jobs
-                                                    .filter((j) => j.id === selectedJobId)
+                                                {uniqueJobIds
+                                                    .filter((j) => selectedJobIds.includes(j.id)).slice(0, 3)
                                                     .map((j) => (
                                                         <Badge
                                                             key={j.id}
@@ -189,22 +193,53 @@ export function ScheduleInterviewModal({
                                                             {j.title}
                                                         </Badge>
                                                     ))}
+                                                {uniqueJobIds.filter((j) => selectedJobIds.includes(j.id)).length > 3 && (
+                                                    <Badge variant="outline" className="bg-background">
+                                                        +{uniqueJobIds.filter((j) => selectedJobIds.includes(j.id)).length - 3} more
+                                                    </Badge>
+                                                )}
                                             </div>
                                         ) : (
-                                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                            <Select
+                                                onValueChange={(value) => field.onChange([...field.value, value])}
+                                                value={field.value[field.value.length - 1] || ""}
+                                            >
                                                 <FormControl>
                                                     <SelectTrigger>
-                                                        <SelectValue placeholder="Select job" />
+                                                        <SelectValue placeholder="Add job position..." />
                                                     </SelectTrigger>
                                                 </FormControl>
                                                 <SelectContent>
-                                                    {jobs.map((job) => (
-                                                        <SelectItem key={job.id} value={job.id}>
-                                                            {job.title}
-                                                        </SelectItem>
-                                                    ))}
+                                                    {jobs
+                                                        .filter((j) => !field.value.includes(j.id))
+                                                        .map((j) => (
+                                                            <SelectItem key={j.id} value={j.id}>
+                                                                {j.title}
+                                                            </SelectItem>
+                                                        ))}
                                                 </SelectContent>
                                             </Select>
+                                        )}
+                                        {!isJobLocked && field.value.length > 0 && (
+                                            <div className="flex flex-wrap gap-2 mt-2">
+                                                {field.value.map((id) => {
+                                                    const job = jobs.find((j) => j.id === id)
+                                                    return (
+                                                        <Badge key={id} variant="secondary" className="pr-1">
+                                                            {job?.title}
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => field.onChange(field.value.filter((i: string) => i !== id))}
+                                                                className="ml-1 hover:text-destructive transition-colors"
+                                                            >
+                                                                <Badge className="p-0 h-3 w-3 inline-flex items-center justify-center bg-transparent text-current border-0 hover:bg-transparent">
+                                                                    ×
+                                                                </Badge>
+                                                            </button>
+                                                        </Badge>
+                                                    )
+                                                })}
+                                            </div>
                                         )}
                                         <FormMessage />
                                     </FormItem>
@@ -248,11 +283,11 @@ export function ScheduleInterviewModal({
                                                 </SelectTrigger>
                                             </FormControl>
                                             <SelectContent>
-                                                <SelectItem value="15">15 Minutes</SelectItem>
-                                                <SelectItem value="30">30 Minutes</SelectItem>
-                                                <SelectItem value="45">45 Minutes</SelectItem>
-                                                <SelectItem value="60">60 Minutes</SelectItem>
-                                                <SelectItem value="90">90 Minutes</SelectItem>
+                                                <SelectItem value="15">15 min</SelectItem>
+                                                <SelectItem value="30">30 min</SelectItem>
+                                                <SelectItem value="45">45 min</SelectItem>
+                                                <SelectItem value="60">60 min</SelectItem>
+                                                <SelectItem value="90">90 min</SelectItem>
                                             </SelectContent>
                                         </Select>
                                         <FormMessage />

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { Search, Filter, Calendar, UserPlus } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -10,27 +10,42 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
+import axios from "axios"
+import { useRecruiterApplicationsStore, type ApplicationJob } from "@/store/recruiterApplication"
 
-interface WaitingListProps {
-    candidates: any[]
-    jobs: any[]
-    onScheduleBatch: (ids: string[]) => void
+
+export interface ScheduleBatchProps {
+    candidateIds: string[];
+    jobId: string[];
 }
 
-export function WaitingList({ candidates, jobs, onScheduleBatch }: WaitingListProps) {
+interface WaitingListProps {
+    onScheduleBatch: (props: ScheduleBatchProps) => void;
+}
+
+export function WaitingList({ onScheduleBatch }: WaitingListProps) {
     const [searchQuery, setSearchQuery] = useState("")
     const [jobFilter, setJobFilter] = useState("all")
     const [selectedIds, setSelectedIds] = useState<string[]>([])
+    const [job, setJob] = useState<ApplicationJob[]>([])
+    const { applications } = useRecruiterApplicationsStore()
+
+    useEffect(() => {
+
+        if (applications.length === 0)
+            return;
+        setJob([...new Map(applications.map((job) => [job.job.id, job.job])).values()])
+    }, [])
 
     const filteredCandidates = useMemo(() => {
-        return candidates.filter((c) => {
+        return applications.filter((c) => {
             const matchesSearch =
-                c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                c.title.toLowerCase().includes(searchQuery.toLowerCase())
+                c.candidate.user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                c.job.title.toLowerCase().includes(searchQuery.toLowerCase())
             // In this mock, we'll just show all candidates as "waiting" if they aren't in the interview list
             return matchesSearch
         })
-    }, [candidates, searchQuery])
+    }, [searchQuery, applications])
 
     const toggleSelect = (id: string) => {
         setSelectedIds((prev) => (prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]))
@@ -42,7 +57,7 @@ export function WaitingList({ candidates, jobs, onScheduleBatch }: WaitingListPr
         if (allSelected) {
             setSelectedIds([])
         } else {
-            setSelectedIds(filteredCandidates.map((c) => c.id))
+            setSelectedIds(filteredCandidates.map((c) => c.candidate.id))
         }
     }
 
@@ -67,7 +82,7 @@ export function WaitingList({ candidates, jobs, onScheduleBatch }: WaitingListPr
                             <Button
                                 size="sm"
                                 className="w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg shadow-primary/20 animate-in fade-in zoom-in duration-200"
-                                onClick={() => onScheduleBatch(selectedIds)}
+                                onClick={() => onScheduleBatch({ candidateIds: selectedIds, jobId: applications.map((a) => a.job.id) })}
                             >
                                 <Calendar className="mr-2 h-4 w-4" />
                                 Schedule {selectedIds.length} Selected
@@ -105,7 +120,7 @@ export function WaitingList({ candidates, jobs, onScheduleBatch }: WaitingListPr
                             </SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="all">All Jobs</SelectItem>
-                                {jobs.map((job) => (
+                                {job.map((job) => (
                                     <SelectItem key={job.id} value={job.id}>
                                         {job.title}
                                     </SelectItem>
@@ -131,20 +146,20 @@ export function WaitingList({ candidates, jobs, onScheduleBatch }: WaitingListPr
                         filteredCandidates.map((candidate) => (
                             <div
                                 key={candidate.id}
-                                className={`flex items-center gap-4 p-4 transition-colors hover:bg-muted/20 ${selectedIds.includes(candidate.id) ? "bg-primary/5" : ""}`}
+                                className={`flex items-center gap-4 p-4 transition-colors hover:bg-muted/20 ${selectedIds.includes(candidate.candidate.id) ? "bg-primary/5" : ""}`}
                             >
                                 <div className="flex items-center px-1">
                                     <Checkbox
-                                        checked={selectedIds.includes(candidate.id)}
-                                        onCheckedChange={() => toggleSelect(candidate.id)}
+                                        checked={selectedIds.includes(candidate.candidate.id)}
+                                        onCheckedChange={() => toggleSelect(candidate.candidate.id)}
                                         className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
                                     />
                                 </div>
 
                                 <Avatar className="h-10 w-10 border border-border/50">
-                                    <AvatarImage src={`/.jpg?height=40&width=40&query=${candidate.name}`} />
+                                    <AvatarImage />
                                     <AvatarFallback className="bg-primary/5 text-primary text-xs font-semibold">
-                                        {candidate.name
+                                        {candidate.candidate.user.name
                                             .split(" ")
                                             .map((n: string) => n[0])
                                             .join("")}
@@ -154,21 +169,21 @@ export function WaitingList({ candidates, jobs, onScheduleBatch }: WaitingListPr
                                 <div className="flex-1 min-w-0">
                                     <div className="flex items-center justify-between gap-2">
                                         <p className="text-sm font-semibold truncate group-hover:text-primary transition-colors">
-                                            {candidate.name}
+                                            {candidate.candidate.user.name}
                                         </p>
                                         <div className="flex items-center gap-1.5 shrink-0">
-                                            <span className="text-xs font-bold text-primary">{candidate.matchScore}%</span>
+                                            <span className="text-xs font-bold text-primary">{candidate.score}%</span>
                                             <div className="w-12 h-1.5 bg-muted rounded-full overflow-hidden hidden sm:block">
-                                                <div className="h-full bg-primary" style={{ width: `${candidate.matchScore}%` }} />
+                                                <div className="h-full bg-primary" style={{ width: `${candidate.score}%` }} />
                                             </div>
                                         </div>
                                     </div>
-                                    <p className="text-xs text-muted-foreground truncate">{candidate.title}</p>
+                                    <p className="text-xs text-muted-foreground truncate">{candidate.job.title}</p>
                                 </div>
 
                                 <div className="hidden sm:flex items-center gap-2">
                                     <Badge variant="outline" className="text-[10px] py-0 h-5 font-normal border-border/60">
-                                        {candidate.experience} Exp
+                                        {candidate.candidate.experienceLevel.split(" ")[0]}
                                     </Badge>
                                 </div>
 
@@ -176,7 +191,7 @@ export function WaitingList({ candidates, jobs, onScheduleBatch }: WaitingListPr
                                     variant="ghost"
                                     size="icon"
                                     className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/10"
-                                    onClick={() => onScheduleBatch([candidate.id])}
+                                    onClick={() => onScheduleBatch({ candidateIds: [candidate.candidate.id], jobId: [candidate.job.id] })}
                                 >
                                     <UserPlus className="h-4 w-4" />
                                 </Button>

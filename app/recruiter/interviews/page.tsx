@@ -1,5 +1,5 @@
 "use client"
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { Breadcrumbs } from "@/components/breadcrumbs"
 import { PageHeader } from "@/components/page-header"
 import { Button } from "@/components/ui/button"
@@ -7,7 +7,7 @@ import { Plus, Calendar, Clock, CheckCircle2, XCircle } from "lucide-react"
 import { StatCard } from "@/components/stat-card"
 import { InterviewTable } from "@/components/interview/interview-table"
 import { InterviewFilters } from "@/components/interview/interview-filters"
-import { WaitingList } from "@/components/interview/waiting-list"
+import { WaitingList, type ScheduleBatchProps } from "@/components/interview/waiting-list"
 import { ScheduleInterviewModal } from "@/components/interview/schedule-interview-modal"
 import { InterviewDetailModal, type InterviewDetail } from "@/components/interview/interview-detail-modal"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -15,7 +15,8 @@ import { mockJobs, mockCandidates } from "@/lib/mock-data"
 import { Badge } from "@/components/ui/badge"
 import { isWithinInterval, parseISO, format } from "date-fns"
 import type { DateRange } from "react-day-picker" // Import DateRange
-
+import { useRecruiterApplicationsStore } from "@/store/recruiterApplication"
+import axios from "axios"
 // Mock interviews data for the recruiter
 const mockInterviews: InterviewDetail[] = [
     {
@@ -95,15 +96,25 @@ export default function RecruiterInterviewsPage() {
     const [activeTab, setActiveTab] = useState("interviews")
     const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false)
     const [selectedInterview, setSelectedInterview] = useState<InterviewDetail | null>(null)
-
+    const { applications, setApplications } = useRecruiterApplicationsStore()
     const [selectedCandidateIds, setSelectedCandidateIds] = useState<string[]>([])
-    const [selectedJobId, setSelectedJobId] = useState<string>("")
+    const [selectedJobId, setSelectedJobId] = useState<string[]>([])
 
     // Filter states
     const [searchQuery, setSearchQuery] = useState("")
     const [statusFilter, setStatusFilter] = useState("all")
     const [jobFilter, setJobFilter] = useState("all")
     const [dateRange, setDateRange] = useState<DateRange | undefined>()
+
+    useEffect(() => {
+        const fetch = async () => {
+            const res = await axios.get("/api/recruiter/get_waitlist", { withCredentials: true })
+            console.log(res.data)
+            setApplications(res.data.applications)
+        }
+
+        fetch()
+    }, [])
 
     const filteredInterviews = useMemo(() => {
         return interviews.filter((int) => {
@@ -162,10 +173,10 @@ export default function RecruiterInterviewsPage() {
 
         setInterviews([...newInterviews, ...interviews])
         setSelectedCandidateIds([])
-        setSelectedJobId("")
+        setSelectedJobId([])
     }
 
-    const openScheduleModal = (candidateIds: string[] = [], jobId = "") => {
+    const openScheduleModal = (candidateIds: string[] = [], jobId: string[] = []) => {
         setSelectedCandidateIds(candidateIds)
         setSelectedJobId(jobId)
         setIsScheduleModalOpen(true)
@@ -210,10 +221,9 @@ export default function RecruiterInterviewsPage() {
 
                     <TabsContent value="waiting-list" className="mt-0 border-none p-0">
                         <WaitingList
-                            candidates={mockCandidates}
-                            jobs={mockJobs}
-                            onScheduleBatch={(candidateIds) => {
-                                openScheduleModal(candidateIds, "")
+
+                            onScheduleBatch={(props: ScheduleBatchProps) => {
+                                openScheduleModal(props.candidateIds, props.jobId)
                             }}
                         />
                     </TabsContent>
@@ -268,10 +278,10 @@ export default function RecruiterInterviewsPage() {
                     open={isScheduleModalOpen}
                     onOpenChange={setIsScheduleModalOpen}
                     onSchedule={handleSchedule}
-                    candidates={mockCandidates.map((c) => ({ id: c.id, name: c.name }))}
-                    jobs={mockJobs.map((j) => ({ id: j.id, title: j.title }))}
+                    candidates={applications.map((c) => ({ id: c.candidate.id, name: c.candidate.user.name }))}
+                    jobs={applications.map((j) => ({ id: j.job.id, title: j.job.title }))}
                     selectedCandidateIds={selectedCandidateIds}
-                    selectedJobId={selectedJobId}
+                    selectedJobIds={selectedJobId}
                 />
 
                 <InterviewDetailModal

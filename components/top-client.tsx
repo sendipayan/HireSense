@@ -300,7 +300,7 @@ export function TopMatchesClient() {
                 candidates={filteredCandidates.filter((c) => selectedIds.includes(c.id)).map((c) => ({ id: c.id, name: c.candidate.user.name }))}
                 jobs={jobs}
                 selectedCandidateIds={selectedIds}
-                selectedJobId={selectedJob}
+                selectedJobIds={[selectedJob]}
             />
         </main>
     )
