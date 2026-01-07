@@ -17,6 +17,7 @@ import { useRecruiterApplicationsStore, type ApplicationJob } from "@/store/recr
 export interface ScheduleBatchProps {
     candidateIds: string[];
     jobId: string[];
+    applicationIds: string[];
 }
 
 interface WaitingListProps {
@@ -110,7 +111,7 @@ export function WaitingList({ onScheduleBatch, setTrigger }: WaitingListProps) {
                             <Button
                                 size="sm"
                                 className="w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg shadow-primary/20 animate-in fade-in zoom-in duration-200"
-                                onClick={() => onScheduleBatch({ candidateIds: selectedIds, jobId: applications.filter((a) => selectApplications.includes(a.id)).map((a) => a.job.id) })}
+                                onClick={() => onScheduleBatch({ candidateIds: selectedIds, applicationIds: selectApplications, jobId: applications.filter((a) => selectApplications.includes(a.id)).map((a) => a.job.id) })}
                             >
                                 <Calendar className="mr-2 h-4 w-4" />
                                 Schedule {selectApplications.length} Selected
@@ -219,7 +220,7 @@ export function WaitingList({ onScheduleBatch, setTrigger }: WaitingListProps) {
                                     variant="ghost"
                                     size="icon"
                                     className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/10"
-                                    onClick={() => onScheduleBatch({ candidateIds: [candidate.candidate.id], jobId: [candidate.job.id] })}
+                                    onClick={() => onScheduleBatch({ candidateIds: [candidate.candidate.id], applicationIds: [candidate.id], jobId: [candidate.job.id] })}
                                 >
                                     <UserPlus className="h-4 w-4" />
                                 </Button>

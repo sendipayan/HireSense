@@ -100,6 +100,7 @@ export default function RecruiterInterviewsPage() {
     const [selectedCandidateIds, setSelectedCandidateIds] = useState<string[]>([])
     const [selectedJobId, setSelectedJobId] = useState<string[]>([])
     const [trigger, setTrigger] = useState(false)
+    const [selectedApplicationIds, setSelectedApplicationIds] = useState<string[]>([])
 
     // Filter states
     const [searchQuery, setSearchQuery] = useState("")
@@ -177,10 +178,11 @@ export default function RecruiterInterviewsPage() {
         setSelectedJobId([])
     }
 
-    const openScheduleModal = (candidateIds: string[] = [], jobId: string[] = []) => {
+    const openScheduleModal = (candidateIds: string[] = [], jobId: string[] = [], applicationIds: string[] = []) => {
         console.log("candidateIds", candidateIds)
         setSelectedCandidateIds(candidateIds)
         setSelectedJobId(jobId)
+        setSelectedApplicationIds(applicationIds)
         setIsScheduleModalOpen(true)
     }
 
@@ -225,7 +227,7 @@ export default function RecruiterInterviewsPage() {
                         <WaitingList
                             setTrigger={setTrigger}
                             onScheduleBatch={(props: ScheduleBatchProps) => {
-                                openScheduleModal(props.candidateIds, props.jobId)
+                                openScheduleModal(props.candidateIds, props.jobId, props.applicationIds)
                             }}
                         />
                     </TabsContent>
@@ -283,6 +285,7 @@ export default function RecruiterInterviewsPage() {
                     candidates={applications.map((c) => ({ id: c.candidate.id, name: c.candidate.user.name }))}
                     jobs={applications.map((j) => ({ id: j.job.id, title: j.job.title }))}
                     selectedCandidateIds={selectedCandidateIds}
+                    selectedApplicationIds={selectedApplicationIds}
                     selectedJobIds={selectedJobId}
                 />
 
