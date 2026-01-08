@@ -202,8 +202,7 @@ model Interview {
   recruiterId   String
   type          InterviewType
   status        InterviewStatus @default(SCHEDULED)
-  startTime     DateTime
-  date          DateTime
+  startAt       DateTime
   duration      Int
   location      String?
   meetingLink   String?

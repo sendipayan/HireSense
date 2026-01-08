@@ -15,22 +15,25 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
-import { CalendarIcon, Clock, LinkIcon, MapPin } from "lucide-react"
+import { CalendarIcon, Clock, LinkIcon, MapPin, Phone } from "lucide-react"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Calendar } from "@/components/ui/calendar"
 import { format } from "date-fns"
 import { cn } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
 import { useEffect, useState } from "react"
+import axios from "axios"
 
 const formSchema = z.object({
     candidateIds: z.array(z.string()).min(1, "At least one candidate is required"),
+    applicationIds: z.array(z.string()).min(1, "At least one application is required"),
     jobIds: z.array(z.string()).min(1, "At least one job is required"),
-    type: z.enum(["online", "phone", "in-person"], { required_error: "Interview type is required" }),
+    type: z.enum(["ONLINE", "PHONE", "IN_PERSON"], { required_error: "Interview type is required" }),
     date: z.date({ required_error: "Date is required" }),
     time: z.string({ required_error: "Time is required" }),
     duration: z.string({ required_error: "Duration is required" }),
     location: z.string().optional(),
+    phno: z.string().optional(),
     meetingLink: z.string().url("Invalid meeting link").optional().or(z.literal("")),
     notes: z.string().optional(),
 })
@@ -39,6 +42,7 @@ interface ScheduleInterviewModalProps {
     open: boolean
     onOpenChange: (open: boolean) => void
     onSchedule: (values: any) => void
+    setTrigger: (trigger: boolean) => void;
     candidates: { id: string; name: string }[]
     jobs: { id: string; title: string }[]
     selectedCandidateIds?: string[]
@@ -50,6 +54,7 @@ export function ScheduleInterviewModal({
     open,
     onOpenChange,
     onSchedule,
+    setTrigger,
     candidates,
     jobs,
     selectedCandidateIds = [],
@@ -62,10 +67,13 @@ export function ScheduleInterviewModal({
         resolver: zodResolver(formSchema),
         defaultValues: {
             candidateIds: selectedCandidateIds,
+            applicationIds: selectedApplicationIds,
             jobIds: selectedJobIds,
-            type: "online",
+            type: "ONLINE",
             duration: "30",
             location: "",
+            phno: "",
+            time: "",
             meetingLink: "",
             notes: "",
         },
@@ -73,14 +81,50 @@ export function ScheduleInterviewModal({
 
     useEffect(() => {
         if (selectedApplicationIds.length > 0) {
-            console.log("selectedApplicationIds", selectedApplicationIds)
+            form.setValue("applicationIds", selectedApplicationIds)
         }
-    }, [selectedApplicationIds])
+        if (selectedCandidateIds.length > 0) {
+            form.setValue("candidateIds", selectedCandidateIds)
+        }
+        if (selectedJobIds.length > 0) {
+            form.setValue("jobIds", selectedJobIds)
+        }
+    }, [selectedApplicationIds, selectedCandidateIds, selectedJobIds])
 
-    function onSubmit(values: z.infer<typeof formSchema>) {
-        onSchedule(values)
-        onOpenChange(false)
-        form.reset()
+    useEffect(() => {
+        console.log("form errors", form.formState.errors)
+    }, [form.formState.errors])
+
+    function toISO(date: Date, time: string): string {
+        const [hours, minutes] = time.split(":").map(Number);
+
+        const combined = new Date(date);
+        combined.setHours(hours, minutes, 0, 0);
+
+        return combined.toISOString();
+    }
+
+
+
+    const onSubmit = async (values: z.infer<typeof formSchema>) => {
+        try {
+            values.date = new Date(toISO(values.date, values.time))
+            const durations = Number(values.duration)
+            const payload = {
+                ...values,
+                durations,
+            }
+            console.log(values.date)
+            const res = await axios.post("/api/recruiter/add_interview", payload, { withCredentials: true })
+            if (res.status === 201) {
+
+                setTrigger(true)
+                onOpenChange(false)
+                form.reset()
+            }
+        } catch (err) {
+            console.log(err)
+        }
     }
 
     const uniqueCandidateIds = Array.from(new Set(selectedCandidateIds))
@@ -177,9 +221,9 @@ export function ScheduleInterviewModal({
                                                 </SelectTrigger>
                                             </FormControl>
                                             <SelectContent>
-                                                <SelectItem value="online">Online Meeting</SelectItem>
-                                                <SelectItem value="phone">Phone Call</SelectItem>
-                                                <SelectItem value="in-person">In-Person</SelectItem>
+                                                <SelectItem value="ONLINE">Online Meeting</SelectItem>
+                                                <SelectItem value="PHONE">Phone Call</SelectItem>
+                                                <SelectItem value="IN_PERSON">In-Person</SelectItem>
                                             </SelectContent>
                                         </Select>
                                         <FormMessage />
@@ -237,7 +281,6 @@ export function ScheduleInterviewModal({
                                                     selected={field.value}
                                                     onSelect={field.onChange}
                                                     disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
-                                                    initialFocus
                                                 />
                                             </PopoverContent>
                                         </Popover>
@@ -254,7 +297,7 @@ export function ScheduleInterviewModal({
                                         <FormControl>
                                             <div className="relative">
                                                 <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                                <Input type="time" className="pl-9" {...field} />
+                                                <Input type="time" className="pl-9" {...field} value={field.value || ""} onChange={field.onChange} />
                                             </div>
                                         </FormControl>
                                         <FormMessage />
@@ -263,7 +306,7 @@ export function ScheduleInterviewModal({
                             />
                         </div>
 
-                        {interviewType === "online" ? (
+                        {interviewType === "ONLINE" && (
                             <FormField
                                 control={form.control}
                                 name="meetingLink"
@@ -273,27 +316,55 @@ export function ScheduleInterviewModal({
                                         <FormControl>
                                             <div className="relative">
                                                 <LinkIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                                <Input placeholder="https://zoom.us/j/..." className="pl-9" {...field} />
+                                                <Input placeholder="https://zoom.us/j/..." className="pl-9" {...field} value={field.value || ""} onChange={field.onChange} />
                                             </div>
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>
                                 )}
                             />
-                        ) : (
+                        )}
+                        {interviewType === "IN_PERSON" && (
                             <FormField
                                 control={form.control}
                                 name="location"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>{interviewType === "phone" ? "Phone Number" : "Location"}</FormLabel>
+                                        <FormLabel>Location</FormLabel>
                                         <FormControl>
                                             <div className="relative">
                                                 <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                                                 <Input
-                                                    placeholder={interviewType === "phone" ? "+1 (555) 000-0000" : "Office address / Room"}
+                                                    placeholder="Office address / Room"
                                                     className="pl-9"
                                                     {...field}
+                                                    value={field.value || ""}
+                                                    onChange={field.onChange}
+                                                />
+                                            </div>
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />)}
+                        {interviewType === "PHONE" && (
+                            <FormField
+                                control={form.control}
+                                name="phno"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Phone Number</FormLabel>
+                                        <FormControl>
+                                            <div className="relative">
+                                                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                                <Input
+                                                    type="tel"
+                                                    placeholder="+1 (555) 000-0000"
+                                                    className="pl-9"
+
+                                                    {...field}
+                                                    value={field.value || ""}
+                                                    onChange={field.onChange}
                                                 />
                                             </div>
                                         </FormControl>
@@ -303,12 +374,13 @@ export function ScheduleInterviewModal({
                             />
                         )}
 
+
                         <FormField
                             control={form.control}
                             name="notes"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Private Notes</FormLabel>
+                                    <FormLabel>Private Notes (optional)</FormLabel>
                                     <FormControl>
                                         <Textarea
                                             placeholder="Add any internal notes for the interviewers..."
@@ -322,10 +394,10 @@ export function ScheduleInterviewModal({
                         />
 
                         <DialogFooter className="pt-4 flex flex-col-reverse sm:flex-row gap-2 sm:gap-0">
-                            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="w-full sm:w-auto">
+                            <Button type="button" variant="outline" onClick={() => { onOpenChange(false); form.reset() }} className="w-full sm:w-auto">
                                 Cancel
                             </Button>
-                            <Button type="submit" className="w-full sm:w-auto">
+                            <Button type="submit" className="w-full sm:w-auto" >
                                 Schedule Interview
                             </Button>
                         </DialogFooter>

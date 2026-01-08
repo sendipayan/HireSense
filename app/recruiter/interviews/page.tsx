@@ -150,36 +150,13 @@ export default function RecruiterInterviewsPage() {
     ]
 
     const handleSchedule = (values: any) => {
-        const newInterviews = values.candidateIds.map((cid: string) => {
-            const candidate = mockCandidates.find((c) => c.id === cid)
-            const job = mockJobs.find((j) => j.id === values.jobId)
 
-            return {
-                id: `int-${cid}-${Date.now()}`,
-                candidateName: candidate?.name || "Unknown Candidate",
-                recruiterName: "Alex Rivera",
-                jobTitle: job?.title || "Unknown Position",
-                date: format(values.date, "MMM dd, yyyy"),
-                time: values.time,
-                duration: values.duration,
-                type: values.type,
-                status: "scheduled",
-                meetingLink: values.meetingLink,
-                location: values.location,
-                notes: values.notes,
-                activityLog: [
-                    { action: "Interview Scheduled", user: "Alex Rivera", timestamp: format(new Date(), "MMM dd, hh:mm a") },
-                ],
-            }
-        })
-
-        setInterviews([...newInterviews, ...interviews])
-        setSelectedCandidateIds([])
-        setSelectedJobId([])
     }
 
     const openScheduleModal = (candidateIds: string[] = [], jobId: string[] = [], applicationIds: string[] = []) => {
         console.log("candidateIds", candidateIds)
+        console.log("jobId", jobId)
+        console.log("applicationIds", applicationIds)
         setSelectedCandidateIds(candidateIds)
         setSelectedJobId(jobId)
         setSelectedApplicationIds(applicationIds)
@@ -282,6 +259,7 @@ export default function RecruiterInterviewsPage() {
                     open={isScheduleModalOpen}
                     onOpenChange={setIsScheduleModalOpen}
                     onSchedule={handleSchedule}
+                    setTrigger={setTrigger}
                     candidates={applications.map((c) => ({ id: c.candidate.id, name: c.candidate.user.name }))}
                     jobs={applications.map((j) => ({ id: j.job.id, title: j.job.title }))}
                     selectedCandidateIds={selectedCandidateIds}

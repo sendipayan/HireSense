@@ -302,6 +302,7 @@ export function TopMatchesClient() {
                 selectedCandidateIds={selectedIds}
                 selectedApplicationIds={applications.filter((a) => selectedIds.includes(a.id)).map((a) => a.id)}
                 selectedJobIds={[selectedJob]}
+                setTrigger={setTrigger}
             />
         </main>
     )
