@@ -44,8 +44,10 @@ export function WaitingList({ onScheduleBatch, response, setApplicationsList, se
 
     useEffect(() => {
 
-        if (applications.length === 0)
+        if (applications.length === 0) {
+            setJob([])
             return;
+        }
         setJob([...new Map(applications.map((job) => [job.job.id, job.job])).values()])
     }, [])
 

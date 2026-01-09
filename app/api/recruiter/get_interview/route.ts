@@ -19,53 +19,53 @@ export async function GET(req: NextRequest) {
 
     const recruiter = await prisma.recruiter.findUnique({
       where: { userId: payload.userId },
+      select: { id: true },
     });
 
     if (!recruiter) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const applications = await prisma.application.findMany({
+    const interviews = await prisma.interview.findMany({
       where: {
-        job: {
-          recruiterId: recruiter.id,
-        },
-        status: "WAITLIST",
+        recruiterId: recruiter.id,
       },
       select: {
         id: true,
-        status: true,
-        score: true,
-        createdAt: true,
-        candidate: {
+        application: {
           select: {
-            id: true,
-            institution: true,
-            experienceLevel: true,
-            degree: true,
-            primarySkills: true,
-            secondarySkills: true,
-            user: {
+            candidate: {
               select: {
-                name: true,
+                user: {
+                  select: {
+                    name: true,
+                  },
+                },
+              },
+            },
+            job: {
+              select: {
+                title: true,
               },
             },
           },
         },
-        job: {
-          select: {
-            id: true,
-            title: true,
-          },
-        },
+        startAt: true,
+        duration: true,
+        status: true,
+        type: true,
+        location: true,
+        meetingLink: true,
+        notes: true,
+        phno: true,
       },
       orderBy: {
-        createdAt: "desc",
+        startAt: "desc",
       },
       take: 10,
     });
 
-    return NextResponse.json({ applications }, { status: 200 });
+    return NextResponse.json({ interviews }, { status: 200 });
   } catch (err) {
     console.error("Error fetching applications:", err);
     return NextResponse.json(

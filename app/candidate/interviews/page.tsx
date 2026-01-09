@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Breadcrumbs } from "@/components/breadcrumbs"
 import { PageHeader } from "@/components/page-header"
 import { InterviewCard, type CandidateInterview } from "@/components/interview/interview-card"
@@ -11,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { InterviewStatusBadge } from "@/components/interview/interview-status-badge"
 import { Calendar, History, Briefcase, User, Info } from "lucide-react"
-
+import axios from "axios"
 // Mock candidate interview data
 const mockCandidateInterviews: CandidateInterview[] = [
     {
@@ -68,6 +68,15 @@ const mockInterviewHistory: (InterviewDetail & { companyName: string })[] = [
 
 export default function CandidateInterviewsPage() {
     const [selectedInterview, setSelectedInterview] = useState<InterviewDetail | null>(null)
+
+    useEffect(() => {
+        const fetchInterviews = async () => {
+            const response = await axios.get('/api/candidate/get_interviews', { withCredentials: true })
+            const data = await response.data
+            console.log(data)
+        }
+        fetchInterviews()
+    }, [])
 
     const handleViewDetails = (interview: any) => {
         // Map CandidateInterview to InterviewDetail structure for the modal

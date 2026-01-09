@@ -16,6 +16,7 @@ import { Badge } from "@/components/ui/badge"
 import { isWithinInterval, parseISO, format } from "date-fns"
 import type { DateRange } from "react-day-picker" // Import DateRange
 import { useRecruiterApplicationsStore } from "@/store/recruiterApplication"
+import { useInterviewStore } from "@/store/useInterviewStore"
 import axios from "axios"
 
 interface ApplicationList {
@@ -118,7 +119,9 @@ export default function RecruiterInterviewsPage() {
     useEffect(() => {
         const fetch = async () => {
             const res = await axios.get("/api/recruiter/get_waitlist", { withCredentials: true })
+            const res2 = await axios.get("/api/recruiter/get_interview", { withCredentials: true })
             console.log(res.data)
+            console.log(res2.data)
             setApplications(res.data.applications)
         }
 
