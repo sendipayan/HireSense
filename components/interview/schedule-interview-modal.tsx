@@ -25,9 +25,9 @@ import { useEffect, useState } from "react"
 import axios from "axios"
 
 const formSchema = z.object({
-    candidateIds: z.array(z.string()).min(1, "At least one candidate is required"),
+
     applicationIds: z.array(z.string()).min(1, "At least one application is required"),
-    jobIds: z.array(z.string()).min(1, "At least one job is required"),
+
     type: z.enum(["ONLINE", "PHONE", "IN_PERSON"], { required_error: "Interview type is required" }),
     date: z.date({ required_error: "Date is required" }),
     time: z.string({ required_error: "Time is required" }),
@@ -43,11 +43,8 @@ interface ScheduleInterviewModalProps {
     onOpenChange: (open: boolean) => void
     onSchedule: (values: any) => void
     setTrigger: (trigger: boolean) => void;
-    candidates: { id: string; name: string }[]
-    jobs: { id: string; title: string }[]
-    selectedCandidateIds?: string[]
+    applications: { CId: string, Cname: string, JId: string[], Jname: string[] }[]
     selectedApplicationIds: string[]
-    selectedJobIds?: string[]
 }
 
 export function ScheduleInterviewModal({
@@ -55,20 +52,15 @@ export function ScheduleInterviewModal({
     onOpenChange,
     onSchedule,
     setTrigger,
-    candidates,
-    jobs,
-    selectedCandidateIds = [],
+    applications = [],
     selectedApplicationIds = [],
-    selectedJobIds = [],
 }: ScheduleInterviewModalProps) {
     const [showAllCandidates, setShowAllCandidates] = useState(false)
 
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
         defaultValues: {
-            candidateIds: selectedCandidateIds,
             applicationIds: selectedApplicationIds,
-            jobIds: selectedJobIds,
             type: "ONLINE",
             duration: "30",
             location: "",
@@ -83,17 +75,18 @@ export function ScheduleInterviewModal({
         if (selectedApplicationIds.length > 0) {
             form.setValue("applicationIds", selectedApplicationIds)
         }
-        if (selectedCandidateIds.length > 0) {
-            form.setValue("candidateIds", selectedCandidateIds)
-        }
-        if (selectedJobIds.length > 0) {
-            form.setValue("jobIds", selectedJobIds)
-        }
-    }, [selectedApplicationIds, selectedCandidateIds, selectedJobIds])
+    }, [selectedApplicationIds])
 
     useEffect(() => {
         console.log("form errors", form.formState.errors)
     }, [form.formState.errors])
+
+
+    useEffect(() => {
+        if (applications.length > 0) {
+            console.log("applications modal: ", applications)
+        }
+    }, [applications])
 
     function toISO(date: Date, time: string): string {
         const [hours, minutes] = time.split(":").map(Number);
@@ -117,7 +110,7 @@ export function ScheduleInterviewModal({
             console.log(values.date)
             const res = await axios.post("/api/recruiter/add_interview", payload, { withCredentials: true })
             if (res.status === 201) {
-
+                onSchedule(res.data)
                 setTrigger(true)
                 onOpenChange(false)
                 form.reset()
@@ -126,17 +119,9 @@ export function ScheduleInterviewModal({
             console.log(err)
         }
     }
+    const remainingCandidates = Math.max(0, applications.length - 3)
+    let displayedApplications = showAllCandidates ? applications : applications.slice(0, 3)
 
-    const uniqueCandidateIds = Array.from(new Set(selectedCandidateIds))
-    const uniqueJobIds = Array.from(new Set(selectedJobIds))
-    let displayedCandidates = showAllCandidates ? uniqueCandidateIds : uniqueCandidateIds.slice(0, 3)
-    let displayedJobs = showAllCandidates ? uniqueJobIds : uniqueJobIds.slice(0, 3)
-    const remainingCandidates = Math.max(0, uniqueCandidateIds.length - 3)
-
-    useEffect(() => {
-        displayedCandidates = showAllCandidates ? uniqueCandidateIds : uniqueCandidateIds.slice(0, 3)
-        displayedJobs = showAllCandidates ? uniqueJobIds : uniqueJobIds.slice(0, 3)
-    }, [showAllCandidates])
 
     const interviewType = form.watch("type")
 
@@ -145,38 +130,33 @@ export function ScheduleInterviewModal({
 
         return (
             <div className="space-y-3">
-                {displayedCandidates.map((candidateId) => {
-                    const candidate = candidates.find((c) => c.id === candidateId)
-                    return (
-                        <div key={candidateId} className="border rounded-lg p-4 bg-muted/30 hover:bg-muted/50 transition-colors">
-                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                                <div className="min-w-0">
-                                    <p className="text-sm font-semibold text-foreground truncate">{candidate?.name}</p>
-                                    <p className="text-xs text-muted-foreground">Candidate</p>
-                                </div>
-                                <div className="flex flex-wrap gap-2">
-                                    {displayedJobs.map((jobId) => {
-                                        const job = jobs.find((j) => j.id === jobId)
-                                        return (
-                                            <Badge
-                                                key={jobId}
-                                                variant="secondary"
-                                                className="bg-primary/10 text-primary border-primary/20 text-xs sm:text-sm"
-                                            >
-                                                {job?.title}
-                                            </Badge>
-                                        )
-                                    })}
-                                    {!showAllCandidates && uniqueJobIds.length > 3 && (
-                                        <Badge variant="outline" className="bg-background text-xs sm:text-sm">
-                                            +{uniqueJobIds.length - 3}
-                                        </Badge>
-                                    )}
-                                </div>
+                {displayedApplications?.map((app) => (
+                    <div key={app.CId} className="border rounded-lg p-4 bg-muted/30 hover:bg-muted/50 transition-colors">
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                            <div className="min-w-0">
+                                <p className="text-sm font-semibold text-foreground truncate">{app.Cname}</p>
+                                <p className="text-xs text-muted-foreground">Candidate</p>
+                            </div>
+                            <div className="flex flex-wrap gap-2">
+                                {app.Jname.slice(0, 3).map((j) => (
+                                    <Badge
+                                        key={j}
+                                        variant="secondary"
+                                        className="bg-primary/10 text-primary border-primary/20 text-xs sm:text-sm"
+                                    >
+                                        {j}
+                                    </Badge>
+                                ))}
+                                {app.Jname.length > 3 && (
+                                    <Badge variant="outline" className="bg-background text-xs sm:text-sm">
+                                        +{app.Jname.length - 3}
+                                    </Badge>
+                                )}
                             </div>
                         </div>
-                    )
-                })}
+                    </div>
+                )
+                )}
                 {remainingCandidates > 0 && !showAllCandidates && (
                     <Button
                         type="button"
@@ -198,8 +178,8 @@ export function ScheduleInterviewModal({
                 <DialogHeader>
                     <DialogTitle>Schedule Interview</DialogTitle>
                     <DialogDescription>
-                        Scheduling for {uniqueCandidateIds.length} candidate{uniqueCandidateIds.length > 1 ? "s" : ""} across{" "}
-                        {uniqueJobIds.length} position{uniqueJobIds.length > 1 ? "s" : ""}
+                        Scheduling for {applications?.length} candidate{applications?.length > 1 ? "s" : ""} across{" "}
+                        {applications.length === 0 ? 0 : applications.map((app) => app.Jname.length)?.reduce((a, b) => Math.max(a, b))} position{applications.length === 0 ? 0 : applications.map((app) => app.Jname.length)?.reduce((a, b) => Math.max(a, b)) > 1 ? "s" : ""}
                     </DialogDescription>
                 </DialogHeader>
 

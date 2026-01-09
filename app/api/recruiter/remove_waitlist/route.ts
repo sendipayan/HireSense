@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
 
     // Check for disallowed statuses
     const invalid = applications.filter((app) =>
-      ["ACCEPTED", "REJECTED", "SCHEDULED"].includes(app.status)
+      ["ACCEPTED", "REJECTED", "SCHEDULED", "PENDING"].includes(app.status)
     );
 
     if (invalid.length > 0) {

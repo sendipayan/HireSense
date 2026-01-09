@@ -17,6 +17,13 @@ import { isWithinInterval, parseISO, format } from "date-fns"
 import type { DateRange } from "react-day-picker" // Import DateRange
 import { useRecruiterApplicationsStore } from "@/store/recruiterApplication"
 import axios from "axios"
+
+interface ApplicationList {
+    CId: string;
+    Cname: string;
+    JId: string[];
+    Jname: string[];
+}
 // Mock interviews data for the recruiter
 const mockInterviews: InterviewDetail[] = [
     {
@@ -96,12 +103,12 @@ export default function RecruiterInterviewsPage() {
     const [activeTab, setActiveTab] = useState("interviews")
     const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false)
     const [selectedInterview, setSelectedInterview] = useState<InterviewDetail | null>(null)
-    const { applications, setApplications } = useRecruiterApplicationsStore()
-    const [selectedCandidateIds, setSelectedCandidateIds] = useState<string[]>([])
-    const [selectedJobId, setSelectedJobId] = useState<string[]>([])
+    const { setApplications } = useRecruiterApplicationsStore()
+
     const [trigger, setTrigger] = useState(false)
     const [selectedApplicationIds, setSelectedApplicationIds] = useState<string[]>([])
-
+    const [applicationList, setApplicationList] = useState<ApplicationList[]>([])
+    const [response, setResponse] = useState(false)
     // Filter states
     const [searchQuery, setSearchQuery] = useState("")
     const [statusFilter, setStatusFilter] = useState("all")
@@ -150,15 +157,13 @@ export default function RecruiterInterviewsPage() {
     ]
 
     const handleSchedule = (values: any) => {
-
+        if (values) {
+            setResponse(true)
+        }
     }
 
-    const openScheduleModal = (candidateIds: string[] = [], jobId: string[] = [], applicationIds: string[] = []) => {
-        console.log("candidateIds", candidateIds)
-        console.log("jobId", jobId)
-        console.log("applicationIds", applicationIds)
-        setSelectedCandidateIds(candidateIds)
-        setSelectedJobId(jobId)
+    const openScheduleModal = (applicationIds: string[] = []) => {
+
         setSelectedApplicationIds(applicationIds)
         setIsScheduleModalOpen(true)
     }
@@ -203,8 +208,11 @@ export default function RecruiterInterviewsPage() {
                     <TabsContent value="waiting-list" className="mt-0 border-none p-0">
                         <WaitingList
                             setTrigger={setTrigger}
+                            trigger={trigger}
+                            response={response}
+                            setApplicationsList={setApplicationList}
                             onScheduleBatch={(props: ScheduleBatchProps) => {
-                                openScheduleModal(props.candidateIds, props.jobId, props.applicationIds)
+                                openScheduleModal(props.applicationIds)
                             }}
                         />
                     </TabsContent>
@@ -260,11 +268,8 @@ export default function RecruiterInterviewsPage() {
                     onOpenChange={setIsScheduleModalOpen}
                     onSchedule={handleSchedule}
                     setTrigger={setTrigger}
-                    candidates={applications.map((c) => ({ id: c.candidate.id, name: c.candidate.user.name }))}
-                    jobs={applications.map((j) => ({ id: j.job.id, title: j.job.title }))}
-                    selectedCandidateIds={selectedCandidateIds}
+                    applications={applicationList}
                     selectedApplicationIds={selectedApplicationIds}
-                    selectedJobIds={selectedJobId}
                 />
 
                 <InterviewDetailModal

@@ -15,6 +15,13 @@ import axios from "axios"
 import { Checkbox } from "@/components/ui/checkbox"
 import { ScheduleInterviewModal } from "./interview/schedule-interview-modal"
 
+interface ApplicationList {
+    CId: string;
+    Cname: string;
+    JId: string[];
+    Jname: string[];
+}
+
 export function TopMatchesClient() {
     const { jobs, setJobs } = useJobStore()
     const [selectedJob, setSelectedJob] = useState("")
@@ -26,6 +33,8 @@ export function TopMatchesClient() {
     const { applications, setApplications } = useRecruiterApplicationsStore()
     const [loading, setLoading] = useState(true)
     const [jobload, setJobload] = useState(true)
+    const [applicationList, setApplicationList] = useState<ApplicationList[]>([])
+
 
     useEffect(() => {
         const fetch = async () => {
@@ -76,14 +85,73 @@ export function TopMatchesClient() {
             .sort((a, b) => b.score - a.score)
     }, [searchQuery, minScore, applications])
 
-    const toggleSelect = (id: string) => {
-        setSelectedIds((prev) => (prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]))
-    }
+    const toggleSelect = (id: string, Aid: string) => {
+        const app = applications.find(a => a.id === id);
+        if (!app) return;
+
+        if (!selectedIds.includes(id)) {
+            setApplicationList(prev => {
+                const existing = prev.find(a => a.CId === Aid);
+
+                if (existing) {
+                    return prev.map(a =>
+                        a.CId === Aid
+                            ? {
+                                ...a,
+                                JId: [...a.JId, app.job.id],
+                                Jname: [...a.Jname, app.job.title],
+                            }
+                            : a
+                    );
+                }
+
+                return [
+                    ...prev,
+                    {
+                        CId: Aid,
+                        Cname: app.candidate.user.name,
+                        JId: [app.job.id],
+                        Jname: [app.job.title],
+                    },
+                ];
+            });
+
+            setSelectedIds(prev => [...prev, id]);
+        } else {
+            setSelectedIds(prev => prev.filter(i => i !== id));
+
+            setApplicationList(prev => {
+                return prev
+                    .map(a =>
+                        a.CId === Aid
+                            ? {
+                                ...a,
+                                JId: a.JId.filter(j => j !== app.job.id),
+                                Jname: a.Jname.filter(j => j !== app.job.title),
+                            }
+                            : a
+                    )
+                    .filter(a => a.CId !== Aid || a.JId.length > 0);
+            });
+        }
+    };
+
 
     const selectAll = () => {
         if (selectedIds.length === filteredCandidates.length) {
             setSelectedIds([])
+            setApplicationList([])
         } else {
+            const select = Array.from(new Set(filteredCandidates.map((c) => c.candidate.id)))
+            const application = select.map((id) => {
+                return {
+                    CId: id,
+                    Cname: filteredCandidates.find((c) => c.candidate.id === id)?.candidate.user.name || "",
+                    JId: filteredCandidates.filter((c) => c.candidate.id === id)?.map((c) => c.job.id),
+                    Jname: filteredCandidates.filter((c) => c.candidate.id === id)?.map((c) => c.job.title)
+                }
+            })
+            setApplicationList(application)
             setSelectedIds(filteredCandidates.map((c) => c.id))
         }
     }
@@ -231,7 +299,7 @@ export function TopMatchesClient() {
                                     <div className="shrink-0 pt-2">
                                         <Checkbox
                                             checked={selectedIds.includes(candidate.id)}
-                                            onCheckedChange={() => toggleSelect(candidate.id)}
+                                            onCheckedChange={() => toggleSelect(candidate.id, candidate.candidate.id)}
                                             className="h-5 w-5 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
                                         />
                                     </div>
@@ -297,11 +365,8 @@ export function TopMatchesClient() {
                     console.log("[v0] Scheduling interviews for:", selectedIds, values)
                     setSelectedIds([])
                 }}
-                candidates={filteredCandidates.filter((c) => selectedIds.includes(c.id)).map((c) => ({ id: c.id, name: c.candidate.user.name }))}
-                jobs={jobs}
-                selectedCandidateIds={selectedIds}
+                applications={applicationList}
                 selectedApplicationIds={applications.filter((a) => selectedIds.includes(a.id)).map((a) => a.id)}
-                selectedJobIds={[selectedJob]}
                 setTrigger={setTrigger}
             />
         </main>

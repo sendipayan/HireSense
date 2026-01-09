@@ -14,24 +14,33 @@ import axios from "axios"
 import { useRecruiterApplicationsStore, type ApplicationJob } from "@/store/recruiterApplication"
 
 
+interface ApplicationList {
+    CId: string;
+    Cname: string;
+    JId: string[];
+    Jname: string[];
+}
+
 export interface ScheduleBatchProps {
-    candidateIds: string[];
-    jobId: string[];
     applicationIds: string[];
 }
 
 interface WaitingListProps {
     onScheduleBatch: (props: ScheduleBatchProps) => void;
+    response: boolean;
+    setApplicationsList: (applicationList: ApplicationList[]) => void;
     setTrigger: (trigger: boolean) => void;
+    trigger: boolean;
 }
 
-export function WaitingList({ onScheduleBatch, setTrigger }: WaitingListProps) {
+export function WaitingList({ onScheduleBatch, response, setApplicationsList, setTrigger, trigger }: WaitingListProps) {
     const [searchQuery, setSearchQuery] = useState("")
     const [jobFilter, setJobFilter] = useState("all")
     const [selectedIds, setSelectedIds] = useState<string[]>([])
     const [job, setJob] = useState<ApplicationJob[]>([])
     const { applications } = useRecruiterApplicationsStore()
     const [selectApplications, setSelectApplications] = useState<string[]>([])
+    const [applicationList, setApplicationList] = useState<ApplicationList[]>([])
 
     useEffect(() => {
 
@@ -39,6 +48,14 @@ export function WaitingList({ onScheduleBatch, setTrigger }: WaitingListProps) {
             return;
         setJob([...new Map(applications.map((job) => [job.job.id, job.job])).values()])
     }, [])
+
+    useEffect(() => {
+        if (response) {
+            setSelectedIds([])
+            setSelectApplications([])
+            setApplicationList([])
+        }
+    }, [response])
 
     const filteredCandidates = useMemo(() => {
         return applications.filter((c) => {
@@ -51,14 +68,58 @@ export function WaitingList({ onScheduleBatch, setTrigger }: WaitingListProps) {
     }, [searchQuery, applications])
 
     const toggleSelect = (id: string, Aid: string) => {
+        const app = applications.find(a => a.id === Aid);
+        if (!app) return;
+
         if (!selectApplications.includes(Aid)) {
-            setSelectedIds((prev) => [...prev, id])
-            setSelectApplications((prev) => [...prev, Aid])
+            setApplicationList(prev => {
+                const existing = prev.find(a => a.CId === id);
+
+                if (existing) {
+                    return prev.map(a =>
+                        a.CId === id
+                            ? {
+                                ...a,
+                                JId: [...a.JId, app.job.id],
+                                Jname: [...a.Jname, app.job.title],
+                            }
+                            : a
+                    );
+                }
+
+                return [
+                    ...prev,
+                    {
+                        CId: id,
+                        Cname: app.candidate.user.name,
+                        JId: [app.job.id],
+                        Jname: [app.job.title],
+                    },
+                ];
+            });
+
+            setSelectedIds(prev => [...prev, id]);
+            setSelectApplications(prev => [...prev, Aid]);
         } else {
-            setSelectedIds((prev) => prev.filter((i) => i !== id))
-            setSelectApplications((prev) => prev.filter((i) => i !== Aid))
+            setSelectedIds(prev => prev.filter(i => i !== id));
+            setSelectApplications(prev => prev.filter(i => i !== Aid));
+
+            setApplicationList(prev => {
+                return prev
+                    .map(a =>
+                        a.CId === id
+                            ? {
+                                ...a,
+                                JId: a.JId.filter(j => j !== app.job.id),
+                                Jname: a.Jname.filter(j => j !== app.job.title),
+                            }
+                            : a
+                    )
+                    .filter(a => a.CId !== id || a.JId.length > 0);
+            });
         }
-    }
+    };
+
 
     const allSelected = filteredCandidates.length > 0 && selectedIds.length === filteredCandidates.length
 
@@ -66,11 +127,26 @@ export function WaitingList({ onScheduleBatch, setTrigger }: WaitingListProps) {
         if (allSelected) {
             setSelectedIds([])
             setSelectApplications([])
+            setApplicationList([])
         } else {
+            const select = Array.from(new Set(filteredCandidates.map((c) => c.candidate.id)))
+            const application = select.map((id) => {
+                return {
+                    CId: id,
+                    Cname: filteredCandidates.find((c) => c.candidate.id === id)?.candidate.user.name || "",
+                    JId: filteredCandidates.filter((c) => c.candidate.id === id)?.map((c) => c.job.id),
+                    Jname: filteredCandidates.filter((c) => c.candidate.id === id)?.map((c) => c.job.title)
+                }
+            })
+            setApplicationList(application)
             setSelectedIds(filteredCandidates.map((c) => c.candidate.id))
             setSelectApplications(filteredCandidates.map((c) => c.id))
         }
     }
+
+    useEffect(() => {
+        setApplicationsList(applicationList)
+    }, [applicationList])
 
     const removeFromWaitingList = async () => {
         if (selectApplications.length === 0 || !Array.isArray(selectApplications)) {
@@ -81,9 +157,10 @@ export function WaitingList({ onScheduleBatch, setTrigger }: WaitingListProps) {
         try {
             const response = await axios.post("/api/recruiter/remove_waitlist", { ids: selectApplications }, { withCredentials: true })
             if (response.status === 200) {
-                setTrigger(true)
+                setTrigger(!trigger)
                 setSelectedIds([])
                 setSelectApplications([])
+                setApplicationList([])
             }
         } catch (error) {
             console.log(error)
@@ -111,7 +188,9 @@ export function WaitingList({ onScheduleBatch, setTrigger }: WaitingListProps) {
                             <Button
                                 size="sm"
                                 className="w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg shadow-primary/20 animate-in fade-in zoom-in duration-200"
-                                onClick={() => onScheduleBatch({ candidateIds: selectedIds, applicationIds: selectApplications, jobId: applications.filter((a) => selectApplications.includes(a.id)).map((a) => a.job.id) })}
+                                onClick={() => onScheduleBatch({
+                                    applicationIds: selectApplications,
+                                })}
                             >
                                 <Calendar className="mr-2 h-4 w-4" />
                                 Schedule {selectApplications.length} Selected
@@ -216,14 +295,7 @@ export function WaitingList({ onScheduleBatch, setTrigger }: WaitingListProps) {
                                     </Badge>
                                 </div>
 
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/10"
-                                    onClick={() => onScheduleBatch({ candidateIds: [candidate.candidate.id], applicationIds: [candidate.id], jobId: [candidate.job.id] })}
-                                >
-                                    <UserPlus className="h-4 w-4" />
-                                </Button>
+
                             </div>
                         ))
                     ) : (
