@@ -2,7 +2,7 @@
 
 import { InterviewStatusBadge, type InterviewStatus } from "./interview-status-badge"
 import { Button } from "@/components/ui/button"
-import { Calendar, MapPin, LinkIcon, ExternalLink, Clock } from "lucide-react"
+import { Calendar, MapPin, LinkIcon, ExternalLink, Clock, Phone } from "lucide-react"
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 
 export interface CandidateInterview {
@@ -13,6 +13,7 @@ export interface CandidateInterview {
     date: string
     time: string
     location?: string
+    phno?: string
     meetingLink?: string
     status: InterviewStatus
     instructions?: string
@@ -51,18 +52,20 @@ export function InterviewCard({ interview, onConfirm, onReschedule, onAddToCalen
                         </div>
                     </div>
                     <div className="space-y-1.5">
-                        <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold">Location</p>
+                        <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold">{
+                            interview.location ? "Location" : "Phone"
+                        }</p>
                         {interview.meetingLink ? (
                             <div className="flex items-center gap-2 text-sm text-primary hover:underline cursor-pointer">
                                 <LinkIcon className="h-4 w-4" />
                                 <span className="truncate">Online Meeting</span>
                             </div>
-                        ) : (
+                        ) :
                             <div className="flex items-center gap-2 text-sm">
-                                <MapPin className="h-4 w-4 text-muted-foreground" />
-                                <span className="truncate">{interview.location || "TBD"}</span>
+                                {interview.location ? <MapPin className="h-4 w-4 text-muted-foreground" /> : <Phone className="h-4 w-4 text-muted-foreground" />}
+                                <span className="truncate">{interview.location ? interview.location : interview.phno}</span>
                             </div>
-                        )}
+                        }
                     </div>
                 </div>
 

@@ -3,7 +3,7 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { InterviewStatusBadge, type InterviewStatus } from "./interview-status-badge"
 import { Button } from "@/components/ui/button"
-import { Clock, MapPin, LinkIcon, FileText, User, History, CalendarIcon, MessageSquare } from "lucide-react"
+import { Clock, MapPin, LinkIcon, FileText, User, History, CalendarIcon, MessageSquare, Link, Phone } from "lucide-react"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
 import { useState } from "react"
@@ -21,6 +21,7 @@ export interface InterviewDetail {
     status: InterviewStatus
     location?: string
     meetingLink?: string
+    phno?: string
     instructions?: string
     notes?: string
 }
@@ -103,17 +104,39 @@ export function InterviewDetailModal({
                                         </p>
                                     </div>
                                 </div>
-                                <div className="flex items-center gap-3">
+                                {interview.location?.trim() !== "" && <div className="flex items-center gap-3">
                                     <div className="p-2 rounded-lg bg-emerald-500/10">
                                         <MapPin className="h-4 w-4 text-emerald-500" />
                                     </div>
                                     <div>
                                         <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold">Location</p>
                                         <p className="text-sm font-medium truncate max-w-[180px]">
-                                            {interview.meetingLink ? "Online Meeting" : interview.location || "TBD"}
+                                            {interview.location}
                                         </p>
                                     </div>
-                                </div>
+                                </div>}
+                                {interview.meetingLink?.trim() !== "" && <div className="flex items-center gap-3">
+                                    <div className="p-2 rounded-lg bg-emerald-500/10">
+                                        <Link className="h-4 w-4 text-emerald-500" />
+                                    </div>
+                                    <div>
+                                        <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold">Meeting Link</p>
+                                        <p className="text-sm font-medium truncate max-w-[180px]">
+                                            {interview.meetingLink}
+                                        </p>
+                                    </div>
+                                </div>}
+                                {interview.phno?.trim() !== "" && <div className="flex items-center gap-3">
+                                    <div className="p-2 rounded-lg bg-emerald-500/10">
+                                        <Phone className="h-4 w-4 text-emerald-500" />
+                                    </div>
+                                    <div>
+                                        <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold">Phone Number</p>
+                                        <p className="text-sm font-medium truncate max-w-[180px]">
+                                            {interview.phno}
+                                        </p>
+                                    </div>
+                                </div>}
                             </div>
                         </div>
 

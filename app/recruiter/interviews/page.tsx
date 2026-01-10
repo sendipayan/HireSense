@@ -11,7 +11,7 @@ import { WaitingList, type ScheduleBatchProps } from "@/components/interview/wai
 import { ScheduleInterviewModal } from "@/components/interview/schedule-interview-modal"
 import { InterviewDetailModal, type InterviewDetail } from "@/components/interview/interview-detail-modal"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { mockJobs, mockCandidates } from "@/lib/mock-data"
+import { mockJobs } from "@/lib/mock-data"
 import { Badge } from "@/components/ui/badge"
 import { isWithinInterval, parseISO, format } from "date-fns"
 import type { DateRange } from "react-day-picker" // Import DateRange
@@ -223,6 +223,7 @@ export default function RecruiterInterviewsPage() {
                                             duration: int.duration.toString(),
                                             location: int.location || "",
                                             meetingLink: int.meetingLink || "",
+                                            phno: int.phno || "",
                                             notes: int.notes || "",
                                             recruiterName: ""
                                         })

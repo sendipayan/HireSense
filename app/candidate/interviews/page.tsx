@@ -91,7 +91,7 @@ export default function CandidateInterviewsPage() {
                                                 hour12: true,
                                             }),
                                             location: interview.location || "",
-
+                                            phno: interview.phno || "",
                                             status: interview.status,
                                             meetingLink: interview.meetingLink || "",
                                             instructions: interview.notes || "",
@@ -194,6 +194,7 @@ export default function CandidateInterviewsPage() {
                                                         type: interview.type.split("_").join(" ").toUpperCase(),
                                                         status: interview.status,
                                                         meetingLink: interview.meetingLink || "",
+                                                        phno: interview.phno || "",
                                                         instructions: interview.notes || "",
                                                         duration: interview.duration.toString() || "",
                                                     })}>
