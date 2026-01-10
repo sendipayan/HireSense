@@ -26,86 +26,15 @@ interface ApplicationList {
     Jname: string[];
 }
 // Mock interviews data for the recruiter
-const mockInterviews: InterviewDetail[] = [
-    {
-        id: "int-1",
-        candidateName: "Sarah Chen",
-        candidateEmail: "sarah.chen@example.com",
-        recruiterName: "Alex Rivera",
-        jobTitle: "Senior Frontend Engineer",
-        date: "Oct 24, 2025",
-        time: "10:00 AM",
-        duration: "45",
-        type: "online",
-        status: "confirmed",
-        meetingLink: "https://zoom.us/j/123456789",
-        instructions: "Please be ready to discuss your recent React projects and architectural decisions.",
-        notes: "Strong technical background, especially in performance optimization.",
-        activityLog: [
-            { action: "Interview Scheduled", user: "Alex Rivera", timestamp: "Oct 20, 11:30 AM" },
-            { action: "Attendance Confirmed", user: "Sarah Chen", timestamp: "Oct 21, 09:15 AM" },
-        ],
-    },
-    {
-        id: "int-2",
-        candidateName: "Michael Rodriguez",
-        candidateEmail: "m.rodriguez@example.com",
-        recruiterName: "Alex Rivera",
-        jobTitle: "Product Designer",
-        date: "Oct 25, 2025",
-        time: "02:30 PM",
-        duration: "60",
-        type: "in-person",
-        status: "scheduled",
-        location: "Conference Room B, 4th Floor",
-        instructions: "Please bring your portfolio on a tablet or laptop. We will have a screen available.",
-        notes: "Excellent UI polish in portfolio. Need to assess UX research skills.",
-        activityLog: [{ action: "Interview Scheduled", user: "Alex Rivera", timestamp: "Oct 22, 03:45 PM" }],
-    },
-    {
-        id: "int-3",
-        candidateName: "Emily Watson",
-        candidateEmail: "emily.w@example.com",
-        recruiterName: "Alex Rivera",
-        jobTitle: "Senior Frontend Engineer",
-        date: "Oct 22, 2025",
-        time: "09:00 AM",
-        duration: "30",
-        type: "online",
-        status: "completed",
-        meetingLink: "https://meet.google.com/abc-defg-hij",
-        notes: "Good candidate. Moving to the final round.",
-        activityLog: [
-            { action: "Interview Scheduled", user: "Alex Rivera", timestamp: "Oct 18, 10:00 AM" },
-            { action: "Interview Completed", user: "Alex Rivera", timestamp: "Oct 22, 09:35 AM" },
-        ],
-    },
-    {
-        id: "int-4",
-        candidateName: "James Wilson",
-        candidateEmail: "j.wilson@example.com",
-        recruiterName: "Alex Rivera",
-        jobTitle: "Backend Developer",
-        date: "Oct 26, 2025",
-        time: "11:00 AM",
-        duration: "45",
-        type: "phone",
-        status: "canceled",
-        location: "+1 (555) 123-4567",
-        activityLog: [
-            { action: "Interview Scheduled", user: "Alex Rivera", timestamp: "Oct 21, 01:20 PM" },
-            { action: "Interview Canceled", user: "James Wilson", timestamp: "Oct 23, 08:45 AM" },
-        ],
-    },
-]
+
 
 export default function RecruiterInterviewsPage() {
-    const [interviews, setInterviews] = useState(mockInterviews)
+    //const [interviews, setInterviews] = useState(mockInterviews)
     const [activeTab, setActiveTab] = useState("interviews")
     const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false)
     const [selectedInterview, setSelectedInterview] = useState<InterviewDetail | null>(null)
     const { setApplications } = useRecruiterApplicationsStore()
-
+    const { setInterviews, interviews } = useInterviewStore()
     const [trigger, setTrigger] = useState(false)
     const [selectedApplicationIds, setSelectedApplicationIds] = useState<string[]>([])
     const [applicationList, setApplicationList] = useState<ApplicationList[]>([])
@@ -122,6 +51,7 @@ export default function RecruiterInterviewsPage() {
             const res2 = await axios.get("/api/recruiter/get_interview", { withCredentials: true })
             console.log(res.data)
             console.log(res2.data)
+            setInterviews(res2.data.interviews)
             setApplications(res.data.applications)
         }
 
@@ -129,14 +59,15 @@ export default function RecruiterInterviewsPage() {
     }, [trigger])
 
     const filteredInterviews = useMemo(() => {
+        if (interviews.length === 0) return []
         return interviews.filter((int) => {
-            const matchesSearch = int.candidateName.toLowerCase().includes(searchQuery.toLowerCase())
+            const matchesSearch = int.application.candidate.user.name.toLowerCase().includes(searchQuery.toLowerCase())
             const matchesStatus = statusFilter === "all" || int.status === statusFilter
-            const matchesJob = jobFilter === "all" || mockJobs.find((j) => j.title === int.jobTitle)?.id === jobFilter
+            const matchesJob = jobFilter === "all" || mockJobs.find((j) => j.title === int.application.job.title)?.id === jobFilter
 
             let matchesDate = true
             if (dateRange?.from) {
-                const interviewDate = parseISO(new Date(int.date).toISOString())
+                const interviewDate = parseISO(new Date(int.startAt).toISOString())
                 if (dateRange.to) {
                     matchesDate = isWithinInterval(interviewDate, { start: dateRange.from, end: dateRange.to })
                 } else {
@@ -151,12 +82,12 @@ export default function RecruiterInterviewsPage() {
     const stats = [
         {
             title: "Upcoming",
-            value: interviews.filter((i) => i.status === "confirmed" || i.status === "scheduled").length,
+            value: interviews.filter((i) => i.status === "CONFIRMED" || i.status === "SCHEDULED").length,
             icon: Calendar,
         },
         { title: "Today", value: 1, icon: Clock, description: "Oct 24, 2025" },
-        { title: "Completed", value: interviews.filter((i) => i.status === "completed").length, icon: CheckCircle2 },
-        { title: "Canceled", value: interviews.filter((i) => i.status === "canceled").length, icon: XCircle },
+        { title: "Completed", value: interviews.filter((i) => i.status === "COMPLETED").length, icon: CheckCircle2 },
+        { title: "Canceled", value: interviews.filter((i) => i.status === "CANCELLED").length, icon: XCircle },
     ]
 
     const handleSchedule = (values: any) => {
@@ -251,14 +182,58 @@ export default function RecruiterInterviewsPage() {
                         {/* Table */}
                         <div className="mt-6">
                             <InterviewTable
-                                interviews={filteredInterviews}
-                                onViewDetails={(int) => setSelectedInterview(int as InterviewDetail)}
+                                interviews={filteredInterviews.map((int) => {
+                                    return {
+                                        id: int.id,
+                                        candidateName: int.application.candidate.user.name,
+                                        jobTitle: int.application.job.title,
+                                        type: int.type.split("_").join(" ").toUpperCase(),
+                                        date: new Date(int.startAt).toLocaleString("en-IN", {
+                                            day: "2-digit",
+                                            month: "short",
+                                            year: "numeric",
+                                            hour: "2-digit",
+                                            minute: "2-digit",
+                                            hour12: true,
+                                        }),
+                                        status: int.status
+                                    }
+                                })}
+                                onViewDetails={(id) => {
+                                    const int = interviews.find((i) => i.id === id);
+                                    if (int) {
+                                        setSelectedInterview({
+                                            id: int.id,
+                                            candidateName: int.application.candidate.user.name,
+                                            jobTitle: int.application.job.title,
+                                            type: int.type.split("_").join(" ").toUpperCase(),
+                                            date: new Date(int.startAt).toLocaleDateString("en-IN", {
+                                                timeZone: "Asia/Kolkata",
+                                                day: "2-digit",
+                                                month: "short",
+                                                year: "numeric",
+                                            }),
+                                            time: new Date(int.startAt).toLocaleTimeString("en-IN", {
+                                                timeZone: "Asia/Kolkata",
+                                                hour: "2-digit",
+                                                minute: "2-digit",
+                                                hour12: true,
+                                            }),
+                                            status: int.status,
+                                            duration: int.duration.toString(),
+                                            location: int.location || "",
+                                            meetingLink: int.meetingLink || "",
+                                            notes: int.notes || "",
+                                            recruiterName: ""
+                                        })
+                                    }
+                                }}
                                 onReschedule={(int) => setSelectedInterview(int as InterviewDetail)}
                                 onCancel={(int) => {
-                                    setInterviews(interviews.map((i) => (i.id === int.id ? { ...i, status: "canceled" } : i)))
+                                    setInterviews(interviews.map((i) => (i.id === int.id ? { ...i, status: "CANCELLED" } : i)))
                                 }}
                                 onMarkCompleted={(int) => {
-                                    setInterviews(interviews.map((i) => (i.id === int.id ? { ...i, status: "completed" } : i)))
+                                    setInterviews(interviews.map((i) => (i.id === int.id ? { ...i, status: "COMPLETED" } : i)))
                                 }}
                             />
                         </div>

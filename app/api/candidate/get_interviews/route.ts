@@ -36,18 +36,19 @@ export async function GET(req: NextRequest) {
         id: true,
         application: {
           select: {
-            candidate: {
-              select: {
-                user: {
-                  select: {
-                    name: true,
-                  },
-                },
-              },
-            },
             job: {
               select: {
                 title: true,
+              },
+            },
+          },
+        },
+        recruiter: {
+          select: {
+            companyName: true,
+            user: {
+              select: {
+                name: true,
               },
             },
           },

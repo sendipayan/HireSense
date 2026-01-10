@@ -1,9 +1,9 @@
 "use client"
 
 import { Badge } from "@/components/ui/badge"
-import { CheckCircle2, Clock, XCircle, Calendar } from "lucide-react"
+import { CheckCircle2, Clock, XCircle, Calendar, HelpCircle } from "lucide-react"
 
-export type InterviewStatus = "scheduled" | "confirmed" | "completed" | "canceled"
+export type InterviewStatus = "SCHEDULED" | "CONFIRMED" | "COMPLETED" | "CANCELLED"
 
 interface InterviewStatusBadgeProps {
     status: InterviewStatus
@@ -12,25 +12,25 @@ interface InterviewStatusBadgeProps {
 
 export function InterviewStatusBadge({ status, className }: InterviewStatusBadgeProps) {
     const config = {
-        scheduled: {
+        SCHEDULED: {
             icon: Clock,
             variant: "secondary" as const,
             label: "Scheduled",
             className: "bg-blue-500/10 text-blue-500 border-blue-500/20 dark:bg-blue-500/20",
         },
-        confirmed: {
+        CONFIRMED: {
             icon: Calendar,
             variant: "default" as const,
             label: "Confirmed",
             className: "bg-indigo-500/10 text-indigo-500 border-indigo-500/20 dark:bg-indigo-500/20",
         },
-        completed: {
+        COMPLETED: {
             icon: CheckCircle2,
             variant: "default" as const,
             label: "Completed",
             className: "bg-emerald-500/10 text-emerald-500 border-emerald-500/20 dark:bg-emerald-500/20",
         },
-        canceled: {
+        CANCELLED: {
             icon: XCircle,
             variant: "destructive" as const,
             label: "Canceled",
@@ -38,7 +38,13 @@ export function InterviewStatusBadge({ status, className }: InterviewStatusBadge
         },
     }
 
-    const { icon: Icon, label, className: variantClasses } = config[status]
+    const fallback = {
+        icon: HelpCircle,
+        label: "Unknown",
+        className: "text-muted-foreground border-muted",
+    }
+
+    const { icon: Icon, label, className: variantClasses } = config[status] ?? fallback
 
     return (
         <Badge variant="outline" className={`${variantClasses} gap-1.5 px-2 py-0.5 font-medium ${className}`}>

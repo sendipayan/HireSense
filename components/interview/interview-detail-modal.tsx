@@ -12,7 +12,6 @@ import { Input } from "../ui/input"
 export interface InterviewDetail {
     id: string
     candidateName: string
-    candidateEmail?: string
     recruiterName: string
     jobTitle: string
     date: string
@@ -24,11 +23,6 @@ export interface InterviewDetail {
     meetingLink?: string
     instructions?: string
     notes?: string
-    activityLog: {
-        action: string
-        user: string
-        timestamp: string
-    }[]
 }
 
 interface InterviewDetailModalProps {

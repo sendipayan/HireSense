@@ -24,7 +24,7 @@ export interface Interview {
 
 interface InterviewTableProps {
     interviews: Interview[]
-    onViewDetails: (interview: Interview) => void
+    onViewDetails: (id: string) => void
     onReschedule: (interview: Interview) => void
     onCancel: (interview: Interview) => void
     onMarkCompleted: (interview: Interview) => void
@@ -59,7 +59,7 @@ export function InterviewTable({
                                 <TableCell className="capitalize text-muted-foreground">{interview.type.replace("-", " ")}</TableCell>
                                 <TableCell className="text-muted-foreground">{interview.date}</TableCell>
                                 <TableCell>
-                                    <InterviewStatusBadge status={interview.status} />
+                                    <InterviewStatusBadge status={interview?.status} />
                                 </TableCell>
                                 <TableCell className="text-right">
                                     <DropdownMenu>
@@ -71,7 +71,7 @@ export function InterviewTable({
                                         </DropdownMenuTrigger>
                                         <DropdownMenuContent align="end" className="w-48">
                                             <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                            <DropdownMenuItem onClick={() => onViewDetails(interview)}>
+                                            <DropdownMenuItem onClick={() => onViewDetails(interview.id)}>
                                                 <Eye className="mr-2 h-4 w-4" /> View Details
                                             </DropdownMenuItem>
                                             <DropdownMenuSeparator />

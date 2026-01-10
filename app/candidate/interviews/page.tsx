@@ -12,67 +12,18 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { InterviewStatusBadge } from "@/components/interview/interview-status-badge"
 import { Calendar, History, Briefcase, User, Info } from "lucide-react"
 import axios from "axios"
-// Mock candidate interview data
-const mockCandidateInterviews: CandidateInterview[] = [
-    {
-        id: "int-1",
-        companyName: "TechCorp Inc.",
-        recruiterName: "Alex Rivera",
-        jobTitle: "Senior Frontend Engineer",
-        date: "Oct 24, 2025",
-        time: "10:00 AM",
-        meetingLink: "https://zoom.us/j/123456789",
-        status: "confirmed",
-        instructions: "Technical round focusing on React and System Design.",
-    },
-    {
-        id: "int-2",
-        companyName: "Innovate Solutions",
-        recruiterName: "Sarah Miller",
-        jobTitle: "UI Designer",
-        date: "Oct 28, 2025",
-        time: "02:00 PM",
-        location: "One Market St, San Francisco",
-        status: "scheduled",
-    },
-]
-
-const mockInterviewHistory: (InterviewDetail & { companyName: string })[] = [
-    {
-        id: "int-3",
-        candidateName: "Sarah Chen",
-        companyName: "GreenFuture",
-        recruiterName: "Mark Wilson",
-        jobTitle: "Frontend Developer",
-        date: "Oct 15, 2025",
-        time: "11:00 AM",
-        duration: "45",
-        type: "online",
-        status: "completed",
-        activityLog: [{ action: "Interview Completed", user: "Mark Wilson", timestamp: "Oct 15, 11:45 AM" }],
-    },
-    {
-        id: "int-4",
-        candidateName: "Sarah Chen",
-        companyName: "CloudScale",
-        recruiterName: "Jessica Lee",
-        jobTitle: "React Engineer",
-        date: "Oct 10, 2025",
-        time: "09:30 AM",
-        duration: "30",
-        type: "phone",
-        status: "completed",
-        activityLog: [{ action: "Interview Completed", user: "Jessica Lee", timestamp: "Oct 10, 10:00 AM" }],
-    },
-]
+import { useCandidateInterviewStore } from "@/store/useCandidateInterviewStore"
 
 export default function CandidateInterviewsPage() {
     const [selectedInterview, setSelectedInterview] = useState<InterviewDetail | null>(null)
+    const { interviews, setInterviews } = useCandidateInterviewStore()
 
     useEffect(() => {
         const fetchInterviews = async () => {
             const response = await axios.get('/api/candidate/get_interviews', { withCredentials: true })
             const data = await response.data
+            const interviews = data.interviews
+            setInterviews(interviews)
             console.log(data)
         }
         fetchInterviews()
@@ -93,12 +44,6 @@ export default function CandidateInterviewsPage() {
             meetingLink: interview.meetingLink,
             location: interview.location,
             instructions: interview.instructions,
-            activityLog: [
-                { action: "Interview Scheduled", user: interview.recruiterName, timestamp: "2 days ago" },
-                ...(interview.status === "confirmed"
-                    ? [{ action: "Attendance Confirmed", user: "Sarah Chen", timestamp: "Yesterday" }]
-                    : []),
-            ],
         }
         setSelectedInterview(detail)
     }
@@ -124,11 +69,33 @@ export default function CandidateInterviewsPage() {
 
                     <TabsContent value="upcoming" className="space-y-6">
                         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                            {mockCandidateInterviews.length > 0 ? (
-                                mockCandidateInterviews.map((interview) => (
+                            {interviews?.length > 0 ? (
+                                interviews?.map((interview) => (
                                     <InterviewCard
                                         key={interview.id}
-                                        interview={interview}
+                                        interview={{
+                                            id: interview.id,
+                                            companyName: interview.recruiter.companyName,
+                                            recruiterName: interview.recruiter.user.name,
+                                            jobTitle: interview.application.job.title,
+                                            date: new Date(interview.startAt).toLocaleDateString("en-IN", {
+                                                timeZone: "Asia/Kolkata",
+                                                day: "2-digit",
+                                                month: "short",
+                                                year: "numeric",
+                                            }),
+                                            time: new Date(interview.startAt).toLocaleTimeString("en-IN", {
+                                                timeZone: "Asia/Kolkata",
+                                                hour: "2-digit",
+                                                minute: "2-digit",
+                                                hour12: true,
+                                            }),
+                                            location: interview.location || "",
+
+                                            status: interview.status,
+                                            meetingLink: interview.meetingLink || "",
+                                            instructions: interview.notes || "",
+                                        }}
                                         onConfirm={() => console.log("Confirmed", interview.id)}
                                         onReschedule={() => handleViewDetails(interview)}
                                         onAddToCalendar={() => console.log("Added to calendar", interview.id)}
@@ -178,28 +145,58 @@ export default function CandidateInterviewsPage() {
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    {mockInterviewHistory.length > 0 ? (
-                                        mockInterviewHistory.map((interview) => (
+                                    {interviews?.length > 0 ? (
+                                        interviews?.map((interview) => (
                                             <TableRow key={interview.id}>
                                                 <TableCell>
                                                     <div className="flex items-center gap-2">
                                                         <Briefcase className="h-4 w-4 text-muted-foreground" />
-                                                        <span className="font-medium">{interview.companyName}</span>
+                                                        <span className="font-medium">{interview.recruiter.companyName}</span>
                                                     </div>
                                                 </TableCell>
-                                                <TableCell className="text-muted-foreground">{interview.jobTitle}</TableCell>
-                                                <TableCell className="text-muted-foreground">{interview.date}</TableCell>
+                                                <TableCell className="text-muted-foreground">{interview.application.job.title}</TableCell>
+                                                <TableCell className="text-muted-foreground">{new Date(interview.startAt).toLocaleString("en-IN", {
+                                                    day: "2-digit",
+                                                    month: "short",
+                                                    year: "numeric",
+                                                    hour: "2-digit",
+                                                    minute: "2-digit",
+                                                    hour12: true,
+                                                })}</TableCell>
                                                 <TableCell>
                                                     <div className="flex items-center gap-2">
                                                         <User className="h-4 w-4 text-muted-foreground" />
-                                                        <span className="text-muted-foreground">{interview.recruiterName}</span>
+                                                        <span className="text-muted-foreground">{interview.recruiter.user.name}</span>
                                                     </div>
                                                 </TableCell>
                                                 <TableCell>
                                                     <InterviewStatusBadge status={interview.status} />
                                                 </TableCell>
                                                 <TableCell className="text-right">
-                                                    <Button variant="ghost" size="sm" onClick={() => setSelectedInterview(interview)}>
+                                                    <Button variant="ghost" size="sm" onClick={() => setSelectedInterview({
+                                                        id: interview.id,
+                                                        candidateName: "",
+                                                        recruiterName: interview.recruiter.user.name,
+                                                        jobTitle: interview.application.job.title,
+                                                        date: new Date(interview.startAt).toLocaleDateString("en-IN", {
+                                                            timeZone: "Asia/Kolkata",
+                                                            day: "2-digit",
+                                                            month: "short",
+                                                            year: "numeric",
+                                                        }),
+                                                        time: new Date(interview.startAt).toLocaleTimeString("en-IN", {
+                                                            timeZone: "Asia/Kolkata",
+                                                            hour: "2-digit",
+                                                            minute: "2-digit",
+                                                            hour12: true,
+                                                        }),
+                                                        location: interview.location || "",
+                                                        type: interview.type.split("_").join(" ").toUpperCase(),
+                                                        status: interview.status,
+                                                        meetingLink: interview.meetingLink || "",
+                                                        instructions: interview.notes || "",
+                                                        duration: interview.duration.toString() || "",
+                                                    })}>
                                                         View Details
                                                     </Button>
                                                 </TableCell>

@@ -1,10 +1,10 @@
 import { create } from "zustand";
-
+import { type InterviewStatus } from "@/components/interview/interview-status-badge";
 export type Interview = {
   id: string;
   startAt: Date;
   duration: number;
-  status: string;
+  status: InterviewStatus;
   type: string;
   location: string | null;
   meetingLink: string | null;
@@ -26,7 +26,7 @@ interface InterviewState {
   interviews: Interview[];
   setInterviews: (data: Interview[]) => void;
   addInterview: (interview: Interview) => void;
-  updateInterviewStatus: (id: string, status: string) => void;
+  updateInterviewStatus: (id: string, status: InterviewStatus) => void;
   clearInterviews: () => void;
 }
 
