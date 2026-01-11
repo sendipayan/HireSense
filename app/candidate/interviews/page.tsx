@@ -17,6 +17,7 @@ import { useCandidateInterviewStore } from "@/store/useCandidateInterviewStore"
 export default function CandidateInterviewsPage() {
     const [selectedInterview, setSelectedInterview] = useState<InterviewDetail | null>(null)
     const { interviews, setInterviews } = useCandidateInterviewStore()
+    const [trigger, setTrigger] = useState(false)
 
     useEffect(() => {
         const fetchInterviews = async () => {
@@ -59,7 +60,7 @@ export default function CandidateInterviewsPage() {
                     <TabsList className="grid w-full grid-cols-2 lg:w-[400px] mb-8">
                         <TabsTrigger value="upcoming" className="gap-2">
                             <Calendar className="h-4 w-4" />
-                            Upcoming
+                            Scheduled
                         </TabsTrigger>
                         <TabsTrigger value="history" className="gap-2">
                             <History className="h-4 w-4" />
@@ -70,7 +71,7 @@ export default function CandidateInterviewsPage() {
                     <TabsContent value="upcoming" className="space-y-6">
                         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                             {interviews?.length > 0 ? (
-                                interviews?.map((interview) => (
+                                interviews?.filter((interview) => interview.status === "SCHEDULED")?.map((interview) => (
                                     <InterviewCard
                                         key={interview.id}
                                         interview={{
@@ -218,6 +219,8 @@ export default function CandidateInterviewsPage() {
 
                 <InterviewDetailModal
                     interview={selectedInterview}
+                    trigger={trigger}
+                    setTrigger={setTrigger}
                     open={!!selectedInterview}
                     onOpenChange={(open) => !open && setSelectedInterview(null)}
                     isRecruiter={false}

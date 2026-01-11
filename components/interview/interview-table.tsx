@@ -3,7 +3,7 @@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { InterviewStatusBadge, type InterviewStatus } from "./interview-status-badge"
 import { Button } from "@/components/ui/button"
-import { MoreHorizontal, Eye, Calendar, XCircle, CheckCircle2 } from "lucide-react"
+import { MoreHorizontal, Eye, Calendar, XCircle, CheckCircle2, UserPlus } from "lucide-react"
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -25,15 +25,19 @@ export interface Interview {
 interface InterviewTableProps {
     interviews: Interview[]
     onViewDetails: (id: string) => void
-    onReschedule: (interview: Interview) => void
+    onHire: (interview: Interview) => void
+    onReject: (interview: Interview) => void
     onCancel: (interview: Interview) => void
+    loading: boolean
     onMarkCompleted: (interview: Interview) => void
 }
 
 export function InterviewTable({
     interviews,
     onViewDetails,
-    onReschedule,
+    loading,
+    onHire,
+    onReject,
     onCancel,
     onMarkCompleted,
 }: InterviewTableProps) {
@@ -69,22 +73,28 @@ export function InterviewTable({
                                                 <span className="sr-only">Open menu</span>
                                             </Button>
                                         </DropdownMenuTrigger>
-                                        <DropdownMenuContent align="end" className="w-48">
+                                        <DropdownMenuContent align="end" className="w-48" >
                                             <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                            <DropdownMenuItem onClick={() => onViewDetails(interview.id)}>
+                                            <DropdownMenuItem onClick={() => onViewDetails(interview.id)} disabled={loading}>
                                                 <Eye className="mr-2 h-4 w-4" /> View Details
                                             </DropdownMenuItem>
-                                            <DropdownMenuSeparator />
-                                            <DropdownMenuItem onClick={() => onMarkCompleted(interview)}>
+                                            {(interview.status === "SCHEDULED" || interview.status === "COMPLETED") && <DropdownMenuSeparator />}
+                                            {interview.status === "COMPLETED" && <DropdownMenuItem disabled={loading} onClick={() => onHire(interview)}>
+                                                <UserPlus className="mr-2 h-4 w-4" /> Hire
+                                            </DropdownMenuItem>}
+                                            {interview.status === "SCHEDULED" && <DropdownMenuItem onClick={() => onMarkCompleted(interview)} disabled={loading}>
                                                 <CheckCircle2 className="mr-2 h-4 w-4" /> Mark Completed
-                                            </DropdownMenuItem>
-                                            <DropdownMenuSeparator />
-                                            <DropdownMenuItem
+                                            </DropdownMenuItem>}
+                                            {(interview.status === "SCHEDULED" || interview.status === "COMPLETED") && <DropdownMenuSeparator />}
+                                            {interview.status === "COMPLETED" && <DropdownMenuItem className="text-destructive focus:text-destructive focus:bg-destructive/10" disabled={loading} onClick={() => onReject(interview)}>
+                                                <XCircle className="mr-2 h-4 w-4 text-destructive" /> Reject
+                                            </DropdownMenuItem>}
+                                            {interview.status === "SCHEDULED" && <DropdownMenuItem
                                                 onClick={() => onCancel(interview)}
-                                                className="text-destructive focus:text-destructive focus:bg-destructive/10"
+                                                className="text-destructive focus:text-destructive focus:bg-destructive/10" disabled={loading}
                                             >
-                                                <XCircle className="mr-2 h-4 w-4" /> Cancel Interview
-                                            </DropdownMenuItem>
+                                                <XCircle className="mr-2 h-4 w-4 text-destructive" /> Cancel Interview
+                                            </DropdownMenuItem>}
                                         </DropdownMenuContent>
                                     </DropdownMenu>
                                 </TableCell>

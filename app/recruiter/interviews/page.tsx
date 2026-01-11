@@ -11,13 +11,14 @@ import { WaitingList, type ScheduleBatchProps } from "@/components/interview/wai
 import { ScheduleInterviewModal } from "@/components/interview/schedule-interview-modal"
 import { InterviewDetailModal, type InterviewDetail } from "@/components/interview/interview-detail-modal"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { mockJobs } from "@/lib/mock-data"
 import { Badge } from "@/components/ui/badge"
 import { isWithinInterval, parseISO, format } from "date-fns"
 import type { DateRange } from "react-day-picker" // Import DateRange
 import { useRecruiterApplicationsStore } from "@/store/recruiterApplication"
 import { useInterviewStore } from "@/store/useInterviewStore"
+import { useJobStore } from "@/store/jobStore"
 import axios from "axios"
+
 
 interface ApplicationList {
     CId: string;
@@ -39,6 +40,8 @@ export default function RecruiterInterviewsPage() {
     const [selectedApplicationIds, setSelectedApplicationIds] = useState<string[]>([])
     const [applicationList, setApplicationList] = useState<ApplicationList[]>([])
     const [response, setResponse] = useState(false)
+    const { jobs, setJobs } = useJobStore()
+    const [loading, setLoading] = useState(false)
     // Filter states
     const [searchQuery, setSearchQuery] = useState("")
     const [statusFilter, setStatusFilter] = useState("all")
@@ -49,21 +52,101 @@ export default function RecruiterInterviewsPage() {
         const fetch = async () => {
             const res = await axios.get("/api/recruiter/get_waitlist", { withCredentials: true })
             const res2 = await axios.get("/api/recruiter/get_interview", { withCredentials: true })
+            const res3 = await axios.get("/api/getjob", { withCredentials: true })
             console.log(res.data)
             console.log(res2.data)
+            console.log(res3.data)
             setInterviews(res2.data.interviews)
             setApplications(res.data.applications)
+            setJobs(res3.data.job)
         }
 
         fetch()
     }, [trigger])
 
+    const completeInterview = async (id: string) => {
+        try {
+            setLoading(true)
+            const response = await axios.post(`/api/recruiter/complete_interview`, {
+                interviewId: id,
+                status: "COMPLETED"
+            }, { withCredentials: true });
+            console.log(response.data);
+            if (response.status === 200) {
+                setTrigger(!trigger);
+            }
+
+        } catch (error) {
+            console.error("Error completing interview:", error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const cancelInterview = async (id: string) => {
+        try {
+            setLoading(true)
+            const response = await axios.delete(`/api/recruiter/cancel_interview/${id}`, { withCredentials: true });
+            console.log(response.data);
+            if (response.status === 200) {
+                setTrigger(!trigger);
+            }
+
+        } catch (error) {
+            console.error("Error completing interview:", error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const hireInterview = async (id: string) => {
+        try {
+            setLoading(true)
+            const response = await axios.post(`/api/recruiter/complete_interview`, {
+                interviewId: id,
+                status: "CONFIRMED"
+            }, { withCredentials: true });
+            console.log(response.data);
+            if (response.status === 200) {
+                setTrigger(!trigger);
+            }
+
+        } catch (error) {
+            console.error("Error completing interview:", error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const rejectInterview = async (id: string) => {
+        try {
+            setLoading(true)
+            const response = await axios.post(`/api/recruiter/complete_interview`, {
+                interviewId: id,
+                status: "CANCELLED"
+            }, { withCredentials: true });
+            console.log(response.data);
+            if (response.status === 200) {
+                setTrigger(!trigger);
+            }
+
+        } catch (error) {
+            console.error("Error completing interview:", error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+
+
+
+
     const filteredInterviews = useMemo(() => {
         if (interviews.length === 0) return []
         return interviews.filter((int) => {
             const matchesSearch = int.application.candidate.user.name.toLowerCase().includes(searchQuery.toLowerCase())
-            const matchesStatus = statusFilter === "all" || int.status === statusFilter
-            const matchesJob = jobFilter === "all" || mockJobs.find((j) => j.title === int.application.job.title)?.id === jobFilter
+            const matchesStatus = statusFilter === "all" || int.status.toLowerCase() === statusFilter.toLowerCase()
+            const matchesJob = jobFilter === "all" || jobs.find((j) => j.title === int.application.job.title)?.id === jobFilter
 
             let matchesDate = true
             if (dateRange?.from) {
@@ -169,7 +252,7 @@ export default function RecruiterInterviewsPage() {
                                 onJobChange={setJobFilter}
                                 dateRange={dateRange}
                                 onDateRangeChange={setDateRange}
-                                jobs={mockJobs.map((j) => ({ id: j.id, title: j.title }))}
+                                jobs={jobs.map((j) => ({ id: j.id, title: j.title }))}
                                 onClear={() => {
                                     setSearchQuery("")
                                     setStatusFilter("all")
@@ -229,12 +312,18 @@ export default function RecruiterInterviewsPage() {
                                         })
                                     }
                                 }}
-                                onReschedule={(int) => setSelectedInterview(int as InterviewDetail)}
+                                loading={loading}
+                                onHire={(int) => {
+                                    hireInterview(int.id)
+                                }}
+                                onReject={(int) => {
+                                    rejectInterview(int.id)
+                                }}
                                 onCancel={(int) => {
-                                    setInterviews(interviews.map((i) => (i.id === int.id ? { ...i, status: "CANCELLED" } : i)))
+                                    cancelInterview(int.id)
                                 }}
                                 onMarkCompleted={(int) => {
-                                    setInterviews(interviews.map((i) => (i.id === int.id ? { ...i, status: "COMPLETED" } : i)))
+                                    completeInterview(int.id)
                                 }}
                             />
                         </div>
@@ -254,6 +343,8 @@ export default function RecruiterInterviewsPage() {
                 <InterviewDetailModal
                     interview={selectedInterview}
                     open={!!selectedInterview}
+                    trigger={trigger}
+                    setTrigger={setTrigger}
                     onOpenChange={(open) => !open && setSelectedInterview(null)}
                     isRecruiter={true}
                 />

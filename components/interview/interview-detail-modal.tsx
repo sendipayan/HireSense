@@ -3,11 +3,13 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { InterviewStatusBadge, type InterviewStatus } from "./interview-status-badge"
 import { Button } from "@/components/ui/button"
-import { Clock, MapPin, LinkIcon, FileText, User, History, CalendarIcon, MessageSquare, Link, Phone } from "lucide-react"
+import { Clock, MapPin, LinkIcon, FileText, User, History, CalendarIcon, MessageSquare, Link, Phone, UserPlus, UserMinus, XCircle } from "lucide-react"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Input } from "../ui/input"
+import axios from "axios"
+import { convertToInputValues } from "@/lib/datePraser"
 
 export interface InterviewDetail {
     id: string
@@ -29,22 +31,132 @@ export interface InterviewDetail {
 interface InterviewDetailModalProps {
     interview: InterviewDetail | null
     open: boolean
+    trigger: boolean
     onOpenChange: (open: boolean) => void
+    setTrigger: (trigger: boolean) => void;
     isRecruiter?: boolean
 }
 
 export function InterviewDetailModal({
     interview,
     open,
+    trigger,
     onOpenChange,
+    setTrigger,
     isRecruiter = false,
 }: InterviewDetailModalProps) {
-    if (!interview) return null
+    if (!interview?.id) return (<Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="sm:max-w-[650px] p-0 overflow-auto max-h-[95vh] flex flex-col">
+            <DialogHeader className="p-6 pb-4 bg-muted/20">
+                <DialogTitle className="text-xl">Interview Not Found</DialogTitle>
+                <DialogDescription className="text-muted-foreground">
+                    The interview you are trying to view does not exist.
+                </DialogDescription>
+            </DialogHeader>
+        </DialogContent>
+    </Dialog>)
 
     const [editMode, setEditMode] = useState(false)
-    const [date, setDate] = useState(interview.date)
-    const [time, setTime] = useState(interview.time)
-    const [duration, setDuration] = useState(interview.duration)
+    const [loading, setLoading] = useState(false)
+    const [date, setDate] = useState("")
+    const [time, setTime] = useState("")
+
+
+    useEffect(() => {
+        if (!interview?.id) return;
+
+        const { date, time } = convertToInputValues(
+            interview.date,
+            interview.time
+        );
+
+        setDate(date);
+        setTime(time);
+    }, [interview?.id]); // runs only when interview changes
+
+
+
+
+    const completeInterview = async () => {
+        try {
+            setLoading(true)
+            const response = await axios.post(`/api/recruiter/complete_interview`, {
+                interviewId: interview.id,
+                status: "COMPLETED"
+            }, { withCredentials: true });
+            console.log(response.data);
+            if (response.status === 200) {
+                setTrigger(!trigger);
+            }
+
+        } catch (error) {
+            console.error("Error completing interview:", error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const hireInterview = async () => {
+        try {
+            setLoading(true)
+            const response = await axios.post(`/api/recruiter/complete_interview`, {
+                interviewId: interview.id,
+                status: "CONFIRMED"
+            }, { withCredentials: true });
+            console.log(response.data);
+            if (response.status === 200) {
+                setTrigger(!trigger);
+            }
+
+        } catch (error) {
+            console.error("Error completing interview:", error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const rejectInterview = async () => {
+        try {
+            setLoading(true)
+            const response = await axios.post(`/api/recruiter/complete_interview`, {
+                interviewId: interview.id,
+                status: "CANCELLED"
+            }, { withCredentials: true });
+            console.log(response.data);
+            if (response.status === 200) {
+                setTrigger(!trigger);
+            }
+
+        } catch (error) {
+            console.error("Error completing interview:", error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const rescheduleInterview = async () => {
+        try {
+            setLoading(true)
+            const response = await axios.patch(`/api/recruiter/reschedule_interview`, {
+                interviewId: interview.id,
+                date,
+                time
+            }, { withCredentials: true });
+            console.log(response.data);
+            if (response.status === 200) {
+                setTrigger(!trigger);
+            }
+
+        } catch (error) {
+            console.error("Error completing interview:", error);
+        } finally {
+            setLoading(false);
+            setEditMode(false);
+            onOpenChange(false);
+        }
+    };
+
+
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
@@ -73,7 +185,8 @@ export function InterviewDetailModal({
                                     </div>
                                     <div>
                                         <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold">Date</p>
-                                        {!editMode ? <p className="text-sm font-medium">{interview.date}</p> : <Input type="date" value={interview.date} onChange={(e) => setDate(e.target.value)} />}
+                                        {!editMode ? <p className="text-sm font-medium">{interview.date}</p>
+                                            : <Input type="date" min={new Date().toISOString().split("T")[0]} value={date} onChange={(e) => setDate(e.target.value)} />}
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-3">
@@ -82,11 +195,11 @@ export function InterviewDetailModal({
                                     </div>
                                     <div>
                                         <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold">
-                                            Time & Duration
+                                            {editMode ? "Time" : "Time & Duration"}
                                         </p>
                                         {!editMode ? <p className="text-sm font-medium">
                                             {interview.time} ({interview.duration}m)
-                                        </p> : <Input type="time" value={interview.time} onChange={(e) => setTime(e.target.value)} />}
+                                        </p> : <Input type="time" value={time} onChange={(e) => setTime(e.target.value)} />}
                                     </div>
                                 </div>
                             </div>
@@ -153,11 +266,11 @@ export function InterviewDetailModal({
                                     <span className="text-xs font-mono text-muted-foreground truncate max-w-[300px] hidden lg:block">
                                         {interview.meetingLink}
                                     </span>
-                                    <Button size="sm" variant="outline" className="h-8 bg-transparent" asChild>
+                                    {interview.status === "SCHEDULED" && <Button size="sm" variant="outline" className="h-8 bg-transparent" asChild>
                                         <a href={interview.meetingLink} target="_blank" rel="noopener noreferrer">
                                             Join Now
                                         </a>
-                                    </Button>
+                                    </Button>}
                                 </div>
                             </div>
                         )}
@@ -215,8 +328,13 @@ export function InterviewDetailModal({
                     <div className="flex flex-col lg:flex-row gap-2">
                         {isRecruiter ? (
                             <>
-                                <Button variant="outline" onClick={() => setEditMode(true)}>Reschedule</Button>
-                                {!editMode ? <Button>Mark as Completed</Button> : <Button onClick={() => setEditMode(false)}>Save Changes</Button>}
+                                {interview.status === "SCHEDULED" && (!editMode ? <Button variant="outline" onClick={() => setEditMode(true)} disabled={loading}>Reschedule</Button>
+                                    : <Button variant="outline" onClick={() => setEditMode(false)} disabled={loading}>Cancel</Button>)}
+                                {interview.status === "SCHEDULED" && (!editMode ? <Button onClick={() => completeInterview()} disabled={loading}>{loading ? "Marking..." : "Mark as Completed"}</Button>
+                                    : <Button disabled={loading} onClick={() => rescheduleInterview()}>{loading ? "Saving..." : "Save Changes"}</Button>)}
+                                {interview.status === "COMPLETED" && <Button variant="destructive" onClick={() => rejectInterview()} disabled={loading}><XCircle className="mr-2 h-4 w-4" />Reject</Button>}
+                                {interview.status === "COMPLETED" && <Button variant="outline" onClick={() => hireInterview()} disabled={loading}><UserPlus className="mr-2 h-4 w-4" />Hire</Button>}
+
                             </>
                         ) : (
                             <>

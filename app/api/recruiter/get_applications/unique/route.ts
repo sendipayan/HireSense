@@ -2,10 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { verifyJwt } from "@/lib/jwt";
 
-export async function GET(
-  req: NextRequest,
-  context: { params: Promise<{ id: string }> }
-) {
+export async function GET(req: NextRequest) {
   const token = req.cookies.get("auth_token")?.value;
 
   if (!token) {

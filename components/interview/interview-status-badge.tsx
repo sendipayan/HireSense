@@ -21,19 +21,19 @@ export function InterviewStatusBadge({ status, className }: InterviewStatusBadge
         CONFIRMED: {
             icon: Calendar,
             variant: "default" as const,
-            label: "Confirmed",
-            className: "bg-indigo-500/10 text-indigo-500 border-indigo-500/20 dark:bg-indigo-500/20",
+            label: "Hired",
+            className: "bg-emerald-500/10 text-emerald-500 border-emerald-500/20 dark:bg-emerald-500/20",
         },
         COMPLETED: {
             icon: CheckCircle2,
             variant: "default" as const,
             label: "Completed",
-            className: "bg-emerald-500/10 text-emerald-500 border-emerald-500/20 dark:bg-emerald-500/20",
+            className: "bg-indigo-500/10 text-indigo-500 border-indigo-500/20 dark:bg-indigo-500/20",
         },
         CANCELLED: {
             icon: XCircle,
             variant: "destructive" as const,
-            label: "Canceled",
+            label: "Rejected",
             className: "bg-destructive/10 text-destructive border-destructive/20 dark:bg-destructive/20",
         },
     }
