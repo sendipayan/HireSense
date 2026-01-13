@@ -27,6 +27,7 @@ import {
 import { Card, CardContent } from "@/components/ui/card"
 import { Inbox, Calendar } from "lucide-react"
 import { InterviewStatusBadge } from "@/components/interview/interview-status-badge"
+import { useCandidateInterviewStore } from "@/store/useCandidateInterviewStore"
 
 
 
@@ -35,12 +36,16 @@ export default function CandidateClientDashboardPage() {
     const [initialLoad, setInitialLoad] = useState(true)
     const { jobs, setJobs } = useJobStore()
     const { applications, setApplications } = useApplicationsStore()
+    const { interviews, setInterviews } = useCandidateInterviewStore()
 
     useEffect(() => {
         const fetch = async () => {
             console.log("fetching jobs")
             const res = await axios.get("/api/getjob")
             const res1 = await axios.get("/api/candidate/get_applications")
+            const res2 = await axios.get("/api/candidate/get_interviews", { withCredentials: true })
+            const data2 = await res2.data
+            setInterviews(data2.interviews)
             const data = await res.data
             const data1 = await res1.data
             setApplications(data1.applications)
@@ -66,7 +71,7 @@ export default function CandidateClientDashboardPage() {
 
     const stats = [
         { title: "Applications", value: `${applications?.length}`, icon: Briefcase, description: "Based on your profile" },
-        { title: "Job Matches", value: 47, icon: Target, description: "Based on your profile" },
+        { title: "Job Matches", value: `${jobs?.length}`, icon: Target, description: "Based on your profile" },
         { title: "Profile Views", value: 89, icon: TrendingUp, trend: { value: 15, positive: true } },
         { title: "Resume Score", value: "85%", icon: FileText, description: "Good standing" },
     ]
@@ -251,37 +256,37 @@ export default function CandidateClientDashboardPage() {
                                 <h2 id="dashboard-interviews-heading" className="text-lg font-semibold">
                                     Next Interviews
                                 </h2>
-                                <Button variant="ghost" size="sm" asChild>
+                                {interviews?.length > 0 && <Button variant="ghost" size="sm" asChild>
                                     <Link href="/candidate/interviews">View All <ArrowRight className="h-4 w-4" /></Link>
-                                </Button>
+                                </Button>}
                             </div>
                             {!initialLoad ? <div className="space-y-3">
-                                {[
-                                    {
-                                        company: "TechCorp Inc.",
-                                        title: "Senior Frontend Engineer",
-                                        date: "Today, 2:00 PM",
-                                        status: "confirmed",
-                                    },
-                                ].map((interview, i) => (
+                                {interviews?.slice(0, 1).map((interview, i) => (
                                     <div
                                         key={i}
                                         className="rounded-xl border border-primary/20 bg-primary/5 p-4 relative overflow-hidden group"
                                     >
                                         <div className="flex items-start justify-between relative z-10">
                                             <div>
-                                                <p className="font-semibold text-primary">{interview.company}</p>
-                                                <p className="text-sm font-medium">{interview.title}</p>
+                                                <p className="font-semibold text-primary">{interview.recruiter.companyName}</p>
+                                                <p className="text-sm font-medium">{interview.application.job.title}</p>
                                                 <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
                                                     <Calendar className="h-3 w-3" />
-                                                    {interview.date}
+                                                    {new Date(interview.startAt).toLocaleString("en-IN", {
+                                                        day: "2-digit",
+                                                        month: "short",
+                                                        year: "numeric",
+                                                        hour: "2-digit",
+                                                        minute: "2-digit",
+                                                        hour12: true,
+                                                    })}
                                                 </div>
                                             </div>
-                                            <InterviewStatusBadge status={interview.status as any} />
+                                            <InterviewStatusBadge status={interview.status} />
                                         </div>
-                                        <Button size="sm" className="w-full mt-4 relative z-10" asChild>
+                                        {interview.status === "SCHEDULED" && <Button size="sm" className="w-full mt-4 relative z-10" asChild>
                                             <Link href="/candidate/interviews">Prepare Now</Link>
-                                        </Button>
+                                        </Button>}
                                     </div>
                                 ))}
                             </div> : <div className="bg-muted-foreground/50 border border-border rounded-lg p-6 mb-8 animate-pulse h-25">

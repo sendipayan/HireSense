@@ -26,9 +26,9 @@ import {
 } from "lucide-react"
 import { useEffect, useState } from "react"
 import axios from "axios"
-import { mockCandidates, mockJobs } from "@/lib/mock-data"
 import type { Job } from "@/store/jobStore"
 import { ScheduleInterviewModal } from "@/components/interview/schedule-interview-modal"
+import { useRouter } from "next/navigation"
 type ApplicationJob = {
     title: string;
     id: string;
@@ -62,6 +62,8 @@ export default function MatchResultsClientPage({ candidateId, jobId }: { candida
     const { breakdown, strengths, gaps, recommendation } = mockMatchResults
     const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false)
     const [initialLoad, setInitialLoad] = useState(true)
+    const [trigger, setTrigger] = useState(false)
+    const router = useRouter()
     const [uniqueJob, setUniqueJob] = useState<Job>({
         id: "",
         recruiterId: "",
@@ -129,12 +131,6 @@ export default function MatchResultsClientPage({ candidateId, jobId }: { candida
         } catch (error) {
             console.error("toggle waitlist error: ", error)
         }
-
-    }
-
-
-
-    const handleSchedule = () => {
 
     }
 
@@ -376,15 +372,19 @@ export default function MatchResultsClientPage({ candidateId, jobId }: { candida
 
                 {/* Actions */}
 
-                <ScheduleInterviewModal
+                {uniqueApplication && <ScheduleInterviewModal
                     open={isScheduleModalOpen}
                     onOpenChange={setIsScheduleModalOpen}
-                    onSchedule={handleSchedule}
-                    selectedJobId={uniqueJob.id}
-                    selectedCandidateIds={[uniqueApplication.candidate.id]}
-                    candidates={[{ id: uniqueApplication.candidate.id, name: uniqueApplication.candidate.user.name }]}
-                    jobs={[{ id: uniqueJob.id, title: uniqueJob.title }]}
-                />
+                    onSchedule={() => router.back()}
+                    selectedApplicationIds={[uniqueApplication.id]}
+                    applications={[{
+                        JId: [uniqueApplication.job.id],
+                        Jname: [uniqueApplication.job.title],
+                        CId: uniqueApplication.candidate.id,
+                        Cname: uniqueApplication.candidate.user.name
+                    }]}
+                    setTrigger={setTrigger}
+                />}
 
             </div>
 

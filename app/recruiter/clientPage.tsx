@@ -17,6 +17,7 @@ import { useRecruiterApplicationsStore } from "@/store/recruiterApplication"
 import { Card, CardContent } from "@/components/ui/card"
 import { useAuthStore } from "@/store/authStore"
 import { InterviewStatusBadge } from "@/components/interview/interview-status-badge"
+import { useInterviewStore } from "@/store/useInterviewStore"
 
 
 
@@ -28,6 +29,7 @@ export default function RecruiterDashboardPage() {
     const { RecuiterProfile } = useRecruiterStore()
     const { jobs, setJobs } = useJobStore()
     const { user } = useAuthStore()
+    const { interviews, setInterviews } = useInterviewStore()
     const { applications, setApplications } = useRecruiterApplicationsStore()
 
     useEffect(() => {
@@ -53,19 +55,22 @@ export default function RecruiterDashboardPage() {
             const res1 = await axios.get("/api/recruiter/get_applications")
             const data1 = await res1.data
             setApplications(data1.applications)
+            const res2 = await axios.get("/api/recruiter/get_interview", { withCredentials: true })
+            const data2 = await res2.data
+            setInterviews(data2.interviews)
             setInitialLoad(false);
         }
         fetch()
-    }, [setJobs])
+    }, [setJobs, setApplications, setInterviews])
 
 
     const stats = [
         { title: "Active Jobs", value: `${jobs.length}`, icon: Briefcase, description: "Currently hiring" },
         {
             title: "Total Candidates",
-            value: "21",
+            value: `${applications.length + interviews.length}`,
             icon: Users,
-            trend: { value: 12, positive: true },
+            trend: { value: interviews.length, positive: true },
         },
         { title: "Avg. Match Score", value: "87%", icon: Target, description: "AI matching accuracy" },
         { title: "Time to Hire", value: "18 days", icon: TrendingUp, trend: { value: 25, positive: true } },
@@ -255,36 +260,30 @@ export default function RecruiterDashboardPage() {
                         </div>
                         {!initialLoad ? <div className="rounded-xl border border-border bg-card overflow-hidden">
                             <div className="divide-y divide-border">
-                                {[
-                                    {
-                                        name: "Sarah Chen",
-                                        job: "Senior Frontend Engineer",
-                                        time: "Today at 2:00 PM",
-                                        status: "confirmed",
-                                    },
-                                    {
-                                        name: "Michael Rodriguez",
-                                        job: "Full Stack Developer",
-                                        time: "Tomorrow at 10:00 AM",
-                                        status: "scheduled",
-                                    },
-                                ].map((interview, i) => (
+                                {interviews?.slice(0, 2).map((interview, i) => (
                                     <div key={i} className="flex items-center justify-between p-4 hover:bg-muted/50 transition-colors">
                                         <div className="flex items-center gap-4">
                                             <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold">
-                                                {interview.name
+                                                {interview.application.candidate.user.name
                                                     .split(" ")
                                                     .map((n) => n[0])
                                                     .join("")}
                                             </div>
                                             <div>
-                                                <p className="font-medium">{interview.name}</p>
-                                                <p className="text-sm text-muted-foreground">{interview.job}</p>
+                                                <p className="font-medium">{interview.application.candidate.user.name}</p>
+                                                <p className="text-sm text-muted-foreground">{interview.application.job.title}</p>
                                             </div>
                                         </div>
                                         <div className="text-right">
-                                            <p className="text-sm font-medium">{interview.time}</p>
-                                            <InterviewStatusBadge status={interview.status as any} />
+                                            <p className="text-sm font-medium">{new Date(interview.startAt).toLocaleString("en-IN", {
+                                                day: "2-digit",
+                                                month: "short",
+                                                year: "numeric",
+                                                hour: "2-digit",
+                                                minute: "2-digit",
+                                                hour12: true,
+                                            })}</p>
+                                            <InterviewStatusBadge status={interview.status} />
                                         </div>
                                     </div>
                                 ))}

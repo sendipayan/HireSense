@@ -340,14 +340,14 @@ export default function RecruiterInterviewsPage() {
                     selectedApplicationIds={selectedApplicationIds}
                 />
 
-                <InterviewDetailModal
+                {selectedInterview && <InterviewDetailModal
                     interview={selectedInterview}
                     open={!!selectedInterview}
                     trigger={trigger}
                     setTrigger={setTrigger}
                     onOpenChange={(open) => !open && setSelectedInterview(null)}
                     isRecruiter={true}
-                />
+                />}
             </div>
         </main>
     )

@@ -217,14 +217,14 @@ export default function CandidateInterviewsPage() {
                     </TabsContent>
                 </Tabs>
 
-                <InterviewDetailModal
+                {selectedInterview && <InterviewDetailModal
                     interview={selectedInterview}
                     trigger={trigger}
                     setTrigger={setTrigger}
                     open={!!selectedInterview}
                     onOpenChange={(open) => !open && setSelectedInterview(null)}
                     isRecruiter={false}
-                />
+                />}
             </div>
         </main>
     )

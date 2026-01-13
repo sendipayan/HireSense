@@ -377,7 +377,7 @@ export function ScheduleInterviewModal({
                             <Button type="button" variant="outline" onClick={() => { onOpenChange(false); form.reset() }} className="w-full sm:w-auto">
                                 Cancel
                             </Button>
-                            <Button type="submit" className="w-full sm:w-auto" >
+                            <Button type="submit" className="w-full sm:w-auto lg:ml-4" >
                                 Schedule Interview
                             </Button>
                         </DialogFooter>

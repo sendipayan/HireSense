@@ -60,7 +60,7 @@ export async function GET(req: NextRequest) {
         phno: true,
       },
       orderBy: {
-        startAt: "desc",
+        startAt: "asc",
       },
       take: 10,
     });

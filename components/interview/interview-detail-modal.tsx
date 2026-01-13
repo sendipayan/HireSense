@@ -338,8 +338,8 @@ export function InterviewDetailModal({
                             </>
                         ) : (
                             <>
-                                <Button variant="outline">Add to Calendar</Button>
-                                <Button>Confirm Attendance</Button>
+                                {interview.status === "SCHEDULED" && <Button>Add to Calendar</Button>}
+
                             </>
                         )}
                     </div>
