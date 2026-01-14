@@ -42,6 +42,7 @@ export default function RecruiterInterviewsPage() {
     const [response, setResponse] = useState(false)
     const { jobs, setJobs } = useJobStore()
     const [loading, setLoading] = useState(false)
+    const [intialLoading, setIntialLoading] = useState(true)
     // Filter states
     const [searchQuery, setSearchQuery] = useState("")
     const [statusFilter, setStatusFilter] = useState("all")
@@ -59,6 +60,7 @@ export default function RecruiterInterviewsPage() {
             setInterviews(res2.data.interviews)
             setApplications(res.data.applications)
             setJobs(res3.data.job)
+            setIntialLoading(false)
         }
 
         fetch()
@@ -201,16 +203,26 @@ export default function RecruiterInterviewsPage() {
                 </PageHeader>
 
                 {/* Stats */}
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mt-8">
-                    {stats.map((stat) => (
-                        <StatCard key={stat.title} {...stat} />
-                    ))}
-                </div>
+                {!intialLoading ? (
+                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mt-8">
+                        {stats.map((stat) => (
+                            <StatCard key={stat.title} {...stat} />
+                        ))}
+                    </div>
+                ) : (
+                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mt-8">
+                        {[1, 2, 3, 4].map((val) => (
+                            <div className="bg-muted-foreground/50 border border-border rounded-lg animate-pulse h-35" key={val}>
+
+                            </div>
+                        ))}
+                    </div>
+                )}
 
                 {/* Tabs */}
                 <Tabs defaultValue="interviews" className="mt-12" onValueChange={setActiveTab}>
                     <div className="flex items-center justify-between mb-6">
-                        <TabsList className="grid w-[400px] grid-cols-2">
+                        {!intialLoading ? <TabsList className="grid w-[400px] grid-cols-2">
                             <TabsTrigger value="interviews" className="flex items-center gap-2">
                                 <Calendar className="h-4 w-4" />
                                 Interviews
@@ -219,7 +231,9 @@ export default function RecruiterInterviewsPage() {
                                 <Clock className="h-4 w-4" />
                                 Waiting List
                             </TabsTrigger>
-                        </TabsList>
+                        </TabsList> : <div className="w-[400px] h-10 bg-muted-foreground/50 border border-border rounded-lg animate-pulse">
+
+                        </div>}
                     </div>
 
                     <TabsContent value="waiting-list" className="mt-0 border-none p-0">
@@ -239,11 +253,11 @@ export default function RecruiterInterviewsPage() {
                         <div className="flex flex-col gap-4">
                             <div className="flex items-center justify-between">
                                 <h2 className="text-2xl font-bold tracking-tight">Upcoming Interviews</h2>
-                                <Badge variant="outline" className="font-medium">
+                                {!intialLoading && <Badge variant="outline" className="font-medium">
                                     {filteredInterviews.length} Scheduled
-                                </Badge>
+                                </Badge>}
                             </div>
-                            <InterviewFilters
+                            {!intialLoading ? <InterviewFilters
                                 searchQuery={searchQuery}
                                 onSearchChange={setSearchQuery}
                                 statusFilter={statusFilter}
@@ -259,12 +273,14 @@ export default function RecruiterInterviewsPage() {
                                     setJobFilter("all")
                                     setDateRange(undefined)
                                 }}
-                            />
+                            /> : <div className="w-full h-15 bg-muted-foreground/50 border border-border rounded-lg animate-pulse">
+
+                            </div>}
                         </div>
 
                         {/* Table */}
                         <div className="mt-6">
-                            <InterviewTable
+                            {!intialLoading ? <InterviewTable
                                 interviews={filteredInterviews.map((int) => {
                                     return {
                                         id: int.id,
@@ -325,7 +341,9 @@ export default function RecruiterInterviewsPage() {
                                 onMarkCompleted={(int) => {
                                     completeInterview(int.id)
                                 }}
-                            />
+                            /> : <div className="w-full h-50 bg-muted-foreground/50 border border-border rounded-lg animate-pulse">
+
+                            </div>}
                         </div>
                     </TabsContent>
                 </Tabs>

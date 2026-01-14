@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { Breadcrumbs } from "@/components/breadcrumbs"
 import { PageHeader } from "@/components/page-header"
 import { InterviewCard, type CandidateInterview } from "@/components/interview/interview-card"
@@ -10,6 +10,7 @@ import { InterviewDetailModal, type InterviewDetail } from "@/components/intervi
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { InterviewStatusBadge } from "@/components/interview/interview-status-badge"
+import { InterviewHistoryFilters } from "@/components/interview/interview-history-filters"
 import { Calendar, History, Briefcase, User, Info } from "lucide-react"
 import axios from "axios"
 import { useCandidateInterviewStore } from "@/store/useCandidateInterviewStore"
@@ -18,6 +19,24 @@ export default function CandidateInterviewsPage() {
     const [selectedInterview, setSelectedInterview] = useState<InterviewDetail | null>(null)
     const { interviews, setInterviews } = useCandidateInterviewStore()
     const [trigger, setTrigger] = useState(false)
+    const [intialLoading, setIntialLoading] = useState(true)
+
+    const [searchQuery, setSearchQuery] = useState("")
+    const [statusFilter, setStatusFilter] = useState("all")
+    const [typeFilter, setTypeFilter] = useState("all")
+
+    const filteredHistory = useMemo(() => {
+        return interviews?.filter((interview) => {
+            const matchesSearch =
+                interview.application.job.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                interview.recruiter.companyName.toLowerCase().includes(searchQuery.toLowerCase())
+
+            const matchesStatus = statusFilter === "all" || interview.status === statusFilter
+            const matchesType = typeFilter === "all" || interview.type === typeFilter
+
+            return matchesSearch && matchesStatus && matchesType
+        })
+    }, [searchQuery, statusFilter, typeFilter, interviews])
 
     useEffect(() => {
         const fetchInterviews = async () => {
@@ -26,6 +45,7 @@ export default function CandidateInterviewsPage() {
             const interviews = data.interviews
             setInterviews(interviews)
             console.log(data)
+            setIntialLoading(false)
         }
         fetchInterviews()
     }, [])
@@ -34,12 +54,12 @@ export default function CandidateInterviewsPage() {
         // Map CandidateInterview to InterviewDetail structure for the modal
         const detail: InterviewDetail = {
             id: interview.id,
-            candidateName: "Sarah Chen", // Current user
+            candidateName: "", // Current user
             recruiterName: interview.recruiterName,
             jobTitle: interview.jobTitle,
             date: interview.date,
             time: interview.time,
-            duration: "45", // Mock duration
+            duration: interview.duration, // Mock duration
             type: interview.meetingLink ? "online" : "in-person",
             status: interview.status,
             meetingLink: interview.meetingLink,
@@ -57,7 +77,7 @@ export default function CandidateInterviewsPage() {
                 <PageHeader title="Interviews" description="Track and prepare for your upcoming and past job interviews." />
 
                 <Tabs defaultValue="upcoming" className="mt-8">
-                    <TabsList className="grid w-full grid-cols-2 lg:w-[400px] mb-8">
+                    {!intialLoading ? <TabsList className="grid w-full grid-cols-2 lg:w-[400px] mb-8">
                         <TabsTrigger value="upcoming" className="gap-2">
                             <Calendar className="h-4 w-4" />
                             Scheduled
@@ -66,7 +86,8 @@ export default function CandidateInterviewsPage() {
                             <History className="h-4 w-4" />
                             History
                         </TabsTrigger>
-                    </TabsList>
+                    </TabsList> : <div className="lg:w-[400px] w-full h-10 bg-muted-foreground/50 border border-border rounded-lg animate-pulse">
+                    </div>}
 
                     <TabsContent value="upcoming" className="space-y-6">
                         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -133,6 +154,11 @@ export default function CandidateInterviewsPage() {
                     </TabsContent>
 
                     <TabsContent value="history">
+                        <InterviewHistoryFilters
+                            onSearchChange={setSearchQuery}
+                            onStatusChange={setStatusFilter}
+                            onTypeChange={setTypeFilter}
+                        />
                         <div className="rounded-xl border border-border bg-card overflow-hidden">
                             <Table>
                                 <TableHeader>
@@ -146,8 +172,8 @@ export default function CandidateInterviewsPage() {
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    {interviews?.length > 0 ? (
-                                        interviews?.map((interview) => (
+                                    {filteredHistory?.length > 0 ? (
+                                        filteredHistory?.map((interview) => (
                                             <TableRow key={interview.id}>
                                                 <TableCell>
                                                     <div className="flex items-center gap-2">
