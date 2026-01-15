@@ -100,7 +100,7 @@ model Candidate {
 model Resume {
   id             String    @id @default(uuid())
   candidate      Candidate @relation(fields: [candidateId], references: [id])
-  candidateId    String    @unique
+  candidateId    String
   resumeUrl      String
   resumeMimeType String
   resumeName     String

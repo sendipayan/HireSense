@@ -10,6 +10,14 @@ import { Progress } from "@/components/ui/progress"
 import { Upload, FileText, CheckCircle2, Sparkles, ArrowRight, X, File } from "lucide-react"
 import axios from "axios"
 
+interface Resume {
+  id: string;
+  resumeName: string;
+  createdAt: Date;
+  isActive: boolean;
+  resumeUrl: string;
+}
+
 /**
  * Resume upload page for candidates
  * - Drag and drop file upload
@@ -23,6 +31,25 @@ export default function ResumeUploadPage() {
   const [uploadProgress, setUploadProgress] = useState(0)
   const [isUploading, setIsUploading] = useState(false)
   const [isComplete, setIsComplete] = useState(false)
+  const [trigger, setTrigger] = useState(false)
+  const [resumes, setResumes] = useState<Resume[]>([])
+
+  useEffect(() => {
+    const getResumes = async () => {
+      const res = await axios.get("/api/candidate/get_resumes", { withCredentials: true })
+      const data = res.data
+      if (res.status === 200) {
+        setResumes(data.resumes)
+      }
+    }
+    getResumes()
+  }, [trigger])
+
+  useEffect(() => {
+    if (resumes.length > 0) {
+      console.log(resumes)
+    }
+  }, [resumes])
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault()
@@ -83,6 +110,7 @@ export default function ResumeUploadPage() {
         const data2 = res2.data
         if (res2.status === 200) {
           setUploadProgress(100)
+          setTrigger(!trigger)
           setIsComplete(true)
           setIsUploading(false)
         }
@@ -220,21 +248,18 @@ export default function ResumeUploadPage() {
             <div className="mt-8">
               <h2 className="text-lg font-semibold mb-4">Previous Uploads</h2>
               <div className="space-y-3">
-                {[
-                  { name: "Sarah_Chen_Resume_v3.pdf", date: "Dec 15, 2024", score: 85 },
-                  { name: "Sarah_Chen_Resume_v2.pdf", date: "Nov 28, 2024", score: 78 },
-                ].map((file) => (
+                {resumes?.map((file) => (
                   <article
-                    key={file.name}
+                    key={file.id}
                     className="flex items-center gap-4 rounded-xl border border-border bg-card p-4"
                   >
                     <FileText className="h-5 w-5 text-muted-foreground shrink-0" aria-hidden="true" />
                     <div className="flex-1 min-w-0">
-                      <p className="font-medium truncate">{file.name}</p>
-                      <p className="text-sm text-muted-foreground">{file.date}</p>
+                      <p className="font-medium truncate">{file.resumeName}</p>
+                      <p className="text-sm text-muted-foreground">{new Date(file.createdAt).toISOString().split("T")[0]}</p>
                     </div>
                     <div className="text-right shrink-0">
-                      <p className="font-medium">{file.score}%</p>
+                      <p className="font-medium">80%</p>
                       <p className="text-xs text-muted-foreground">Score</p>
                     </div>
                   </article>
