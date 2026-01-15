@@ -58,23 +58,41 @@ export default function ResumeUploadPage() {
 
   const handleFileUpload = async (file: File) => {
     if (!file) return
+    if (file.size > 1048576) {
+      return
+    }
     setUploadedFile(file)
     setIsUploading(true)
     setUploadProgress(0)
 
+    const formdata = new FormData()
+    formdata.append("file", file)
 
-    // Simulate upload progress
-    const interval = setInterval(() => {
-      setUploadProgress((prev) => {
-        if (prev >= 100) {
-          clearInterval(interval)
-          setIsUploading(false)
+    try {
+      const res = await axios.post("/api/candidate/file_url", formdata, { withCredentials: true })
+      const data = res.data
+
+      if (res.status === 200) {
+        setUploadProgress(50)
+        const res2 = await axios.post("/api/candidate/add_resume", {
+          fileUrl: data.fileUrl,
+          fileName: data.fileName,
+          fileMime: data.fileMime,
+          fileSize: data.fileSize
+        }, { withCredentials: true })
+        const data2 = res2.data
+        if (res2.status === 200) {
+          setUploadProgress(100)
           setIsComplete(true)
-          return 100
+          setIsUploading(false)
         }
-        return prev + 10
-      })
-    }, 200)
+        console.log(data2)
+      }
+
+    } catch (err) {
+      console.log(err)
+    }
+
   }
 
   const removeFile = () => {
