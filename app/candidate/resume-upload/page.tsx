@@ -1,13 +1,14 @@
 "use client"
 
 import type React from "react"
-import { useState, useCallback } from "react"
+import { useState, useCallback, useEffect } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Breadcrumbs } from "@/components/breadcrumbs"
 import { PageHeader } from "@/components/page-header"
 import { Progress } from "@/components/ui/progress"
 import { Upload, FileText, CheckCircle2, Sparkles, ArrowRight, X, File } from "lucide-react"
+import axios from "axios"
 
 /**
  * Resume upload page for candidates
@@ -49,10 +50,18 @@ export default function ResumeUploadPage() {
     }
   }, [])
 
-  const handleFileUpload = (file: File) => {
+  useEffect(() => {
+    if (isComplete) {
+      console.log(uploadedFile)
+    }
+  }, [isComplete])
+
+  const handleFileUpload = async (file: File) => {
+    if (!file) return
     setUploadedFile(file)
     setIsUploading(true)
     setUploadProgress(0)
+
 
     // Simulate upload progress
     const interval = setInterval(() => {
@@ -100,9 +109,8 @@ export default function ResumeUploadPage() {
           <div className="lg:col-span-2">
             {!uploadedFile ? (
               <div
-                className={`relative rounded-2xl border-2 border-dashed transition-colors ${
-                  isDragging ? "border-primary bg-primary/5" : "border-border bg-card"
-                }`}
+                className={`relative rounded-2xl border-2 border-dashed transition-colors ${isDragging ? "border-primary bg-primary/5" : "border-border bg-card"
+                  }`}
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}
                 onDrop={handleDrop}

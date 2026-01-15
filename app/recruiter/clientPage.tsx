@@ -251,15 +251,15 @@ export default function RecruiterDashboardPage() {
                             <h2 id="upcoming-interviews-heading" className="text-lg font-semibold">
                                 Upcoming Interviews
                             </h2>
-                            <Button variant="ghost" size="sm" asChild>
+                            {interviews.length > 0 && <Button variant="ghost" size="sm" asChild>
                                 <Link href="/recruiter/interviews">
                                     View Schedule
                                     <ArrowRight className="ml-1 h-4 w-4" aria-hidden="true" />
                                 </Link>
-                            </Button>
+                            </Button>}
                         </div>
                         {!initialLoad ? <div className="rounded-xl border border-border bg-card overflow-hidden">
-                            <div className="divide-y divide-border">
+                            {applications.length > 0 && <div className="divide-y divide-border">
                                 {interviews?.slice(0, 2).map((interview, i) => (
                                     <div key={i} className="flex items-center justify-between p-4 hover:bg-muted/50 transition-colors">
                                         <div className="flex items-center gap-4">
@@ -287,7 +287,7 @@ export default function RecruiterDashboardPage() {
                                         </div>
                                     </div>
                                 ))}
-                            </div>
+                            </div>}
                         </div> : <div className="bg-muted-foreground/50 border border-border rounded-lg p-6 mb-8 animate-pulse h-25">
 
                         </div>}
