@@ -1,0 +1,95 @@
+import { NextRequest, NextResponse } from "next/server";
+import prisma from "@/lib/prisma";
+import { verifyJwt } from "@/lib/jwt";
+
+export async function DELETE(
+  req: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) {
+  try {
+    const token = req.cookies.get("auth_token")?.value;
+    if (!token) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    const payload = verifyJwt(token);
+    if (!payload) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    if (payload.role !== "CANDIDATE") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const user = await prisma.candidate.findUnique({
+      where: {
+        userId: payload.userId,
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    if (!user) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+
+    const { id } = await context.params;
+    if (!id) {
+      return NextResponse.json({ error: "Invalid job ID" }, { status: 400 });
+    }
+
+    const resumeStatus = await prisma.resume.findUnique({
+      where: {
+        id,
+      },
+      select: {
+        isActive: true,
+      },
+    });
+
+    if (!resumeStatus) {
+      return NextResponse.json({ error: "Resume not found" }, { status: 404 });
+    }
+
+    const resume = await prisma.resume.delete({
+      where: {
+        id,
+      },
+    });
+
+    if (resumeStatus.isActive) {
+      const active = await prisma.resume.findFirst({
+        where: {
+          candidateId: user.id,
+          isActive: false,
+        },
+        select: {
+          id: true,
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
+      });
+
+      if (active) {
+        await prisma.resume.update({
+          where: {
+            id: active.id,
+          },
+          data: {
+            isActive: true,
+          },
+        });
+      }
+    }
+    return NextResponse.json(
+      { message: "Resume deleted successfully" },
+      { status: 200 }
+    );
+  } catch (err) {
+    console.error("job deletion error: ", err);
+    return NextResponse.json(
+      { error: "Something went wrong" },
+      { status: 500 }
+    );
+  }
+}

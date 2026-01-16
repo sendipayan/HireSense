@@ -9,6 +9,7 @@ import { PageHeader } from "@/components/page-header"
 import { Progress } from "@/components/ui/progress"
 import { Upload, FileText, CheckCircle2, Sparkles, ArrowRight, X, File } from "lucide-react"
 import axios from "axios"
+import { useRouter } from "next/navigation"
 
 interface Resume {
   id: string;
@@ -33,8 +34,11 @@ export default function ResumeUploadPage() {
   const [isComplete, setIsComplete] = useState(false)
   const [trigger, setTrigger] = useState(false)
   const [resumes, setResumes] = useState<Resume[]>([])
+  const [resumeId, setResumeId] = useState<string>("")
+  const router = useRouter()
 
   useEffect(() => {
+    console.log("running")
     const getResumes = async () => {
       const res = await axios.get("/api/candidate/get_resumes", { withCredentials: true })
       const data = res.data
@@ -43,7 +47,7 @@ export default function ResumeUploadPage() {
       }
     }
     getResumes()
-  }, [trigger])
+  }, [isComplete])
 
   useEffect(() => {
     if (resumes.length > 0) {
@@ -109,12 +113,13 @@ export default function ResumeUploadPage() {
         }, { withCredentials: true })
         const data2 = res2.data
         if (res2.status === 200) {
+          setResumeId(data2.id)
           setUploadProgress(100)
           setTrigger(!trigger)
           setIsComplete(true)
           setIsUploading(false)
         }
-        console.log(data2)
+        console.log(res2)
       }
 
     } catch (err) {
@@ -170,7 +175,7 @@ export default function ResumeUploadPage() {
                   </div>
                   <p className="text-lg font-medium">Drag and drop your resume here</p>
                   <p className="mt-1 text-muted-foreground">or click to browse files</p>
-                  <p className="mt-4 text-sm text-muted-foreground">Supports PDF, DOC, DOCX (max 10MB)</p>
+                  <p className="mt-4 text-sm text-muted-foreground">Supports PDF, DOC, DOCX (max 1MB)</p>
                   <input
                     id="resume-upload"
                     type="file"
@@ -181,7 +186,7 @@ export default function ResumeUploadPage() {
                   />
                 </label>
                 <p id="file-requirements" className="sr-only">
-                  Accepted file types: PDF, DOC, DOCX. Maximum file size: 10 megabytes.
+                  Accepted file types: PDF, DOC, DOCX. Maximum file size: 1 megabytes.
                 </p>
               </div>
             ) : (
@@ -228,15 +233,9 @@ export default function ResumeUploadPage() {
                 {isComplete && (
                   <div className="mt-6 flex flex-col gap-3 sm:flex-row">
                     <Button asChild className="flex-1">
-                      <Link href="/ai-feedback">
+                      <Link href={`/candidate/ai-feedback?resume=${resumeId}`}>
                         <Sparkles className="mr-2 h-4 w-4" aria-hidden="true" />
                         Get AI Feedback
-                      </Link>
-                    </Button>
-                    <Button variant="outline" asChild className="flex-1 bg-transparent">
-                      <Link href="/match-results">
-                        View Job Matches
-                        <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />
                       </Link>
                     </Button>
                   </div>
@@ -245,17 +244,18 @@ export default function ResumeUploadPage() {
             )}
 
             {/* Previous Resumes */}
-            <div className="mt-8">
+            {resumes.length > 0 && <div className="mt-8">
               <h2 className="text-lg font-semibold mb-4">Previous Uploads</h2>
               <div className="space-y-3">
                 {resumes?.map((file) => (
                   <article
                     key={file.id}
-                    className="flex items-center gap-4 rounded-xl border border-border bg-card p-4"
+                    className="flex items-center gap-4 rounded-xl border border-border bg-card p-4 cursor-pointer hover:border-primary/50 hover:shadow-lg hover:shadow-primary/5"
+                    onClick={() => { router.push(`/candidate/ai-feedback?resume=${file.id}`) }}
                   >
                     <FileText className="h-5 w-5 text-muted-foreground shrink-0" aria-hidden="true" />
                     <div className="flex-1 min-w-0">
-                      <p className="font-medium truncate">{file.resumeName}</p>
+                      <p className="font-medium truncate"><strong>{file.isActive ? "Primary: " : ""}</strong>{file.resumeName}</p>
                       <p className="text-sm text-muted-foreground">{new Date(file.createdAt).toISOString().split("T")[0]}</p>
                     </div>
                     <div className="text-right shrink-0">
@@ -265,7 +265,7 @@ export default function ResumeUploadPage() {
                   </article>
                 ))}
               </div>
-            </div>
+            </div>}
           </div>
 
           {/* Tips Sidebar */}

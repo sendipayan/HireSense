@@ -4,7 +4,6 @@ import { notFound } from "next/navigation"
 import { ArrowLeft, MapPin, DollarSign, Building2, Globe, Calendar, Briefcase, Clock, IndianRupee } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
-import { mockJobs } from "@/lib/mock-data"
 import { useRouter } from "next/navigation"
 import { useState, useEffect } from "react"
 import { useParams } from "next/navigation"
@@ -20,7 +19,6 @@ export default function JobDetailsPage() {
     const [jobs, setJobs] = useState<Job | null>(null)
     const [intialLoading, setIntialLoading] = useState(true)
     const [error, setError] = useState(false)
-    const [applyingJob, setApplyingJob] = useState<(typeof mockJobs)[0] | null>(null)
 
     useEffect(() => {
 
