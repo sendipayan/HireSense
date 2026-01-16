@@ -255,7 +255,7 @@ export default function ResumeUploadPage() {
                   >
                     <FileText className="h-5 w-5 text-muted-foreground shrink-0" aria-hidden="true" />
                     <div className="flex-1 min-w-0">
-                      <p className="font-medium truncate"><strong>{file.isActive ? "Primary: " : ""}</strong>{file.resumeName}</p>
+                      <p className="font-medium truncate"><strong className="text-primary">{file.isActive ? "Primary: " : ""}</strong>{file.resumeName}</p>
                       <p className="text-sm text-muted-foreground">{new Date(file.createdAt).toISOString().split("T")[0]}</p>
                     </div>
                     <div className="text-right shrink-0">

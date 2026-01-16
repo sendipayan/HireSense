@@ -30,6 +30,7 @@ interface Resume {
     createdAt: Date;
     isActive: boolean;
     resumeUrl: string;
+    resumeMimeType: string;
 }
 
 
@@ -39,12 +40,14 @@ export default function AIFeedbackClientPage({ resumeId }: { resumeId: string })
     const { overall, sections, keywords } = mockFeedback
     const [loading, setLoading] = useState(false)
     const [trigger, setTrigger] = useState(false)
+    const [viewurl, setViewurl] = useState("")
     const [resume, setResume] = useState<Resume>({
         id: "",
         resumeName: "",
         createdAt: new Date(),
         isActive: false,
-        resumeUrl: ""
+        resumeUrl: "",
+        resumeMimeType: ""
     })
 
     useEffect(() => {
@@ -57,6 +60,7 @@ export default function AIFeedbackClientPage({ resumeId }: { resumeId: string })
                 console.log(response.data)
                 if (response.status === 200) {
                     setResume(response.data.resumes)
+                    console.log(response.data.resumes.resumeUrl)
                 }
             } catch (err) {
                 console.log(err)
@@ -66,6 +70,19 @@ export default function AIFeedbackClientPage({ resumeId }: { resumeId: string })
         }
         getResume()
     }, [trigger])
+
+    useEffect(() => {
+        if (resume?.resumeUrl) {
+            if (resume.resumeMimeType === "application/pdf") {
+                const viewerUrl =
+                    "https://docs.google.com/gview?url=" +
+                    encodeURIComponent(resume.resumeUrl) +
+                    "&embedded=true";
+                setViewurl(viewerUrl)
+            }
+
+        }
+    }, [resume])
 
     const getScoreColor = (score: number) => {
         if (score >= 90) return "text-success"
@@ -124,10 +141,19 @@ export default function AIFeedbackClientPage({ resumeId }: { resumeId: string })
                     title="AI Resume Feedback"
                     description="Detailed analysis of your resume with actionable suggestions to improve your chances."
                 >
-                    <Button variant="outline" className="bg-transparent cursor-pointer">
+                    {resume.resumeMimeType === "application/pdf" ? < Button variant="outline" className="bg-transparent cursor-pointer"
+                        onClick={() => window.open(viewurl, "_blank", "noopener,noreferrer")}
+                        disabled={!viewurl}
+                    >
                         <Eye className="mr-2 h-4 w-4" aria-hidden="true" />
                         View Resume
-                    </Button>
+                    </Button> : <Button variant="outline" className="bg-transparent cursor-pointer"
+                        onClick={() => window.open(resume.resumeUrl, "_blank", "noopener,noreferrer")}
+                        disabled={!resume.resumeUrl}
+                    >
+                        <Download className="mr-2 h-4 w-4" aria-hidden="true" />
+                        Download Resume
+                    </Button>}
                 </PageHeader>
 
                 {/* Overall Score */}
@@ -303,6 +329,6 @@ export default function AIFeedbackClientPage({ resumeId }: { resumeId: string })
                     </div>
                 </section>
             </div>
-        </main>
+        </main >
     )
 }

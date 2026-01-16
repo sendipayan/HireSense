@@ -41,6 +41,7 @@ export async function GET(
         id: true,
         isActive: true,
         resumeUrl: true,
+        resumeMimeType: true,
       },
     });
 
