@@ -32,7 +32,22 @@ export async function getJob() {
         take: 5,
       });
     } else {
+      const applied = await prisma.application.findMany({
+        where: {
+          candidate: {
+            userId: payload.userId,
+          },
+        },
+        select: {
+          jobId: true,
+        },
+      });
       job = await prisma.postJob.findMany({
+        where: {
+          id: {
+            notIn: applied.map((data) => data.jobId),
+          },
+        },
         include: {
           recruiter: {
             select: {

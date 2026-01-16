@@ -24,6 +24,17 @@ export async function getAuthUser() {
       data = await prisma.candidate.findUnique({
         where: { userId: payload.userId },
         include: {
+          resumes: {
+            where: {
+              isActive: true,
+            },
+            select: {
+              id: true,
+              resumeName: true,
+              resumeUrl: true,
+              createdAt: true,
+            },
+          },
           user: {
             select: { name: true, email: true, role: true },
           },

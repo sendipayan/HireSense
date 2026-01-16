@@ -30,13 +30,16 @@ interface User {
     id: string;
     name: string
     email: string
+    resumeName: string
+    resumeUrl: string
+    createdAt: Date
 }
 
 export function JobsBrowser() {
     const router = useRouter()
     const { jobs, setJobs } = useJobStore()
     const { user } = useAuthStore()
-    const { candidateProfile } = useCandidateStore()
+    const { candidateProfile, setCandidateProfile } = useCandidateStore()
     const [initialLoad, setInitialLoad] = useState(true)
     const [searchQuery, setSearchQuery] = useState("")
     const [selectedTypes, setSelectedTypes] = useState<string[]>([])
@@ -44,53 +47,59 @@ export function JobsBrowser() {
     const [sortBy, setSortBy] = useState("newest")
     const [applyingJob, setApplyingJob] = useState<Job | null>(null)
     const [users, setUsers] = useState<User | null>(null)
-    const [appliedJobs, setAppliedJobs] = useState<string[]>([])
+    const [userload, setUserload] = useState(true)
+    const [trigger, setTrigger] = useState(false)
 
 
     useEffect(() => {
+        async function loadUser() {
+            const res = await axios.get("/api/auth/me")
+            const data = await res.data
+            if (data?.user?.user?.role === "CANDIDATE") {
+                setCandidateProfile(data?.user)
+            }
+            setUserload(false)
+            console.log("user: ", data.user)
+        }
 
+        loadUser()
+
+    }, [trigger])
+
+    useEffect(() => {
+
+        if (userload) {
+            return
+        }
         const fetch = async () => {
 
             const res = await axios.get("/api/getjob")
             const data = await res.data
+            console.log("jobs: ", data.job)
             setJobs(data.job)
-            if (!candidateProfile) return
-            const res1 = await axios.post("/api/candidate/applied_jobs", {
-                candidateId: candidateProfile.id
-            }, { withCredentials: true })
-            const data1 = await res1.data
-
-            setAppliedJobs([
-                ...data1.applications.map((job: any) => job.jobId)
-            ]);
-
-
+            setInitialLoad(false)
         }
         fetch()
-    }, [setJobs, candidateProfile])
+    }, [candidateProfile])
+
+
 
     useEffect(() => {
-        if (appliedJobs.length === 0) return
-
-        console.log("appliedJobs: ", appliedJobs)
-        appliedJobs.map((jobId) => {
-            const job = jobs.find((job) => job.id === jobId)
-            if (job) {
-                job.applied = true
-            }
+        if (!user || !candidateProfile || !initialLoad) return
+        console.log(candidateProfile)
+        setUsers({
+            id: candidateProfile?.id || "",
+            name: user?.name || "",
+            email: user?.email || "",
+            resumeName: candidateProfile?.resumes[0]?.resumeName || "",
+            resumeUrl: candidateProfile?.resumes[0]?.resumeUrl || "",
+            createdAt: candidateProfile?.resumes[0]?.createdAt || new Date()
         })
-        setInitialLoad(false);
-    }, [appliedJobs])
-
-
-    useEffect(() => {
-        if (!user) return
-        console.log(user)
-        setUsers({ id: candidateProfile?.id || "", name: user?.name || "", email: user?.email || "" })
-    }, [user])
+    }, [user, candidateProfile, initialLoad])
 
     const filteredJobs = useMemo(() => {
-        console.log(jobs)
+
+        if (jobs.length === 0) return []
 
         return jobs?.filter((job) => {
             const matchesSearch =
@@ -227,9 +236,9 @@ export function JobsBrowser() {
 
                     <p className="text-sm text-muted-foreground">Showing {filteredJobs?.length} job opportunities</p>
 
-                    <div className="space-y-4">
-                        {filteredJobs.length > 0 ? (
-                            filteredJobs.map((job) => (
+                    {!initialLoad ? <div className="space-y-4">
+                        {filteredJobs?.length > 0 ? (
+                            filteredJobs?.map((job) => (
                                 <article
                                     key={job.id}
                                     className="group rounded-xl border border-border bg-card p-6 transition-all hover:border-primary/50 hover:shadow-lg hover:shadow-primary/5 "
@@ -299,12 +308,18 @@ export function JobsBrowser() {
                                 </Button>
                             </div>
                         )}
-                    </div>
+                    </div> : <div className="space-y-4">
+                        {[1, 2, 3].map((item) => (
+                            <div key={item} className="w-full bg-muted-foreground/50 border border-border rounded-xl p-6 mb-8 animate-pulse h-50">
+
+                            </div>
+                        ))}
+                    </div>}
                 </section>
             </div>
 
             {applyingJob && (
-                <ApplyJobModal user={users} job={applyingJob} open={!!applyingJob} onOpenChange={(open) => !open && setApplyingJob(null)} />
+                <ApplyJobModal user={users} trigger={trigger} setTrigger={setTrigger} job={applyingJob} open={!!applyingJob} onOpenChange={(open) => !open && setApplyingJob(null)} />
             )}
         </>
     )

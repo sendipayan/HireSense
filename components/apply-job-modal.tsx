@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import {
     Dialog,
     DialogContent,
@@ -15,10 +15,8 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { useToast } from "@/hooks/use-toast"
-import { useAuthStore } from "@/store/authStore"
 import { CheckCircle2, Upload, FileText, XCircle } from "lucide-react"
 import axios, { AxiosError } from "axios"
-import { useJobStore } from "@/store/jobStore"
 
 interface Job {
     id: string
@@ -29,22 +27,41 @@ interface User {
     id: string;
     name: string
     email: string
+    resumeName: string
+    resumeUrl: string
+    createdAt: Date
 }
 
 interface ApplyJobModalProps {
     job: Job
     user: User | null
     open: boolean
+    trigger: boolean
+    setTrigger: (trigger: boolean) => void
     onOpenChange: (open: boolean) => void
 }
 
-export function ApplyJobModal({ job, user, open, onOpenChange }: ApplyJobModalProps) {
+export function ApplyJobModal({ job, user, open, trigger, setTrigger, onOpenChange }: ApplyJobModalProps) {
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [isSuccess, setIsSuccess] = useState(false)
     const [isError, setIsError] = useState(false)
     const [errormessg, setErrormessg] = useState("")
-    const { jobs } = useJobStore()
     const { toast } = useToast()
+    const [viewurl, setViewurl] = useState("")
+
+    useEffect(() => {
+        if (!user) return
+        if (user.resumeUrl.trim() === "") {
+            setIsError(true)
+            setErrormessg("Please upload your resume to apply for this job")
+        } else {
+            const viewerUrl =
+                "https://docs.google.com/gview?url=" +
+                encodeURIComponent(user.resumeUrl) +
+                "&embedded=true";
+            setViewurl(viewerUrl)
+        }
+    }, [user])
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -61,11 +78,9 @@ export function ApplyJobModal({ job, user, open, onOpenChange }: ApplyJobModalPr
                 candidateId: user.id,
             }, { withCredentials: true })
             console.log(response.data)
-            setIsSuccess(true)
-            const match = jobs.find((j) => j.id === job.id);
-
-            if (match) {
-                match.applied = true;
+            if (response.status === 201) {
+                setIsSuccess(true)
+                setTrigger(!trigger)
             }
         } catch (error: any) {
             console.log(error.response.data.error)
@@ -150,11 +165,13 @@ export function ApplyJobModal({ job, user, open, onOpenChange }: ApplyJobModalPr
 
                         <div className="grid gap-2">
                             <label className="text-sm font-medium">Resume</label>
-                            <div className="flex items-center gap-4 rounded-lg border border-dashed border-border p-4 bg-muted/50">
+                            <div className="flex items-center gap-4 rounded-lg border border-dashed border-border p-4 bg-muted/50 cursor-pointer hover:bg-primary/10"
+                                onClick={() => window.open(viewurl, "_blank", "noopener,noreferrer")}
+                            >
                                 <FileText className="h-8 w-8 text-primary" />
                                 <div className="flex-1 text-sm">
-                                    <p className="font-medium">sarah_chen_resume.pdf</p>
-                                    <p className="text-muted-foreground text-xs">Uploaded 2 days ago</p>
+                                    <p className="font-medium">{user?.resumeName}</p>
+                                    {user?.createdAt && <p className="text-muted-foreground text-xs">Uploaded on {new Date(user.createdAt).toISOString().split("T")[0]}</p>}
                                 </div>
                                 {/*<Button variant="ghost" size="sm" type="button" className="text-primary hover:text-primary/80">
                                     <Upload className="h-4 w-4 mr-2" />

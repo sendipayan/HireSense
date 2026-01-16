@@ -261,7 +261,7 @@ export default function CandidateClientDashboardPage() {
                                 </Button>}
                             </div>
                             {!initialLoad ? <div className="space-y-3">
-                                {interviews?.slice(0, 1).map((interview, i) => (
+                                {interviews?.length > 0 ? (interviews?.slice(0, 1).map((interview, i) => (
                                     <div
                                         key={i}
                                         className="rounded-xl border border-primary/20 bg-primary/5 p-4 relative overflow-hidden group"
@@ -288,7 +288,17 @@ export default function CandidateClientDashboardPage() {
                                             <Link href="/candidate/interviews">Prepare Now</Link>
                                         </Button>}
                                     </div>
-                                ))}
+                                ))) : (<Card className="border-dashed bg-transparent py-4">
+                                    <CardContent className="flex flex-col items-center text-center">
+                                        <div className="h-16 w-16 rounded-full bg-muted/20 flex items-center justify-center mb-4">
+                                            <Calendar className="h-8 w-8 text-muted-foreground" />
+                                        </div>
+                                        <h3 className="text-xl font-semibold">No Upcoming Interviews</h3>
+                                        <p className="text-muted-foreground mt-2 max-w-sm">
+                                            Check back later for new opportunities.
+                                        </p>
+                                    </CardContent>
+                                </Card>)}
                             </div> : <div className="bg-muted-foreground/50 border border-border rounded-lg p-6 mb-8 animate-pulse h-25">
 
                             </div>}
@@ -309,7 +319,7 @@ export default function CandidateClientDashboardPage() {
                             </Button>}
                         </div>
                         {!initialLoad ? <div className="space-y-4">
-                            {jobs?.map((job, index) => (
+                            {jobs.length > 0 ? (jobs?.map((job, index) => (
                                 <JobCard
                                     key={job.id}
                                     id={job.id}
@@ -322,7 +332,17 @@ export default function CandidateClientDashboardPage() {
                                     tags={job.requirements}
                                     matchScore={95 - index * 5}
                                 />
-                            ))}
+                            ))) : (<Card className="border-dashed bg-transparent py-4">
+                                <CardContent className="flex flex-col items-center text-center">
+                                    <div className="h-16 w-16 rounded-full bg-muted/20 flex items-center justify-center mb-4">
+                                        <Briefcase className="h-8 w-8 text-muted-foreground" />
+                                    </div>
+                                    <h3 className="text-xl font-semibold">No Recommended Jobs</h3>
+                                    <p className="text-muted-foreground mt-2 max-w-sm">
+                                        Wait for new Jobs
+                                    </p>
+                                </CardContent>
+                            </Card>)}
                         </div> :
                             <div className="space-y-4">
                                 {[1, 2, 3, 4].map((id) => (

@@ -6,10 +6,17 @@ type BaseUser = {
   role: "CANDIDATE" | "RECRUITER";
 };
 
+type Resume = {
+  id: string;
+  resumeName: string;
+  resumeUrl: string;
+  createdAt: Date;
+};
 type CandidateProfile = {
   id: string;
   userId: string;
   user: BaseUser;
+  resumes: Resume[];
   phoneNumber?: string | null;
   status?: string | null;
   institution?: string | null;
