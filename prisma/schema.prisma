@@ -108,6 +108,8 @@ model Resume {
   isActive       Boolean   @default(false)
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
+
+  @@index([createdAt, id])
 }
 
 enum CandidateStatus {
@@ -158,6 +160,8 @@ model PostJob {
   status             JobStatus          @default(ACTIVE)
   createdAt          DateTime           @default(now())
   updatedAt          DateTime           @updatedAt
+
+  @@index([createdAt, id])
 }
 
 enum JobStatus {
@@ -198,6 +202,7 @@ model Application {
   interview   Interview?
 
   @@unique([jobId, candidateId])
+  @@index([createdAt, id])
 }
 
 enum ApplicationStatus {
@@ -224,6 +229,8 @@ model Interview {
   phno          String?
   createdAt     DateTime        @default(now())
   updatedAt     DateTime        @updatedAt
+
+  @@index([createdAt, id])
 }
 
 enum InterviewType {

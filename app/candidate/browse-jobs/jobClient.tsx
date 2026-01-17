@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useRef } from "react"
 import { Search, Filter, MapPin, Briefcase, DollarSign, Clock, IndianRupee } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -16,6 +16,9 @@ import { useEffect } from "react"
 import { useJobStore } from "@/store/jobStore"
 import { useCandidateStore } from "@/store/candidateStore"
 import { useAuthStore } from "@/store/authStore"
+import { useCursorStore } from "@/store/nextCursorStore"
+import { Spinner } from "@/components/ui/spinner"
+
 const jobTypes = ["FULL_TIME", "BOTH", "INTERNSHIP"]
 const experienceLevels = ["Entry Level", "Mid Level", "Senior Level", "Lead"]
 
@@ -37,7 +40,7 @@ interface User {
 
 export function JobsBrowser() {
     const router = useRouter()
-    const { jobs, setJobs } = useJobStore()
+    const { jobs, setJobs, addJob } = useJobStore()
     const { user } = useAuthStore()
     const { candidateProfile, setCandidateProfile } = useCandidateStore()
     const [initialLoad, setInitialLoad] = useState(true)
@@ -49,7 +52,56 @@ export function JobsBrowser() {
     const [users, setUsers] = useState<User | null>(null)
     const [userload, setUserload] = useState(true)
     const [trigger, setTrigger] = useState(false)
+    const [loading, setLoading] = useState(false);
+    const { cursor, hasMore, setPage } = useCursorStore()
 
+    const observerRef = useRef<IntersectionObserver | null>(null);
+    const loadingRef = useRef(false);
+
+    const fetchMore = async () => {
+        if (loadingRef.current || !hasMore) return;
+
+        try {
+            loadingRef.current = true;
+            setLoading(true);
+            console.log("fetching more");
+
+            const res = await axios.post("/api/candidate/next_Jobs", {
+                cursor,
+            },
+                { withCredentials: true })
+
+            const data = await res.data
+            console.log("next jobs: ", data)
+            setJobs([...jobs, ...data.job])
+            setPage({ cursor: data.cursor, hasMore: data.hasMore })
+
+        } catch (error) {
+            console.log(error)
+        } finally {
+            setLoading(false);
+            loadingRef.current = false;
+        }
+    };
+
+    const setLoaderRef = (node: HTMLDivElement | null) => {
+        if (!node) return;
+
+        if (observerRef.current) {
+            observerRef.current.disconnect();
+        }
+
+        observerRef.current = new IntersectionObserver(
+            ([entry]) => {
+                if (entry.isIntersecting) {
+                    fetchMore();
+                }
+            },
+            { rootMargin: "100px" }
+        );
+
+        observerRef.current.observe(node);
+    };
 
     useEffect(() => {
         async function loadUser() {
@@ -68,7 +120,7 @@ export function JobsBrowser() {
 
     useEffect(() => {
 
-        if (userload) {
+        if (userload || !candidateProfile) {
             return
         }
         const fetch = async () => {
@@ -76,7 +128,8 @@ export function JobsBrowser() {
             const res = await axios.get("/api/getjob")
             const data = await res.data
             console.log("jobs: ", data.job)
-            setJobs(data.job)
+            setJobs(data.job.job)
+            setPage({ cursor: data.job.cursor, hasMore: data.job.hasMore })
             setInitialLoad(false)
         }
         fetch()
@@ -84,9 +137,10 @@ export function JobsBrowser() {
 
 
 
+
     useEffect(() => {
         if (!user || !candidateProfile || !initialLoad) return
-        console.log(candidateProfile)
+        console.log("candidateProfile: ", candidateProfile)
         setUsers({
             id: candidateProfile?.id || "",
             name: user?.name || "",
@@ -99,13 +153,13 @@ export function JobsBrowser() {
 
     const filteredJobs = useMemo(() => {
 
-        if (jobs.length === 0) return []
+        if (jobs?.length === 0) return []
 
         return jobs?.filter((job) => {
             const matchesSearch =
-                job.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                job.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 job.recruiter?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                job.description.toLowerCase().includes(searchQuery.toLowerCase())
+                job.description?.toLowerCase().includes(searchQuery.toLowerCase())
 
             const matchesType = selectedTypes.length === 0 || selectedTypes.includes(job.jobType)
 
@@ -306,6 +360,11 @@ export function JobsBrowser() {
                                 >
                                     Clear all filters
                                 </Button>
+                            </div>
+                        )}
+                        {hasMore && (
+                            <div ref={setLoaderRef} className="w-full flex justify-center items-center">
+                                <Spinner className="w-10 h-10" />
                             </div>
                         )}
                     </div> : <div className="space-y-4">

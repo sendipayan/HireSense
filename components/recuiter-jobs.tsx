@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo, useEffect } from "react"
+import { useState, useMemo, useEffect, useRef } from "react"
 import Link from "next/link"
 import { Search, Filter, MoreHorizontal, Pencil, Trash2, Users, Eye, Calendar, AlertCircle, IndianRupee } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -28,6 +28,9 @@ import {
 import { Spinner } from "./ui/spinner"
 import { useJobStore } from "@/store/jobStore"
 import axios from "axios"
+import { useCursorStore } from "@/store/nextCursorStore"
+
+
 
 export function RecruiterJobsClient() {
     const [searchQuery, setSearchQuery] = useState("")
@@ -35,13 +38,63 @@ export function RecruiterJobsClient() {
     const { jobs, setJobs, removeJob } = useJobStore()
     const [initialLoad, setInitialLoad] = useState(true)
     const [loading, setLoading] = useState(false)
+    const { cursor, hasMore, setPage } = useCursorStore()
     const [jobToDelete, setJobToDelete] = useState<string | null>(null)
+
+    const observerRef = useRef<IntersectionObserver | null>(null);
+    const loadingRef = useRef(false);
+
+    const fetchMore = async () => {
+        if (loadingRef.current || !hasMore) return;
+
+        try {
+            loadingRef.current = true;
+            setLoading(true);
+            console.log("fetching more");
+
+            const res = await axios.post("/api/recruiter/next_jobs", {
+                cursor,
+            },
+                { withCredentials: true })
+
+            const data = await res.data
+            console.log("next jobs: ", data)
+            setJobs([...jobs, ...data.job])
+            setPage({ cursor: data.cursor, hasMore: data.hasMore })
+
+        } catch (error) {
+            console.log(error)
+        } finally {
+            setLoading(false);
+            loadingRef.current = false;
+        }
+    };
+
+    const setLoaderRef = (node: HTMLDivElement | null) => {
+        if (!node) return;
+
+        if (observerRef.current) {
+            observerRef.current.disconnect();
+        }
+
+        observerRef.current = new IntersectionObserver(
+            ([entry]) => {
+                if (entry.isIntersecting) {
+                    fetchMore();
+                }
+            },
+            { rootMargin: "100px" }
+        );
+
+        observerRef.current.observe(node);
+    };
 
     useEffect(() => {
         const fetch = async () => {
             const res = await axios.get("/api/getjob")
             const data = await res.data
-            setJobs(data.job)
+            setJobs(data.job.job)
+            setPage({ cursor: data.job.cursor, hasMore: data.job.hasMore })
             console.log(data.job)
             setInitialLoad(false);
         }
@@ -49,8 +102,17 @@ export function RecruiterJobsClient() {
 
     }, [setJobs])
 
+    useEffect(() => {
+        if (cursor) {
+            console.log(cursor)
+        }
+    }, [cursor])
+
 
     const filteredJobs = useMemo(() => {
+        if (initialLoad) {
+            return []
+        }
         return jobs.filter((job) => {
             const matchesSearch =
                 job.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -112,7 +174,7 @@ export function RecruiterJobsClient() {
             </div>
 
             {/* Jobs Grid */}
-            {!initialLoad ? <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {!initialLoad ? (<><div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {filteredJobs.length > 0 ? (
                     filteredJobs.map((job) => (
                         <div
@@ -209,7 +271,13 @@ export function RecruiterJobsClient() {
                         </Button>
                     </div>
                 )}
-            </div> :
+
+            </div>
+                {hasMore && (
+                    <div ref={setLoaderRef} className="w-full flex justify-center items-center">
+                        <Spinner className="w-10 h-10" />
+                    </div>
+                )}</>) :
 
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                     {[1, 2, 3, 4, 5, 6].map((item) => (

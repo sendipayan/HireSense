@@ -18,6 +18,8 @@ import { Card, CardContent } from "@/components/ui/card"
 import { useAuthStore } from "@/store/authStore"
 import { InterviewStatusBadge } from "@/components/interview/interview-status-badge"
 import { useInterviewStore } from "@/store/useInterviewStore"
+import { useCursorStore } from "@/store/nextCursorStore"
+
 
 
 
@@ -31,6 +33,7 @@ export default function RecruiterDashboardPage() {
     const { user } = useAuthStore()
     const { interviews, setInterviews } = useInterviewStore()
     const { applications, setApplications } = useRecruiterApplicationsStore()
+    const { cursor, setPage } = useCursorStore()
 
     useEffect(() => {
 
@@ -51,26 +54,34 @@ export default function RecruiterDashboardPage() {
         const fetch = async () => {
             const res = await axios.get("/api/getjob")
             const data = await res.data
-            setJobs(data.job)
+            setJobs(data.job.job)
+            setPage({ cursor: data.job.cursor, hasMore: data.job.hasMore })
             const res1 = await axios.get("/api/recruiter/get_applications")
             const data1 = await res1.data
             setApplications(data1.applications)
             const res2 = await axios.get("/api/recruiter/get_interview", { withCredentials: true })
             const data2 = await res2.data
             setInterviews(data2.interviews)
+
             setInitialLoad(false);
         }
         fetch()
     }, [setJobs, setApplications, setInterviews])
 
+    useEffect(() => {
+        if (cursor) {
+            console.log("cursor: ", cursor)
+        }
+    }, [cursor])
+
 
     const stats = [
-        { title: "Active Jobs", value: `${jobs.length}`, icon: Briefcase, description: "Currently hiring" },
+        { title: "Active Jobs", value: `${jobs?.length}`, icon: Briefcase, description: "Currently hiring" },
         {
             title: "Total Candidates",
-            value: `${applications.length + interviews.length}`,
+            value: `${applications?.length + interviews?.length}`,
             icon: Users,
-            trend: { value: interviews.length, positive: true },
+            trend: { value: interviews?.length, positive: true },
         },
         { title: "Avg. Match Score", value: "87%", icon: Target, description: "AI matching accuracy" },
         { title: "Time to Hire", value: "18 days", icon: TrendingUp, trend: { value: 25, positive: true } },
@@ -129,7 +140,7 @@ export default function RecruiterDashboardPage() {
                             <h2 id="active-jobs-heading" className="text-lg font-semibold">
                                 Active Jobs
                             </h2>
-                            {jobs.length > 0 && <Button variant="ghost" size="sm" asChild>
+                            {jobs?.length > 0 && <Button variant="ghost" size="sm" asChild>
                                 <Link href="/recruiter/jobs">View all <ArrowRight className="ml-1 h-4 w-4" aria-hidden="true" /></Link>
                             </Button>}
                         </div>

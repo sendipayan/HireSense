@@ -28,6 +28,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Inbox, Calendar } from "lucide-react"
 import { InterviewStatusBadge } from "@/components/interview/interview-status-badge"
 import { useCandidateInterviewStore } from "@/store/useCandidateInterviewStore"
+import { useCursorStore } from "@/store/nextCursorStore"
 
 
 
@@ -37,6 +38,7 @@ export default function CandidateClientDashboardPage() {
     const { jobs, setJobs } = useJobStore()
     const { applications, setApplications } = useApplicationsStore()
     const { interviews, setInterviews } = useCandidateInterviewStore()
+    const { cursor, setPage } = useCursorStore()
 
     useEffect(() => {
         const fetch = async () => {
@@ -49,7 +51,8 @@ export default function CandidateClientDashboardPage() {
             const data = await res.data
             const data1 = await res1.data
             setApplications(data1.applications)
-            setJobs(data.job)
+            setJobs(data.job.job)
+            setPage({ cursor: data.job.cursor, hasMore: data.job.hasMore })
             setInitialLoad(false);
         }
 
@@ -61,11 +64,10 @@ export default function CandidateClientDashboardPage() {
 
 
     useEffect(() => {
-
-        if (applications?.length > 0) {
-            console.log(applications)
+        if (cursor) {
+            console.log(cursor)
         }
-    }, [applications])
+    }, [cursor])
     // Mock user data
 
 
@@ -319,7 +321,7 @@ export default function CandidateClientDashboardPage() {
                             </Button>}
                         </div>
                         {!initialLoad ? <div className="space-y-4">
-                            {jobs.length > 0 ? (jobs?.map((job, index) => (
+                            {jobs.length > 0 ? (jobs?.slice(0, 4).map((job, index) => (
                                 <JobCard
                                     key={job.id}
                                     id={job.id}
