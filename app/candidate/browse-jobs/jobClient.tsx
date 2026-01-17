@@ -33,6 +33,7 @@ interface User {
     id: string;
     name: string
     email: string
+    resumeId: string
     resumeName: string
     resumeUrl: string
     createdAt: Date
@@ -145,6 +146,7 @@ export function JobsBrowser() {
             id: candidateProfile?.id || "",
             name: user?.name || "",
             email: user?.email || "",
+            resumeId: candidateProfile?.resumes[0]?.id || "",
             resumeName: candidateProfile?.resumes[0]?.resumeName || "",
             resumeUrl: candidateProfile?.resumes[0]?.resumeUrl || "",
             createdAt: candidateProfile?.resumes[0]?.createdAt || new Date()

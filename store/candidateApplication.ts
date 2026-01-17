@@ -8,12 +8,21 @@ type ApplicationJob = {
   };
 };
 
+type Resume = {
+  resumeName: string;
+  resumeUrl: string;
+  resumeMimeType: string;
+  resumeSize: number;
+  id: string;
+};
+
 type Application = {
   id: string;
   status: string;
   score: number;
   createdAt: string;
   job: ApplicationJob;
+  resume: Resume;
 };
 
 type ApplicationsState = {
@@ -40,7 +49,7 @@ export const useApplicationsStore = create<ApplicationsState>((set) => ({
   updateApplication: (id, data) =>
     set((state) => ({
       applications: state.applications.map((a) =>
-        a.id === id ? { ...a, ...data } : a
+        a.id === id ? { ...a, ...data } : a,
       ),
     })),
 

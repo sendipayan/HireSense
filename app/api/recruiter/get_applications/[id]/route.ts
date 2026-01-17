@@ -4,7 +4,7 @@ import { verifyJwt } from "@/lib/jwt";
 
 export async function GET(
   req: NextRequest,
-  context: { params: Promise<{ id: string }> }
+  context: { params: Promise<{ id: string }> },
 ) {
   const token = req.cookies.get("auth_token")?.value;
 
@@ -66,6 +66,15 @@ export async function GET(
             title: true,
           },
         },
+        resume: {
+          select: {
+            resumeName: true,
+            resumeUrl: true,
+            resumeMimeType: true,
+            resumeSize: true,
+            id: true,
+          },
+        },
       },
       orderBy: {
         score: "desc",
@@ -78,7 +87,7 @@ export async function GET(
     console.error("Error fetching applications:", err);
     return NextResponse.json(
       { error: "Internal Server Error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

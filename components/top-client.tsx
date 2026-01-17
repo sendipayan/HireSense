@@ -18,6 +18,8 @@ import { ScheduleInterviewModal } from "./interview/schedule-interview-modal"
 interface ApplicationList {
     CId: string;
     Cname: string;
+    resumeUrl: string;
+    resumeMimeType: string;
     JId: string[];
     Jname: string[];
 }
@@ -40,9 +42,9 @@ export function TopMatchesClient() {
         const fetch = async () => {
             const res = await axios.get("/api/getjob")
             const data = await res.data
-            setJobs(data.job)
-            if (data.job.length > 0) {
-                setSelectedJob(data.job[0]?.id)
+            setJobs(data.job.job)
+            if (data.job.job.length > 0) {
+                setSelectedJob(data.job.job[0]?.id)
             }
             setJobload(false)
             console.log(data.job)
@@ -110,6 +112,8 @@ export function TopMatchesClient() {
                     {
                         CId: Aid,
                         Cname: app.candidate.user.name,
+                        resumeMimeType: app.resume.resumeMimeType,
+                        resumeUrl: app.resume.resumeUrl,
                         JId: [app.job.id],
                         Jname: [app.job.title],
                     },
@@ -147,6 +151,8 @@ export function TopMatchesClient() {
                 return {
                     CId: id,
                     Cname: filteredCandidates.find((c) => c.candidate.id === id)?.candidate.user.name || "",
+                    resumeMimeType: filteredCandidates.find((c) => c.candidate.id === id)?.resume.resumeMimeType || "",
+                    resumeUrl: filteredCandidates.find((c) => c.candidate.id === id)?.resume.resumeUrl || "",
                     JId: filteredCandidates.filter((c) => c.candidate.id === id)?.map((c) => c.job.id),
                     Jname: filteredCandidates.filter((c) => c.candidate.id === id)?.map((c) => c.job.title)
                 }
@@ -208,7 +214,7 @@ export function TopMatchesClient() {
                                         <SelectValue placeholder="Select a job..." />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        {jobs.map((job) => (
+                                        {jobs?.map((job) => (
                                             <SelectItem key={job.id} value={job.id}>
                                                 {job.title}
                                             </SelectItem>
@@ -319,6 +325,9 @@ export function TopMatchesClient() {
                                             title={candidate.job.title}
                                             location={candidate.candidate.institution}
                                             experience={candidate.candidate.experienceLevel}
+                                            resumeId={candidate.resume.id}
+                                            resumeMimeType={candidate.resume.resumeMimeType}
+                                            resumeUrl={candidate.resume.resumeUrl}
                                             education={candidate.candidate.degree}
                                             status={candidate.status}
                                             skills={candidate.candidate.primarySkills}

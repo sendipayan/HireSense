@@ -17,6 +17,8 @@ import { useRecruiterApplicationsStore, type ApplicationJob } from "@/store/recr
 interface ApplicationList {
     CId: string;
     Cname: string;
+    resumeMimeType: string;
+    resumeUrl: string;
     JId: string[];
     Jname: string[];
 }
@@ -94,6 +96,8 @@ export function WaitingList({ onScheduleBatch, response, setApplicationsList, se
                     {
                         CId: id,
                         Cname: app.candidate.user.name,
+                        resumeMimeType: app.resume.resumeMimeType,
+                        resumeUrl: app.resume.resumeUrl,
                         JId: [app.job.id],
                         Jname: [app.job.title],
                     },
@@ -136,6 +140,8 @@ export function WaitingList({ onScheduleBatch, response, setApplicationsList, se
                 return {
                     CId: id,
                     Cname: filteredCandidates.find((c) => c.candidate.id === id)?.candidate.user.name || "",
+                    resumeMimeType: filteredCandidates.find((c) => c.candidate.id === id)?.resume.resumeMimeType || "",
+                    resumeUrl: filteredCandidates.find((c) => c.candidate.id === id)?.resume.resumeUrl || "",
                     JId: filteredCandidates.filter((c) => c.candidate.id === id)?.map((c) => c.job.id),
                     Jname: filteredCandidates.filter((c) => c.candidate.id === id)?.map((c) => c.job.title)
                 }

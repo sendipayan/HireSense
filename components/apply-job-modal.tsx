@@ -27,6 +27,7 @@ interface User {
     id: string;
     name: string
     email: string
+    resumeId: string
     resumeName: string
     resumeUrl: string
     createdAt: Date
@@ -76,6 +77,7 @@ export function ApplyJobModal({ job, user, open, trigger, setTrigger, onOpenChan
             const response = await axios.post("/api/candidate/apply-job", {
                 jobId: job.id,
                 candidateId: user.id,
+                resumeId: user.resumeId,
             }, { withCredentials: true })
             console.log(response.data)
             if (response.status === 201) {

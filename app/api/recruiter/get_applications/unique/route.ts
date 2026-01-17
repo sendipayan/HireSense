@@ -25,7 +25,7 @@ export async function GET(req: NextRequest) {
     if (!jobId || !candidateId) {
       return NextResponse.json(
         { error: "Invalid job ID or candidate ID" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -62,6 +62,15 @@ export async function GET(req: NextRequest) {
             title: true,
           },
         },
+        resume: {
+          select: {
+            resumeName: true,
+            resumeUrl: true,
+            resumeMimeType: true,
+            resumeSize: true,
+            id: true,
+          },
+        },
       },
     });
 
@@ -70,7 +79,7 @@ export async function GET(req: NextRequest) {
     console.error("Error fetching applications:", err);
     return NextResponse.json(
       { error: "Internal Server Error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

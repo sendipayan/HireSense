@@ -18,7 +18,6 @@ import { Card, CardContent } from "@/components/ui/card"
 import { useAuthStore } from "@/store/authStore"
 import { InterviewStatusBadge } from "@/components/interview/interview-status-badge"
 import { useInterviewStore } from "@/store/useInterviewStore"
-import { useCursorStore } from "@/store/nextCursorStore"
 
 
 
@@ -33,7 +32,6 @@ export default function RecruiterDashboardPage() {
     const { user } = useAuthStore()
     const { interviews, setInterviews } = useInterviewStore()
     const { applications, setApplications } = useRecruiterApplicationsStore()
-    const { cursor, setPage } = useCursorStore()
 
     useEffect(() => {
 
@@ -55,7 +53,6 @@ export default function RecruiterDashboardPage() {
             const res = await axios.get("/api/getjob")
             const data = await res.data
             setJobs(data.job.job)
-            setPage({ cursor: data.job.cursor, hasMore: data.job.hasMore })
             const res1 = await axios.get("/api/recruiter/get_applications")
             const data1 = await res1.data
             setApplications(data1.applications)
@@ -68,11 +65,6 @@ export default function RecruiterDashboardPage() {
         fetch()
     }, [setJobs, setApplications, setInterviews])
 
-    useEffect(() => {
-        if (cursor) {
-            console.log("cursor: ", cursor)
-        }
-    }, [cursor])
 
 
     const stats = [
@@ -228,6 +220,9 @@ export default function RecruiterDashboardPage() {
                                     status={candidate.status}
                                     education={candidate.candidate.degree}
                                     skills={candidate.candidate.primarySkills}
+                                    resumeId={candidate.resume.id}
+                                    resumeUrl={candidate.resume.resumeUrl}
+                                    resumeMimeType={candidate.resume.resumeMimeType}
                                     matchScore={candidate.score}
                                     avatar=""
                                 />

@@ -46,6 +46,14 @@ type Candidate = {
     };
 };
 
+type Resume = {
+    id: string;
+    resumeName: string;
+    resumeUrl: string;
+    resumeMimeType: string;
+    resumeSize: number;
+}
+
 type Application = {
     candidate: Candidate;
     createdAt: string;
@@ -53,6 +61,7 @@ type Application = {
     score: number;
     status: string;
     job: ApplicationJob;
+    resume: Resume;
 };
 
 
@@ -103,6 +112,14 @@ export default function MatchResultsClientPage({ candidateId, jobId }: { candida
             title: "",
             id: "",
         },
+        resume: {
+            id: "",
+            resumeName: "",
+            resumeUrl: "",
+            resumeMimeType: "",
+            resumeSize: 0,
+        },
+
     })
 
 
@@ -381,7 +398,9 @@ export default function MatchResultsClientPage({ candidateId, jobId }: { candida
                         JId: [uniqueApplication.job.id],
                         Jname: [uniqueApplication.job.title],
                         CId: uniqueApplication.candidate.id,
-                        Cname: uniqueApplication.candidate.user.name
+                        Cname: uniqueApplication.candidate.user.name,
+                        resumeUrl: uniqueApplication.resume.resumeUrl,
+                        resumeMimeType: uniqueApplication.resume.resumeMimeType,
                     }]}
                     setTrigger={setTrigger}
                 />}

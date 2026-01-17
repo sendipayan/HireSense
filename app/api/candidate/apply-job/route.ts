@@ -19,12 +19,12 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { jobId, candidateId } = body;
+    const { jobId, candidateId, resumeId } = body;
 
-    if (!jobId || !candidateId) {
+    if (!jobId || !candidateId || !resumeId) {
       return NextResponse.json(
-        { error: "Missing user Id or job Id or both" },
-        { status: 400 }
+        { error: "Missing user Id or job Id or resume Id or all" },
+        { status: 400 },
       );
     }
 
@@ -43,20 +43,7 @@ export async function POST(req: NextRequest) {
           error:
             "Candidate is not verified yet. Please verify your profile first",
         },
-        { status: 400 }
-      );
-    }
-
-    const job = await prisma.postJob.findUnique({
-      where: {
-        id: jobId,
-      },
-    });
-
-    if (!candidate || !job) {
-      return NextResponse.json(
-        { error: "Job or Candidate Not Found" },
-        { status: 404 }
+        { status: 400 },
       );
     }
 
@@ -72,26 +59,50 @@ export async function POST(req: NextRequest) {
     if (findApplication) {
       return NextResponse.json(
         { error: "Application already exists" },
-        { status: 400 }
+        { status: 400 },
       );
+    }
+
+    const job = await prisma.postJob.findUnique({
+      where: {
+        id: jobId,
+      },
+    });
+
+    if (!candidate || !job) {
+      return NextResponse.json(
+        { error: "Job or Candidate Not Found" },
+        { status: 404 },
+      );
+    }
+
+    const resume = await prisma.resume.findUnique({
+      where: {
+        id: resumeId,
+      },
+    });
+
+    if (!resume) {
+      return NextResponse.json({ error: "Resume Not Found" }, { status: 404 });
     }
 
     const application = await prisma.application.create({
       data: {
         jobId,
         candidateId,
+        resumeId,
       },
     });
 
     return NextResponse.json(
       { message: "Application submitted successfully", application },
-      { status: 201 }
+      { status: 201 },
     );
   } catch (err: any) {
     console.log(err);
     return NextResponse.json(
       { error: "Internal Server Error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

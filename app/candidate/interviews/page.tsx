@@ -64,6 +64,9 @@ export default function CandidateInterviewsPage() {
             status: interview.status,
             meetingLink: interview.meetingLink,
             location: interview.location,
+            resumeName: interview.resumeName,
+            resumeUrl: interview.resumeUrl,
+            resumeType: interview.resumeType,
             instructions: interview.instructions,
         }
         setSelectedInterview(detail)
@@ -117,6 +120,9 @@ export default function CandidateInterviewsPage() {
                                             status: interview.status,
                                             meetingLink: interview.meetingLink || "",
                                             instructions: interview.notes || "",
+                                            resumeName: interview.application.resume.resumeName || "",
+                                            resumeUrl: interview.application.resume.resumeUrl || "",
+                                            resumeType: interview.application.resume.resumeMimeType || "",
                                         }}
                                         onConfirm={() => console.log("Confirmed", interview.id)}
                                         onReschedule={() => handleViewDetails(interview)}
@@ -172,8 +178,8 @@ export default function CandidateInterviewsPage() {
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    {filteredHistory?.length > 0 ? (
-                                        filteredHistory?.map((interview) => (
+                                    {filteredHistory?.filter((interview) => interview.status !== "SCHEDULED").length > 0 ? (
+                                        filteredHistory?.filter((interview) => interview.status !== "SCHEDULED").map((interview) => (
                                             <TableRow key={interview.id}>
                                                 <TableCell>
                                                     <div className="flex items-center gap-2">
@@ -224,6 +230,10 @@ export default function CandidateInterviewsPage() {
                                                         phno: interview.phno || "",
                                                         instructions: interview.notes || "",
                                                         duration: interview.duration.toString() || "",
+                                                        resumeName: interview.application.resume.resumeName || "",
+                                                        resumeUrl: interview.application.resume.resumeUrl || "",
+                                                        resumeType: interview.application.resume.resumeMimeType || "",
+
                                                     })}>
                                                         View Details
                                                     </Button>

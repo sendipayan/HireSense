@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect } from "react"
 import Link from "next/link"
-import { Search, Filter, Calendar, Building2, ChevronRight, ArrowLeft } from "lucide-react"
+import { Search, Filter, Calendar, Building2, ChevronRight, ArrowLeft, FileText } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardTitle } from "@/components/ui/card"
@@ -34,11 +34,7 @@ export default function ApplicationsPage() {
         fetchApplications()
     }, [])
 
-    useEffect(() => {
-        if (applications.length > 0) {
-            console.log(applications)
-        }
-    }, [applications])
+
 
     const filteredApplications = useMemo(() => {
         return applications.filter((app) => {
@@ -154,6 +150,17 @@ export default function ApplicationsPage() {
                                                     <Calendar className="h-4 w-4" />
                                                     Applied on {new Date(app.createdAt).toISOString().split("T")[0]}
                                                 </div>
+                                                {app.resume.resumeMimeType === "application/pdf" ? <div className="flex items-center gap-1.5 cursor-pointer hover:text-primary"
+                                                    onClick={() => {
+                                                        window.open(`https://docs.google.com/gview?url=${encodeURIComponent(app.resume.resumeUrl)}&embedded=true`, "_blank", "noopener,noreferrer")
+                                                    }}>
+                                                    <FileText className="h-4 w-4" />
+                                                    {"Resume: " + app.resume.resumeName}
+                                                </div> : <div className="flex items-center gap-1.5 cursor-pointer hover:text-primary"
+                                                    onClick={() => { window.open(app.resume.resumeUrl, "_blank", "noopener,noreferrer") }}>
+                                                    <FileText className="h-4 w-4" />
+                                                    {"Resume: " + app.resume.resumeName}
+                                                </div>}
                                             </div>
                                         </div>
                                         <div className="border-t border-border bg-muted/30 p-4 md:border-l md:border-t-0 md:p-6">

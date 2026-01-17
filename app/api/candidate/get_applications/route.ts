@@ -29,7 +29,7 @@ export async function GET(req: NextRequest) {
     if (!candidate) {
       return NextResponse.json(
         { error: "Candidate Not Found" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -49,6 +49,15 @@ export async function GET(req: NextRequest) {
             },
           },
         },
+        resume: {
+          select: {
+            resumeName: true,
+            resumeUrl: true,
+            resumeMimeType: true,
+            resumeSize: true,
+            id: true,
+          },
+        },
       },
       orderBy: {
         createdAt: "desc",
@@ -59,19 +68,19 @@ export async function GET(req: NextRequest) {
     if (!applications) {
       return NextResponse.json(
         { error: "Applications Not Found" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
     return NextResponse.json(
       { message: "Applications fetched successfully", applications },
-      { status: 200 }
+      { status: 200 },
     );
   } catch (error) {
     console.log(error);
     return NextResponse.json(
       { error: "Internal Server Error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

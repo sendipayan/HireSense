@@ -43,7 +43,7 @@ interface ScheduleInterviewModalProps {
     onOpenChange: (open: boolean) => void
     onSchedule: (values: any) => void
     setTrigger: (trigger: boolean) => void;
-    applications: { CId: string, Cname: string, JId: string[], Jname: string[] }[]
+    applications: { CId: string, Cname: string, resumeUrl: string, resumeMimeType: string, JId: string[], Jname: string[] }[]
     selectedApplicationIds: string[]
 }
 

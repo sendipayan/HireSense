@@ -48,6 +48,15 @@ export async function GET(req: NextRequest) {
                 title: true,
               },
             },
+            resume: {
+              select: {
+                resumeMimeType: true,
+                resumeUrl: true,
+                resumeName: true,
+                resumeSize: true,
+                id: true,
+              },
+            },
           },
         },
         startAt: true,
@@ -70,7 +79,7 @@ export async function GET(req: NextRequest) {
     console.error("Error fetching applications:", err);
     return NextResponse.json(
       { error: "Internal Server Error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

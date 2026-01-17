@@ -17,6 +17,14 @@ type Candidate = {
   };
 };
 
+type Resume = {
+  resumeName: string;
+  resumeUrl: string;
+  resumeMimeType: string;
+  resumeSize: number;
+  id: string;
+};
+
 type Application = {
   candidate: Candidate;
   createdAt: string;
@@ -24,6 +32,7 @@ type Application = {
   score: number;
   status: string;
   job: ApplicationJob;
+  resume: Resume;
 };
 
 type ApplicationsState = {
@@ -47,5 +56,5 @@ export const useRecruiterApplicationsStore = create<ApplicationsState>(
       })),
 
     clear: () => set({ applications: [] }),
-  })
+  }),
 );

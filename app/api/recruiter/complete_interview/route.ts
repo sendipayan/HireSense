@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
     if (!interviewId || !status) {
       return NextResponse.json(
         { error: "Missing required fields" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -41,11 +41,10 @@ export async function POST(req: NextRequest) {
     if (!interview) {
       return NextResponse.json(
         { error: "Interview not found" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
-    console.log(status);
     if (
       status !== "COMPLETED" &&
       status !== "CANCELLED" &&
@@ -57,7 +56,7 @@ export async function POST(req: NextRequest) {
     if (interview.status === "CANCELLED" || interview.status === "CONFIRMED") {
       return NextResponse.json(
         { error: "Status cannot be changed" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -68,13 +67,13 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(
       { message: "Interview completed successfully" },
-      { status: 200 }
+      { status: 200 },
     );
   } catch (err) {
     console.error("Error fetching applications:", err);
     return NextResponse.json(
       { error: "Internal Server Error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

@@ -23,6 +23,8 @@ import axios from "axios"
 interface ApplicationList {
     CId: string;
     Cname: string;
+    resumeMimeType: string;
+    resumeUrl: string;
     JId: string[];
     Jname: string[];
 }
@@ -59,7 +61,7 @@ export default function RecruiterInterviewsPage() {
             console.log(res3.data)
             setInterviews(res2.data.interviews)
             setApplications(res.data.applications)
-            setJobs(res3.data.job)
+            setJobs(res3.data.job.job)
             setIntialLoading(false)
         }
 
@@ -324,7 +326,10 @@ export default function RecruiterInterviewsPage() {
                                             meetingLink: int.meetingLink || "",
                                             phno: int.phno || "",
                                             notes: int.notes || "",
-                                            recruiterName: ""
+                                            recruiterName: "",
+                                            resumeUrl: int.application.resume.resumeUrl,
+                                            resumeName: int.application.resume.resumeName,
+                                            resumeType: int.application.resume.resumeMimeType,
                                         })
                                     }
                                 }}

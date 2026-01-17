@@ -3,6 +3,13 @@ import { type InterviewStatus } from "@/components/interview/interview-status-ba
 export type CandidateInterview = {
   id: string;
   application: {
+    resume: {
+      id: string;
+      resumeMimeType: string;
+      resumeName: string;
+      resumeUrl: string;
+      resumeSize: number;
+    };
     job: {
       title: string;
     };
@@ -48,7 +55,7 @@ export const useCandidateInterviewStore = create<CandidateInterviewState>(
     updateInterview: (id, data) =>
       set((state) => ({
         interviews: state.interviews.map((i) =>
-          i.id === id ? { ...i, ...data } : i
+          i.id === id ? { ...i, ...data } : i,
         ),
       })),
 
@@ -58,5 +65,5 @@ export const useCandidateInterviewStore = create<CandidateInterviewState>(
       })),
 
     clear: () => set({ interviews: [] }),
-  })
+  }),
 );

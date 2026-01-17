@@ -1,5 +1,14 @@
 import { create } from "zustand";
 import { type InterviewStatus } from "@/components/interview/interview-status-badge";
+
+type Resume = {
+  id: string;
+  resumeName: string;
+  resumeMimeType: string;
+  resumeUrl: string;
+  resumeSize: number;
+};
+
 export type Interview = {
   id: string;
   startAt: Date;
@@ -19,6 +28,7 @@ export type Interview = {
     job: {
       title: string;
     };
+    resume: Resume;
   };
 };
 
@@ -46,7 +56,7 @@ export const useInterviewStore = create<InterviewState>((set) => ({
   updateInterviewStatus: (id, status) =>
     set((state) => ({
       interviews: state.interviews.map((interview) =>
-        interview.id === id ? { ...interview, status } : interview
+        interview.id === id ? { ...interview, status } : interview,
       ),
     })),
 

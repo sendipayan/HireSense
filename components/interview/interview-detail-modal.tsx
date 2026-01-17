@@ -3,7 +3,7 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { InterviewStatusBadge, type InterviewStatus } from "./interview-status-badge"
 import { Button } from "@/components/ui/button"
-import { Clock, MapPin, LinkIcon, FileText, User, History, CalendarIcon, MessageSquare, Link, Phone, UserPlus, UserMinus, XCircle } from "lucide-react"
+import { Clock, MapPin, LinkIcon, FileText, User, History, ListCheck, CalendarIcon, MessageSquare, Link, Phone, UserPlus, UserMinus, XCircle } from "lucide-react"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
 import { useState, useEffect } from "react"
@@ -15,6 +15,9 @@ export interface InterviewDetail {
     id: string
     candidateName: string
     recruiterName: string
+    resumeUrl: string
+    resumeName: string
+    resumeType: string
     jobTitle: string
     date: string
     time: string
@@ -255,6 +258,33 @@ export function InterviewDetailModal({
 
                         <Separator />
 
+                        <div className="space-y-3">
+                            <p className="text-sm font-semibold flex items-center gap-2">
+                                <FileText className="h-4 w-4" />
+                                Resume
+                            </p>
+                            <div className="flex items-center justify-center lg:justify-between p-3 rounded-lg border border-primary/20 bg-primary/5">
+                                <span className="text-xs font-mono  truncate max-w-[300px] hidden lg:block">
+                                    {interview.resumeName}
+                                </span>
+                                {interview.resumeType === "application/pdf" ?
+                                    <Button size="sm" variant="outline" className="h-8 bg-transparent"
+                                        onClick={() => {
+                                            window.open(`https://docs.google.com/gview?url=${encodeURIComponent(interview.resumeUrl)}&embedded=true`, "_blank", "noopener,noreferrer")
+                                        }}
+                                    >
+                                        View
+                                    </Button> :
+                                    <Button size="sm" variant="outline" className="h-8 bg-transparent"
+                                        onClick={() => {
+                                            window.open(interview.resumeUrl, "_blank", "noopener,noreferrer")
+                                        }}
+                                    >
+                                        Download
+                                    </Button>}
+                            </div>
+                        </div>
+
                         {/* Links/Actions */}
                         {interview.meetingLink && (
                             <div className="space-y-3">
@@ -278,7 +308,7 @@ export function InterviewDetailModal({
                         {/* Instructions */}
                         <div className="space-y-3">
                             <p className="text-sm font-semibold flex items-center gap-2">
-                                <FileText className="h-4 w-4" />
+                                <ListCheck className="h-4 w-4" />
                                 Instructions
                             </p>
                             <p className="text-sm text-muted-foreground leading-relaxed">

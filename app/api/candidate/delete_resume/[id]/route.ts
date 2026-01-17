@@ -4,7 +4,7 @@ import { verifyJwt } from "@/lib/jwt";
 
 export async function DELETE(
   req: NextRequest,
-  context: { params: Promise<{ id: string }> }
+  context: { params: Promise<{ id: string }> },
 ) {
   try {
     const token = req.cookies.get("auth_token")?.value;
@@ -50,6 +50,16 @@ export async function DELETE(
       return NextResponse.json({ error: "Resume not found" }, { status: 404 });
     }
 
+    const inUse = await prisma.application.findFirst({
+      where: {
+        resumeId: id,
+      },
+    });
+
+    if (inUse) {
+      return NextResponse.json({ error: "Resume is in use" }, { status: 400 });
+    }
+
     const resume = await prisma.resume.delete({
       where: {
         id,
@@ -83,13 +93,13 @@ export async function DELETE(
     }
     return NextResponse.json(
       { message: "Resume deleted successfully" },
-      { status: 200 }
+      { status: 200 },
     );
   } catch (err) {
     console.error("job deletion error: ", err);
     return NextResponse.json(
       { error: "Something went wrong" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
