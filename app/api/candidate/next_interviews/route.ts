@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { verifyJwt } from "@/lib/jwt";
 
-export async function GET(req: NextRequest) {
+export async function POST(req: NextRequest) {
   const token = req.cookies.get("auth_token")?.value;
 
   if (!token) {
@@ -16,6 +16,10 @@ export async function GET(req: NextRequest) {
     if (!payload || payload.role !== "CANDIDATE") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+
+    const { cursor } = await req.json();
+    if (!cursor)
+      return NextResponse.json({ error: "Invalid request" }, { status: 400 });
 
     const candidate = await prisma.candidate.findUnique({
       where: { userId: payload.userId },
@@ -75,6 +79,11 @@ export async function GET(req: NextRequest) {
         phno: true,
       },
       orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+      cursor: {
+        createdAt: cursor.createdAt,
+        id: cursor.id,
+      },
+      skip: 1,
       take: limit + 1,
     });
 

@@ -23,11 +23,11 @@ export default function TriggerGoogleJwt() {
             if (res.ok) {
                 const res2 = await fetch("/api/auth/me")
                 const data2 = await res2.json()
-                setUser(data2.user.user)
-                if (data2.user.user.role === "RECRUITER") {
-                    setRecuiterProfile(data2.user)
+                setUser(data2?.user?.user)
+                if (data2?.user?.user?.role === "RECRUITER") {
+                    setRecuiterProfile(data2?.user)
                 } else {
-                    setCandidateProfile(data2.user)
+                    setCandidateProfile(data2?.user)
                 }
                 setIsLoggedIn(true)
                 router.replace(`${data.role}/dashboard`)

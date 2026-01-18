@@ -141,7 +141,7 @@ export default function AboutPage() {
           </p>
           <div className="mt-12 grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
             {values.map((value) => (
-              <article key={value.title} className="text-center">
+              <article key={value.title} className="text-center ">
                 <div className="mx-auto mb-4 inline-flex rounded-lg bg-primary/10 p-4">
                   <value.icon className="h-6 w-6 text-primary" aria-hidden="true" />
                 </div>
