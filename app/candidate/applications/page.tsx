@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo, useEffect } from "react"
+import { useState, useMemo, useEffect, useRef } from "react"
 import Link from "next/link"
 import { Search, Filter, Calendar, Building2, ChevronRight, ArrowLeft, FileText } from "lucide-react"
 import { Input } from "@/components/ui/input"
@@ -8,15 +8,67 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { mockApplications } from "@/lib/mock-data"
+import { useCursorStore } from "@/store/nextCursorStore"
 import { useApplicationsStore } from "@/store/candidateApplication"
 import axios from "axios"
+import { Spinner } from "@/components/ui/spinner"
 
 export default function ApplicationsPage() {
     const [searchQuery, setSearchQuery] = useState("")
     const [statusFilter, setStatusFilter] = useState("all")
     const { applications, setApplications } = useApplicationsStore()
     const [initialLoad, setInitialLoad] = useState(true)
+    const { cursor, setPage, hasMore } = useCursorStore()
+    const [loading, setLoading] = useState(false)
+
+    const observerRef = useRef<IntersectionObserver | null>(null);
+    const loadingRef = useRef(false);
+
+    const fetchMore = async () => {
+        if (loadingRef.current || !hasMore || !cursor) return;
+
+        try {
+            loadingRef.current = true;
+            setLoading(true);
+            console.log("fetching more");
+            const response = await axios.post('/api/candidate/next_applications', { cursor }, { withCredentials: true })
+            const data = await response.data
+            setApplications([...applications, ...data.applications])
+            setPage({ cursor: data.cursor, hasMore: data.hasMore })
+
+        } catch (error) {
+            console.log(error)
+        } finally {
+            setLoading(false);
+            loadingRef.current = false;
+        }
+    };
+
+    const setLoaderRef = (node: HTMLDivElement | null) => {
+        if (!node) return;
+
+        if (observerRef.current) {
+            observerRef.current.disconnect();
+        }
+
+        observerRef.current = new IntersectionObserver(
+            ([entry]) => {
+                if (entry.isIntersecting) {
+                    fetchMore();
+                }
+            },
+            { rootMargin: "100px" }
+        );
+
+        observerRef.current.observe(node);
+    };
+
+    useEffect(() => {
+        if (cursor) {
+            console.log("cursor is", cursor)
+        }
+    }, [cursor])
+
 
     useEffect(() => {
 
@@ -24,7 +76,9 @@ export default function ApplicationsPage() {
             try {
                 const response = await axios.get('/api/candidate/get_applications', { withCredentials: true })
                 const data = await response.data
+                console.log("data is", data)
                 setApplications(data.applications)
+                setPage({ cursor: data.cursor, hasMore: data.hasMore })
             } catch (error) {
                 console.log(error)
             } finally {
@@ -175,6 +229,7 @@ export default function ApplicationsPage() {
                                 </CardContent>
                             </Card>
                         ))
+
                     ) : (
                         <Card className="flex flex-col items-center justify-center border-dashed p-12 text-center">
                             <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-muted">
@@ -194,6 +249,9 @@ export default function ApplicationsPage() {
                             </Button>
                         </Card>
                     )}
+                    {hasMore && <div ref={setLoaderRef} className="w-full flex justify-center items-center">
+                        <Spinner className="w-10 h-10" />
+                    </div>}
                 </div> :
 
                     <div className="grid gap-4">

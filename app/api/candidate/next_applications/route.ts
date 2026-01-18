@@ -1,21 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { verifyJwt } from "@/lib/jwt";
+import { cookies } from "next/headers";
 
-export async function GET(req: NextRequest) {
-  const token = req.cookies.get("auth_token")?.value;
-  if (!token) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
+export async function POST(req: NextRequest) {
   try {
+    const token = (await cookies()).get("auth_token")?.value;
+    if (!token)
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
     const payload = verifyJwt(token);
-    if (!payload) {
+    if (!payload || payload.role !== "CANDIDATE")
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-    if (payload.role != "CANDIDATE") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+
+    const { cursor } = await req.json();
+    if (!cursor)
+      return NextResponse.json({ error: "Invalid request" }, { status: 400 });
 
     const candidate = await prisma.candidate.findUnique({
       where: {
@@ -69,6 +69,11 @@ export async function GET(req: NextRequest) {
           id: "desc",
         },
       ],
+      cursor: {
+        createdAt: cursor.createdAt,
+        id: cursor.id,
+      },
+      skip: 1,
       take: limit + 1,
     });
 
@@ -100,7 +105,7 @@ export async function GET(req: NextRequest) {
   } catch (error) {
     console.log(error);
     return NextResponse.json(
-      { error: "Internal Server Error" },
+      { error: "Internal server error" },
       { status: 500 },
     );
   }
