@@ -1,5 +1,5 @@
 "use client"
-import { useState, useMemo, useEffect } from "react"
+import { useState, useMemo, useEffect, useRef } from "react"
 import { Breadcrumbs } from "@/components/breadcrumbs"
 import { PageHeader } from "@/components/page-header"
 import { Button } from "@/components/ui/button"
@@ -17,7 +17,9 @@ import type { DateRange } from "react-day-picker" // Import DateRange
 import { useRecruiterApplicationsStore } from "@/store/recruiterApplication"
 import { useInterviewStore } from "@/store/useInterviewStore"
 import { useJobStore } from "@/store/jobStore"
+import { useCursorStore } from "@/store/nextCursorStore"
 import axios from "axios"
+import { Spinner } from "@/components/ui/spinner"
 
 
 interface ApplicationList {
@@ -44,12 +46,53 @@ export default function RecruiterInterviewsPage() {
     const [response, setResponse] = useState(false)
     const { jobs, setJobs } = useJobStore()
     const [loading, setLoading] = useState(false)
+    const { cursor, hasMore, setPage } = useCursorStore()
     const [intialLoading, setIntialLoading] = useState(true)
     // Filter states
     const [searchQuery, setSearchQuery] = useState("")
     const [statusFilter, setStatusFilter] = useState("all")
     const [jobFilter, setJobFilter] = useState("all")
     const [dateRange, setDateRange] = useState<DateRange | undefined>()
+
+    const observerRef = useRef<IntersectionObserver | null>(null);
+    const loadingRef = useRef(false);
+
+    const fetchMore = async () => {
+        if (loadingRef.current || !hasMore || !cursor) return;
+
+        try {
+            loadingRef.current = true;
+            setLoading(true);
+            console.log("fetching more");
+            const res = await axios.post("/api/recruiter/next_interviews", { cursor }, { withCredentials: true })
+            setInterviews([...interviews, ...res.data.interviews])
+            setPage({ cursor: res.data.cursor, hasMore: res.data.hasMore })
+        } catch (error) {
+            console.log(error)
+        } finally {
+            setLoading(false);
+            loadingRef.current = false;
+        }
+    };
+
+    const setLoaderRef = (node: HTMLDivElement | null) => {
+        if (!node) return;
+
+        if (observerRef.current) {
+            observerRef.current.disconnect();
+        }
+
+        observerRef.current = new IntersectionObserver(
+            ([entry]) => {
+                if (entry.isIntersecting) {
+                    fetchMore();
+                }
+            },
+            { rootMargin: "100px" }
+        );
+
+        observerRef.current.observe(node);
+    };
 
     useEffect(() => {
         const fetch = async () => {
@@ -60,6 +103,7 @@ export default function RecruiterInterviewsPage() {
             console.log(res2.data)
             console.log(res3.data)
             setInterviews(res2.data.interviews)
+            setPage({ cursor: res2.data.cursor, hasMore: res2.data.hasMore })
             setApplications(res.data.applications)
             setJobs(res3.data.job.job)
             setIntialLoading(false)
@@ -67,6 +111,7 @@ export default function RecruiterInterviewsPage() {
 
         fetch()
     }, [trigger])
+
 
     const completeInterview = async (id: string) => {
         try {
@@ -348,6 +393,9 @@ export default function RecruiterInterviewsPage() {
                                 }}
                             /> : <div className="w-full h-50 bg-muted-foreground/50 border border-border rounded-lg animate-pulse">
 
+                            </div>}
+                            {hasMore && <div ref={setLoaderRef} className="w-full flex justify-center items-center mt-5">
+                                <Spinner className="w-10 h-10" />
                             </div>}
                         </div>
                     </TabsContent>

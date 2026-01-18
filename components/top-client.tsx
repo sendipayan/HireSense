@@ -181,6 +181,7 @@ export function TopMatchesClient() {
         } catch (err) {
             console.log("Error adding candidates to waitlist:", err)
         }
+        setApplicationList([])
         setSelectedIds([])
     }
 
@@ -209,13 +210,13 @@ export function TopMatchesClient() {
                         <div className="flex flex-col gap-4 w-full">
                             <div className="bg-card/50 backdrop-blur-xl border border-border w-full p-2 rounded-2xl shadow-sm">
                                 <p className="text-sm font-medium text-muted-foreground mb-3">Analyzing for Position:</p>
-                                <Select value={selectedJob} onValueChange={setSelectedJob}>
+                                <Select value={selectedJob} onValueChange={(value) => { setSelectedJob(value); setApplicationList([]); setSelectedIds([]); }}>
                                     <SelectTrigger className="w-full bg-background border-primary/30 h-12 text-lg">
                                         <SelectValue placeholder="Select a job..." />
                                     </SelectTrigger>
                                     <SelectContent>
                                         {jobs?.map((job) => (
-                                            <SelectItem key={job.id} value={job.id}>
+                                            <SelectItem key={job.id} value={job.id} >
                                                 {job.title}
                                             </SelectItem>
                                         ))}
@@ -372,6 +373,7 @@ export function TopMatchesClient() {
                 onOpenChange={setIsScheduleModalOpen}
                 onSchedule={(values) => {
                     console.log("[v0] Scheduling interviews for:", selectedIds, values)
+                    setApplicationList([])
                     setSelectedIds([])
                 }}
                 applications={applicationList}

@@ -1,21 +1,25 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { verifyJwt } from "@/lib/jwt";
+import { cookies } from "next/headers";
 
-export async function GET(req: NextRequest) {
-  const token = req.cookies.get("auth_token")?.value;
-
-  if (!token) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
+export async function POST(req: NextRequest) {
   try {
-    const payload = verifyJwt(token);
-    console.log(payload);
-
-    if (!payload || payload.role !== "RECRUITER" || !payload.isVerified) {
+    const token = (await cookies()).get("auth_token")?.value;
+    if (!token)
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+
+    const payload = verifyJwt(token);
+    if (
+      !payload ||
+      payload.role !== "RECRUITER" ||
+      payload.isVerified !== "APPROVED"
+    )
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    const { cursor } = await req.json();
+    if (!cursor)
+      return NextResponse.json({ error: "Invalid request" }, { status: 400 });
 
     const recruiter = await prisma.recruiter.findUnique({
       where: { userId: payload.userId },
@@ -72,6 +76,11 @@ export async function GET(req: NextRequest) {
         phno: true,
       },
       orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+      cursor: {
+        createdAt: cursor.createdAt,
+        id: cursor.id,
+      },
+      skip: 1,
       take: limit + 1,
     });
 
@@ -91,10 +100,10 @@ export async function GET(req: NextRequest) {
       },
       { status: 200 },
     );
-  } catch (err) {
-    console.error("Error fetching applications:", err);
+  } catch (error) {
+    console.log(error);
     return NextResponse.json(
-      { error: "Internal Server Error" },
+      { error: "Internal server error" },
       { status: 500 },
     );
   }
