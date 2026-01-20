@@ -12,6 +12,8 @@ import {
     Star,
     UserCircle,
     LogOut,
+    User,
+    Camera,
 } from "lucide-react"
 import { usePathname } from "next/navigation"
 import Link from "next/link"
@@ -28,6 +30,13 @@ import {
     SidebarRail,
     useSidebar,
 } from "@/components/ui/sidebar"
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from "@/components/ui/dialog"
 import { useAuthStore } from "@/store/authStore"
 import { useRecruiterStore } from "@/store/RecuiterStore"
 import { useCandidateStore } from "@/store/candidateStore"
@@ -45,6 +54,11 @@ const candidateNav = [
         title: "Dashboard",
         url: "/candidate/dashboard",
         icon: LayoutDashboard,
+    },
+    {
+        title: "Profile",
+        url: "/candidate/dashboard/profile",
+        icon: User,
     },
     {
         title: "Jobs",
@@ -73,6 +87,11 @@ const recruiterNav = [
         title: "Dashboard",
         url: "/recruiter/dashboard",
         icon: LayoutDashboard,
+    },
+    {
+        title: "Profile",
+        url: "/recruiter/dashboard/profile",
+        icon: User,
     },
     {
         title: "Jobs",
@@ -105,12 +124,10 @@ export function AppSidebar({ type, ...props }: AppSidebarProps) {
     const clearApplications = useRecruiterApplicationsStore((s) => s.clear)
     const clearCandidateApplications = useApplicationsStore((s) => s.clear)
     const { user } = useAuthStore()
-    const { setOpen, isMobile } = useSidebar()
+    const { setOpen, open, isMobile } = useSidebar()
 
     // Close sidebar on route change
-    useEffect(() => {
-        setOpen(false)
-    }, [pathname, setOpen])
+
 
     const navItems = type === "candidate" ? candidateNav : recruiterNav
     const profileUrl = `/${type}/dashboard/profile`
@@ -121,41 +138,81 @@ export function AppSidebar({ type, ...props }: AppSidebarProps) {
                 {/* Decorative background */}
                 <div className="absolute inset-0 bg-linear-to-br from-primary/20 via-background to-background dark:from-primary/10 dark:via-background dark:to-background z-0" />
 
-                <Link href={profileUrl} className="flex flex-col items-center gap-4 w-full h-full justify-center group relative z-10 transition-colors hover:bg-white/5 dark:hover:bg-black/5 p-4">
-                    <div className="relative w-24 h-24 transition-transform duration-300 group-hover:scale-105">
-                        {/* Glowing effect behind avatar */}
-                        <div className="absolute inset-0 bg-linear-to-tr from-primary to-purple-500 rounded-full blur-md opacity-20 group-hover:opacity-40 transition-opacity" />
+                <div className="flex flex-col items-center gap-4 w-full h-full justify-center group relative z-10 transition-colors p-4">
+                    <div className="absolute inset-0 transition-colors hover:bg-white/5 dark:hover:bg-black/5 z-0" />
 
-                        <div className="relative w-full h-full rounded-full p-[3px] bg-linear-to-tr from-primary/50 to-purple-500/50 group-hover:from-primary group-hover:to-purple-500 transition-colors">
-                            <div className="w-full h-full rounded-full border-2 border-background overflow-hidden bg-background">
-                                <Avatar className="w-full h-full">
-                                    <AvatarImage src="" alt={user?.name || "User"} className="object-cover" />
-                                    <AvatarFallback className="text-3xl font-bold bg-muted text-primary/80">
-                                        {user?.name ? user.name.charAt(0).toUpperCase() : <UserCircle className="w-12 h-12" />}
-                                    </AvatarFallback>
-                                </Avatar>
+                    <Dialog>
+                        <DialogTrigger asChild>
+                            <div className="relative w-24 h-24 transition-transform duration-300 group-hover:scale-105 z-10 cursor-pointer">
+                                {/* Glowing effect behind avatar */}
+                                <div className="absolute inset-0 bg-linear-to-tr from-primary to-purple-500 rounded-full blur-md opacity-20 group-hover:opacity-40 transition-opacity" />
+
+                                <div className="relative w-full h-full rounded-full p-[3px] bg-linear-to-tr from-primary/50 to-purple-500/50 group-hover:from-primary group-hover:to-purple-500 transition-colors">
+                                    <div className="w-full h-full rounded-full border-2 border-background overflow-hidden bg-background relative">
+                                        <Avatar className="w-full h-full">
+                                            <AvatarImage src="" alt={user?.name || "User"} className="object-cover" />
+                                            <AvatarFallback className="text-3xl font-bold bg-muted text-primary/80">
+                                                {user?.name ? user.name.charAt(0).toUpperCase() : <UserCircle className="w-12 h-12" />}
+                                            </AvatarFallback>
+                                        </Avatar>
+                                    </div>
+                                </div>
+
+                                {/* Status Indicator */}
+                                <div className="absolute bottom-1 right-1 w-5 h-5 bg-green-500 border-4 border-background rounded-full shadow-sm z-30 pointer-events-none" />
                             </div>
-                        </div>
+                        </DialogTrigger>
+                        <DialogContent aria-describedby="profile-picture" className="sm:max-w-md">
+                            <DialogHeader>
+                                <DialogTitle className="text-center">Profile Picture</DialogTitle>
+                            </DialogHeader>
+                            <div className="flex flex-col items-center justify-center lg:p-6 gap-6">
+                                <div className="relative w-64 h-64 rounded-full border-4 border-primary/20 shadow-2xl">
+                                    <Avatar className="w-full h-full">
+                                        <AvatarImage src="" alt={user?.name || "User"} className="object-cover" />
+                                        <AvatarFallback className="text-6xl font-bold bg-muted text-primary/80">
+                                            {user?.name ? user.name.charAt(0).toUpperCase() : <UserCircle className="w-32 h-32" />}
+                                        </AvatarFallback>
+                                    </Avatar>
 
-                        {/* Status Indicator */}
-                        <div className="absolute bottom-1 right-1 w-5 h-5 bg-green-500 border-4 border-background rounded-full shadow-sm" />
-                    </div>
+                                    <label
+                                        htmlFor="popup-profile-upload"
+                                        className="absolute bottom-4 right-4 p-3 bg-primary text-primary-foreground rounded-full shadow-lg cursor-pointer hover:bg-primary/90 transition-colors ring-4 ring-background"
+                                    >
+                                        <Camera className="w-6 h-6" />
+                                        <input
+                                            type="file"
+                                            id="popup-profile-upload"
+                                            className="hidden"
+                                            accept="image/*"
+                                            onChange={(e) => {
+                                                console.log("Profile picture selected from popup:", e.target.files?.[0]);
+                                            }}
+                                        />
+                                    </label>
+                                </div>
+                                <p className="text-sm text-muted-foreground text-center">
+                                    Click the camera icon to update your profile picture.
+                                </p>
+                            </div>
+                        </DialogContent>
+                    </Dialog>
 
-                    <div className="text-center group-data-[collapsible=icon]:hidden animate-in fade-in slide-in-from-top-1 duration-300 w-full px-2">
+                    <Link href={profileUrl} className="text-center group-data-[collapsible=icon]:hidden animate-in fade-in slide-in-from-top-1 duration-300 w-full px-2 z-10">
                         <h3 className="font-bold text-lg leading-tight truncate w-full text-foreground/90">
                             {user?.name || (type === "candidate" ? "Candidate" : "Recruiter")}
                         </h3>
                         <p className="text-xs font-medium text-muted-foreground uppercase tracking-widest mt-1 scale-90">
                             {type} Workspace
                         </p>
-                    </div>
-                </Link>
+                    </Link>
+                </div>
             </SidebarHeader>
 
             <SidebarContent>
                 <SidebarMenu className="py-4 gap-1 px-2">
                     {navItems.map((item) => {
-                        const isActive = pathname === item.url || pathname.startsWith(item.url + "/")
+                        const isActive = pathname === item.url
                         return (
                             <SidebarMenuItem key={item.title}>
                                 <SidebarMenuButton
