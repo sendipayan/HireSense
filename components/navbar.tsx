@@ -85,6 +85,7 @@ export function Navbar() {
             <ProfileMenu
               name={user?.name}
               role={user?.role}
+              profilePic={user?.profilePic}
               onLogout={async () => {
                 const res = await axios.post("/api/auth/logout")
                 if (res.data.success) {

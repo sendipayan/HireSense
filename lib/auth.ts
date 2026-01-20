@@ -16,7 +16,7 @@ export async function getAuthUser() {
         where: { userId: payload.userId },
         include: {
           user: {
-            select: { name: true, email: true, role: true },
+            select: { name: true, email: true, role: true, profilePic: true },
           },
         },
       });
@@ -36,7 +36,7 @@ export async function getAuthUser() {
             },
           },
           user: {
-            select: { name: true, email: true, role: true },
+            select: { name: true, email: true, role: true, profilePic: true },
           },
         },
       });

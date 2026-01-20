@@ -13,14 +13,15 @@ datasource db {
 }
 
 model User {
-  id        String     @id @default(uuid())
-  name      String
-  email     String     @unique
-  password  String
-  role      Role       @default(CANDIDATE)
-  createdAt DateTime   @default(now())
-  recruiter Recruiter?
-  candidate Candidate?
+  id         String     @id @default(uuid())
+  name       String
+  email      String     @unique
+  password   String
+  profilePic String?
+  role       Role       @default(CANDIDATE)
+  createdAt  DateTime   @default(now())
+  recruiter  Recruiter?
+  candidate  Candidate?
 }
 
 enum Role {

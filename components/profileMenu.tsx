@@ -9,10 +9,11 @@ import { useRouter } from "next/navigation"
 type Props = {
     name: string | undefined
     role: "CANDIDATE" | "RECRUITER" | undefined
+    profilePic: string | undefined
     onLogout: () => void
 }
 
-export function ProfileMenu({ name, role, onLogout }: Props) {
+export function ProfileMenu({ name, role, profilePic, onLogout }: Props) {
     const router = useRouter()
 
     return (
@@ -21,7 +22,7 @@ export function ProfileMenu({ name, role, onLogout }: Props) {
                 <button className="outline-none">
                     <Avatar.Root className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-muted">
                         <Avatar.Image
-                            src="/avatar.png"
+                            src={profilePic}
                             alt="Profile"
                             className="h-full w-full rounded-full object-cover"
                         />

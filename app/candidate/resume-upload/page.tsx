@@ -89,29 +89,62 @@ export default function ResumeUploadPage() {
 
   const handleFileUpload = async (file: File) => {
     if (!file) return
-    if (file.size > 1048576) {
+    // Upgraded limit to 5MB to match backend capability and standard practices
+    if (file.size > 5 * 1024 * 1024) {
+      console.error("File size exceeds 5MB limit");
       return
     }
     setUploadedFile(file)
     setIsUploading(true)
     setUploadProgress(0)
 
-    const formdata = new FormData()
-    formdata.append("file", file)
-
     try {
-      const res = await axios.post("/api/candidate/file_url", formdata, { withCredentials: true })
-      const data = res.data
+      // 1. Get Signature from our backend
+      const timestamp = Math.round(new Date().getTime() / 1000);
 
-      if (res.status === 200) {
-        setUploadProgress(50)
+      const signRes = await axios.post("/api/cloudinary/sign", {
+        paramsToSign: { timestamp },
+        uploadType: "resume"
+      }, { withCredentials: true });
+
+      const { signature, params, apiKey, cloudName } = signRes.data;
+
+      // 2. Prepare Direct Upload
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("api_key", apiKey);
+      formData.append("timestamp", params.timestamp.toString());
+      formData.append("signature", signature);
+      if (params.folder) formData.append("folder", params.folder);
+
+      // 3. Upload directly to Cloudinary (raw resource type for docs)
+      const uploadRes = await axios.post(
+        `https://api.cloudinary.com/v1_1/${cloudName}/raw/upload`,
+        formData,
+        {
+          onUploadProgress: (progressEvent) => {
+            if (progressEvent.total) {
+              const percent = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+              setUploadProgress(Math.floor(percent * 0.9)); // Reserve 10% for final save
+            }
+          }
+        }
+      );
+
+      const data = uploadRes.data;
+
+      if (uploadRes.status === 200) {
+        setUploadProgress(90);
+
+        // 4. Save metadata to our backend
         const res2 = await axios.post("/api/candidate/add_resume", {
-          fileUrl: data.fileUrl,
-          fileName: data.fileName,
-          fileMime: data.fileMime,
-          fileSize: data.fileSize
-        }, { withCredentials: true })
-        const data2 = res2.data
+          fileUrl: data.secure_url,
+          fileName: file.name,
+          fileMime: file.type, // Cloudinary 'raw' might not return accurate mime on response, use original
+          fileSize: data.bytes
+        }, { withCredentials: true });
+
+        const data2 = res2.data;
         if (res2.status === 200) {
           setResumeId(data2.id)
           setUploadProgress(100)
@@ -119,13 +152,13 @@ export default function ResumeUploadPage() {
           setIsComplete(true)
           setIsUploading(false)
         }
-        console.log(res2)
       }
 
     } catch (err) {
-      console.log(err)
+      console.error("Upload failed:", err);
+      setUploadProgress(0);
+      setIsUploading(false);
     }
-
   }
 
   const removeFile = () => {

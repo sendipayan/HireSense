@@ -28,7 +28,6 @@ import {
     SidebarMenuButton,
     SidebarMenuItem,
     SidebarRail,
-    useSidebar,
 } from "@/components/ui/sidebar"
 import {
     Dialog,
@@ -123,14 +122,56 @@ export function AppSidebar({ type, ...props }: AppSidebarProps) {
     const clearJob = useJobStore((s) => s.clear)
     const clearApplications = useRecruiterApplicationsStore((s) => s.clear)
     const clearCandidateApplications = useApplicationsStore((s) => s.clear)
-    const { user } = useAuthStore()
-    const { setOpen, open, isMobile } = useSidebar()
+    const { user, setUser } = useAuthStore()
 
     // Close sidebar on route change
 
 
     const navItems = type === "candidate" ? candidateNav : recruiterNav
     const profileUrl = `/${type}/dashboard/profile`
+
+    const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0]
+        if (!file) return
+        if (file.size > 5 * 1024 * 1024) {
+            return
+        }
+
+        try {
+            // 1. Get Signature
+            const timestamp = Math.round(new Date().getTime() / 1000);
+            const signRes = await axios.post("/api/cloudinary/sign", {
+                paramsToSign: { timestamp },
+                uploadType: "profile"
+            }, { withCredentials: true });
+
+            const { signature, params, apiKey, cloudName } = signRes.data;
+
+            // 2. Upload to Cloudinary
+            const formData = new FormData();
+            formData.append("file", file);
+            formData.append("api_key", apiKey);
+            formData.append("timestamp", params.timestamp.toString());
+            formData.append("signature", signature);
+            if (params.folder) formData.append("folder", params.folder);
+
+            const uploadRes = await axios.post(
+                `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
+                formData
+            );
+
+            // Log the URL as before (logic to save to DB seems missing in original code too)
+            console.log(uploadRes.data.secure_url)
+            const res = await axios.post("/api/user/add_profilepic", {
+                fileUrl: uploadRes.data.secure_url,
+            }, { withCredentials: true });
+            console.log(res.data)
+            setUser(res.data.user)
+
+        } catch (error) {
+            console.error("Error uploading image:", error)
+        }
+    }
 
     return (
         <Sidebar collapsible="offcanvas" {...props}>
@@ -150,7 +191,7 @@ export function AppSidebar({ type, ...props }: AppSidebarProps) {
                                 <div className="relative w-full h-full rounded-full p-[3px] bg-linear-to-tr from-primary/50 to-purple-500/50 group-hover:from-primary group-hover:to-purple-500 transition-colors">
                                     <div className="w-full h-full rounded-full border-2 border-background overflow-hidden bg-background relative">
                                         <Avatar className="w-full h-full">
-                                            <AvatarImage src="" alt={user?.name || "User"} className="object-cover" />
+                                            <AvatarImage src={user?.profilePic} alt={user?.name || "User"} className="object-cover" />
                                             <AvatarFallback className="text-3xl font-bold bg-muted text-primary/80">
                                                 {user?.name ? user.name.charAt(0).toUpperCase() : <UserCircle className="w-12 h-12" />}
                                             </AvatarFallback>
@@ -169,7 +210,7 @@ export function AppSidebar({ type, ...props }: AppSidebarProps) {
                             <div className="flex flex-col items-center justify-center lg:p-6 gap-6">
                                 <div className="relative w-64 h-64 rounded-full border-4 border-primary/20 shadow-2xl">
                                     <Avatar className="w-full h-full">
-                                        <AvatarImage src="" alt={user?.name || "User"} className="object-cover" />
+                                        <AvatarImage src={user?.profilePic} alt={user?.name || "User"} className="object-cover" />
                                         <AvatarFallback className="text-6xl font-bold bg-muted text-primary/80">
                                             {user?.name ? user.name.charAt(0).toUpperCase() : <UserCircle className="w-32 h-32" />}
                                         </AvatarFallback>
@@ -184,15 +225,13 @@ export function AppSidebar({ type, ...props }: AppSidebarProps) {
                                             type="file"
                                             id="popup-profile-upload"
                                             className="hidden"
-                                            accept="image/*"
-                                            onChange={(e) => {
-                                                console.log("Profile picture selected from popup:", e.target.files?.[0]);
-                                            }}
+                                            accept="image/jpeg,image/png,image/webp,image/avif"
+                                            onChange={handleImageUpload}
                                         />
                                     </label>
                                 </div>
                                 <p className="text-sm text-muted-foreground text-center">
-                                    Click the camera icon to update your profile picture.
+                                    Click the camera icon to update your profile picture (Max 5MB).
                                 </p>
                             </div>
                         </DialogContent>
