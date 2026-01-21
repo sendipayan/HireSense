@@ -14,6 +14,7 @@ type Candidate = {
   secondarySkills: string[];
   user: {
     name: string;
+    profilePic?: string;
   };
 };
 

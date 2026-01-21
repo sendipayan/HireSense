@@ -37,6 +37,7 @@ async function handler(req: NextRequest, user: UserPayload) {
               user: {
                 select: {
                   name: true,
+                  profilePic: true,
                 },
               },
             },

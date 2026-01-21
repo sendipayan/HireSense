@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo, useEffect } from "react"
+import { useState, useMemo, useEffect, useRef } from "react"
 import { Search, Filter, Calendar, UserPlus } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -11,6 +11,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
 import axios from "axios"
+import { Spinner } from "../ui/spinner"
+import { useCursorStore, type Cursor } from "@/store/nextCursorStore"
 import { useRecruiterApplicationsStore, type ApplicationJob } from "@/store/recruiterApplication"
 
 
@@ -38,11 +40,60 @@ interface WaitingListProps {
 export function WaitingList({ onScheduleBatch, response, setApplicationsList, setTrigger, trigger }: WaitingListProps) {
     const [searchQuery, setSearchQuery] = useState("")
     const [jobFilter, setJobFilter] = useState("all")
+    const [loading, setLoading] = useState(false)
     const [selectedIds, setSelectedIds] = useState<string[]>([])
     const [job, setJob] = useState<ApplicationJob[]>([])
-    const { applications } = useRecruiterApplicationsStore()
+    const { applications, setApplications } = useRecruiterApplicationsStore()
     const [selectApplications, setSelectApplications] = useState<string[]>([])
     const [applicationList, setApplicationList] = useState<ApplicationList[]>([])
+    const observerRef = useRef<IntersectionObserver | null>(null);
+    const loadingRef = useRef(false);
+    const { cursor, setPage, hasMore } = useCursorStore()
+
+    useEffect(() => {
+        if (!cursor) return
+        console.log(cursor)
+    }, [cursor])
+
+    const fetchMore = async () => {
+        if (loadingRef.current || !hasMore || !cursor) return;
+
+        try {
+            loadingRef.current = true;
+            setLoading(true);
+            console.log("fetching more");
+            const res = await axios.post("/api/recruiter/next_waitlist", { cursor }, { withCredentials: true })
+            console.log(res.data)
+            setApplications([...applications, ...res.data.applications])
+            setPage({ cursor: res.data.cursor, hasMore: res.data.hasMore })
+
+        } catch (error) {
+            console.log(error)
+        } finally {
+            setLoading(false);
+            loadingRef.current = false;
+        }
+    };
+
+    const setLoaderRef = (node: HTMLDivElement | null) => {
+        if (!node) return;
+
+        if (observerRef.current) {
+            observerRef.current.disconnect();
+        }
+
+        observerRef.current = new IntersectionObserver(
+            ([entry]) => {
+                if (entry.isIntersecting) {
+                    fetchMore();
+                }
+            },
+            { rootMargin: "100px" }
+        );
+
+        observerRef.current.observe(node);
+    };
+
 
     useEffect(() => {
 
@@ -62,6 +113,7 @@ export function WaitingList({ onScheduleBatch, response, setApplicationsList, se
     }, [response])
 
     const filteredCandidates = useMemo(() => {
+        console.log("aplication useMemo")
         return applications.filter((c) => {
             const matchesSearch =
                 c.candidate.user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -69,7 +121,7 @@ export function WaitingList({ onScheduleBatch, response, setApplicationsList, se
             // In this mock, we'll just show all candidates as "waiting" if they aren't in the interview list
             return matchesSearch
         })
-    }, [searchQuery, applications])
+    }, [searchQuery, applications, setApplications])
 
     const toggleSelect = (id: string, Aid: string) => {
         const app = applications.find(a => a.id === Aid);
@@ -273,7 +325,7 @@ export function WaitingList({ onScheduleBatch, response, setApplicationsList, se
                                 </div>
 
                                 <Avatar className="h-10 w-10 border border-border/50">
-                                    <AvatarImage />
+                                    <AvatarImage src={candidate.candidate.user.profilePic ? candidate.candidate.user.profilePic : ""} />
                                     <AvatarFallback className="bg-primary/5 text-primary text-xs font-semibold">
                                         {candidate.candidate.user.name
                                             .split(" ")
@@ -306,11 +358,15 @@ export function WaitingList({ onScheduleBatch, response, setApplicationsList, se
 
                             </div>
                         ))
+
                     ) : (
                         <div className="py-12 text-center">
                             <p className="text-sm text-muted-foreground">No candidates found in the waiting list.</p>
                         </div>
                     )}
+                    {hasMore && <div ref={setLoaderRef} className="w-full flex justify-center items-center mt-5">
+                        <Spinner className="w-10 h-10" />
+                    </div>}
                 </div>
             </CardContent>
         </Card>

@@ -7,6 +7,7 @@ import { PageHeader } from "@/components/page-header"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { mockMatchResults } from "@/lib/mock-data"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
     Target,
     CheckCircle2,
@@ -43,6 +44,7 @@ type Candidate = {
     secondarySkills: string[];
     user: {
         name: string;
+        profilePic?: string;
     };
 };
 
@@ -102,6 +104,7 @@ export default function MatchResultsClientPage({ candidateId, jobId }: { candida
             secondarySkills: [],
             user: {
                 name: "",
+                profilePic: "",
             },
         },
         createdAt: "",
@@ -202,12 +205,15 @@ export default function MatchResultsClientPage({ candidateId, jobId }: { candida
                         </h2>
                         <div className="rounded-xl border border-border bg-card p-6">
                             <div className="flex items-start gap-4">
-                                <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-primary/10 text-xl font-bold text-primary">
-                                    {uniqueApplication?.candidate.user.name
-                                        .split(" ")
-                                        .map((n) => n[0])
-                                        .join("")}
-                                </div>
+                                <Avatar className="h-10 w-10 border border-border/50">
+                                    <AvatarImage src={uniqueApplication.candidate.user.profilePic ? uniqueApplication.candidate.user.profilePic : ""} />
+                                    <AvatarFallback className="bg-primary/5 text-primary text-xs font-semibold">
+                                        {uniqueApplication.candidate.user.name
+                                            .split(" ")
+                                            .map((n: string) => n[0])
+                                            .join("")}
+                                    </AvatarFallback>
+                                </Avatar>
                                 <div>
                                     <h3 className="text-xl font-semibold">{uniqueApplication?.candidate.user.name}</h3>
                                     <p className="text-muted-foreground"><strong>For Role: </strong>{uniqueApplication?.job.title}</p>
@@ -403,6 +409,7 @@ export default function MatchResultsClientPage({ candidateId, jobId }: { candida
                         resumeMimeType: uniqueApplication.resume.resumeMimeType,
                     }]}
                     setTrigger={setTrigger}
+                    trigger={trigger}
                 />}
 
             </div>

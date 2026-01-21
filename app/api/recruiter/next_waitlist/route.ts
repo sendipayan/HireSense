@@ -1,20 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { withAuth } from "@/lib/api-middleware";
-
-type UserPayload = {
-  userId: string;
-  role: string;
-  isVerified?: string;
-};
+import { withAuth, type UserPayload } from "@/lib/api-middleware";
 
 async function handler(req: NextRequest, user: UserPayload) {
-  if (!user.isVerified) {
+  if (user.isVerified !== "APPROVED") {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const { cursor } = await req.json();
+  if (!cursor) {
+    return NextResponse.json({ error: "Invalid request" }, { status: 400 });
   }
 
   const recruiter = await prisma.recruiter.findUnique({
     where: { userId: user.userId },
+    select: { id: true },
   });
 
   if (!recruiter) {
@@ -73,6 +72,11 @@ async function handler(req: NextRequest, user: UserPayload) {
       },
       { id: "desc" },
     ],
+    cursor: {
+      createdAt: cursor.createdAt,
+      id: cursor.id,
+    },
+    skip: 1,
     take: limit + 1,
   });
 
@@ -82,16 +86,14 @@ async function handler(req: NextRequest, user: UserPayload) {
   return NextResponse.json(
     {
       applications,
-      cursor: hasMore
-        ? {
-            createdAt: applications[applications.length - 1].createdAt,
-            id: applications[applications.length - 1].id,
-          }
-        : null,
+      cursor: {
+        createdAt: applications[applications.length - 1].createdAt,
+        id: applications[applications.length - 1].id,
+      },
       hasMore,
     },
     { status: 200 },
   );
 }
 
-export const GET = withAuth(handler, { allowedRoles: ["RECRUITER"] });
+export const POST = withAuth(handler, { allowedRoles: ["RECRUITER"] });

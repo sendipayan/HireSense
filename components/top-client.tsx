@@ -333,7 +333,7 @@ export function TopMatchesClient() {
                                             status={candidate.status}
                                             skills={candidate.candidate.primarySkills}
                                             matchScore={candidate.score}
-                                            avatar=""
+                                            avatar={candidate.candidate.user.profilePic ? candidate.candidate.user.profilePic : ""}
                                         />
                                     </div>
                                 </div>
@@ -371,6 +371,7 @@ export function TopMatchesClient() {
             <ScheduleInterviewModal
                 open={isScheduleModalOpen}
                 onOpenChange={setIsScheduleModalOpen}
+                trigger={trigger}
                 onSchedule={(values) => {
                     console.log("[v0] Scheduling interviews for:", selectedIds, values)
                     setApplicationList([])

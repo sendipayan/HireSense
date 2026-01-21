@@ -13,6 +13,7 @@ import { Users, Briefcase, Target, TrendingUp, Plus, ArrowRight, Eye, Clock, Che
 import { useEffect, useState } from "react"
 import { useJobStore } from "@/store/jobStore"
 import axios from "axios"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useRecruiterApplicationsStore } from "@/store/recruiterApplication"
 import { Card, CardContent } from "@/components/ui/card"
 import { useAuthStore } from "@/store/authStore"
@@ -224,7 +225,7 @@ export default function RecruiterDashboardPage() {
                                     resumeUrl={candidate.resume.resumeUrl}
                                     resumeMimeType={candidate.resume.resumeMimeType}
                                     matchScore={candidate.score}
-                                    avatar=""
+                                    avatar={candidate.candidate.user.profilePic ? candidate.candidate.user.profilePic : ""}
                                 />
                             ))) : (
                                 (
@@ -269,12 +270,15 @@ export default function RecruiterDashboardPage() {
                                 {interviews?.slice(0, 2).map((interview, i) => (
                                     <div key={i} className="flex items-center justify-between p-4 hover:bg-muted/50 transition-colors">
                                         <div className="flex items-center gap-4">
-                                            <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold">
-                                                {interview.application.candidate.user.name
-                                                    .split(" ")
-                                                    .map((n) => n[0])
-                                                    .join("")}
-                                            </div>
+                                            <Avatar className="h-10 w-10 border border-border/50">
+                                                <AvatarImage src={interview.application.candidate.user.profilePic ? interview.application.candidate.user.profilePic : ""} />
+                                                <AvatarFallback className="bg-primary/5 text-primary text-xs font-semibold">
+                                                    {interview.application.candidate.user.name
+                                                        .split(" ")
+                                                        .map((n: string) => n[0])
+                                                        .join("")}
+                                                </AvatarFallback>
+                                            </Avatar>
                                             <div>
                                                 <p className="font-medium">{interview.application.candidate.user.name}</p>
                                                 <p className="text-sm text-muted-foreground">{interview.application.job.title}</p>

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifyJwt } from "@/lib/jwt";
 
 // Define the payload type based on your jwt.ts
-type UserPayload = {
+export type UserPayload = {
   userId: string;
   role: string;
   isVerified?: "APPROVED" | "PENDING" | "REJECTED";

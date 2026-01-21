@@ -43,6 +43,7 @@ interface ScheduleInterviewModalProps {
     onOpenChange: (open: boolean) => void
     onSchedule: (values: any) => void
     setTrigger: (trigger: boolean) => void;
+    trigger: boolean
     applications: { CId: string, Cname: string, resumeUrl: string, resumeMimeType: string, JId: string[], Jname: string[] }[]
     selectedApplicationIds: string[]
 }
@@ -52,6 +53,7 @@ export function ScheduleInterviewModal({
     onOpenChange,
     onSchedule,
     setTrigger,
+    trigger,
     applications = [],
     selectedApplicationIds = [],
 }: ScheduleInterviewModalProps) {
@@ -111,7 +113,7 @@ export function ScheduleInterviewModal({
             const res = await axios.post("/api/recruiter/add_interview", payload, { withCredentials: true })
             if (res.status === 201) {
                 onSchedule(res.data)
-                setTrigger(true)
+                setTrigger(!trigger)
                 onOpenChange(false)
                 form.reset()
             }

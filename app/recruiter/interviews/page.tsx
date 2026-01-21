@@ -17,7 +17,7 @@ import type { DateRange } from "react-day-picker" // Import DateRange
 import { useRecruiterApplicationsStore } from "@/store/recruiterApplication"
 import { useInterviewStore } from "@/store/useInterviewStore"
 import { useJobStore } from "@/store/jobStore"
-import { useCursorStore } from "@/store/nextCursorStore"
+import { useCursorStore, type Cursor } from "@/store/nextCursorStore"
 import axios from "axios"
 import { Spinner } from "@/components/ui/spinner"
 
@@ -48,6 +48,10 @@ export default function RecruiterInterviewsPage() {
     const [loading, setLoading] = useState(false)
     const { cursor, hasMore, setPage } = useCursorStore()
     const [intialLoading, setIntialLoading] = useState(true)
+    const [secondCursor, setSecondCursor] = useState<Cursor | null>(null)
+    const [secondHasMore, setSecondHasMore] = useState(false)
+    const [thirdCursor, setThirdCursor] = useState<Cursor | null>(null)
+    const [thirdHasMore, setThirdHasMore] = useState(false)
     // Filter states
     const [searchQuery, setSearchQuery] = useState("")
     const [statusFilter, setStatusFilter] = useState("all")
@@ -66,7 +70,8 @@ export default function RecruiterInterviewsPage() {
             console.log("fetching more");
             const res = await axios.post("/api/recruiter/next_interviews", { cursor }, { withCredentials: true })
             setInterviews([...interviews, ...res.data.interviews])
-            setPage({ cursor: res.data.cursor, hasMore: res.data.hasMore })
+            setThirdCursor(res.data.cursor)
+            setThirdHasMore(res.data.hasMore)
         } catch (error) {
             console.log(error)
         } finally {
@@ -96,21 +101,66 @@ export default function RecruiterInterviewsPage() {
 
     useEffect(() => {
         const fetch = async () => {
-            const res = await axios.get("/api/recruiter/get_waitlist", { withCredentials: true })
-            const res2 = await axios.get("/api/recruiter/get_interview", { withCredentials: true })
-            const res3 = await axios.get("/api/getjob", { withCredentials: true })
-            console.log(res.data)
-            console.log(res2.data)
-            console.log(res3.data)
-            setInterviews(res2.data.interviews)
-            setPage({ cursor: res2.data.cursor, hasMore: res2.data.hasMore })
-            setApplications(res.data.applications)
-            setJobs(res3.data.job.job)
-            setIntialLoading(false)
+            setIntialLoading(true)
+
+            try {
+                const res = await axios.get("/api/recruiter/get_waitlist", { withCredentials: true })
+                console.log(res.data)
+                if (res.status === 200) {
+                    setApplications(res.data.applications)
+                    setSecondCursor(res.data.cursor)
+                    setSecondHasMore(res.data.hasMore)
+                }
+
+            } catch (err) {
+                console.log("Error fetching waitiing list: ", err)
+            }
+
+            try {
+                const res2 = await axios.get("/api/recruiter/get_interview", { withCredentials: true })
+                console.log(res2.data)
+                if (res2.status === 200) {
+                    setInterviews(res2.data.interviews)
+                    setThirdCursor(res2.data.cursor)
+                    setThirdHasMore(res2.data.hasMore)
+                }
+
+            } catch (err) {
+                console.log("Error fetching interviews: ", err)
+            }
+
+            try {
+                const res3 = await axios.get("/api/getjob", { withCredentials: true })
+                console.log(res3.data)
+                if (res3.status === 200) {
+                    setJobs(res3.data.job.job)
+                }
+            } catch (err) {
+                console.log("Error fetching jobs: ", err)
+            } finally {
+                setIntialLoading(false)
+            }
         }
 
         fetch()
     }, [trigger])
+
+    useEffect(() => {
+        if (intialLoading || loading) return
+
+        if (activeTab === "interviews") {
+            console.log("running")
+            setPage({ cursor: thirdCursor, hasMore: thirdHasMore })
+        } else if (activeTab === "waiting-list") {
+            console.log("waiting")
+            setPage({ cursor: secondCursor, hasMore: secondHasMore })
+        }
+    }, [activeTab, trigger, intialLoading, loading])
+
+    useEffect(() => {
+        if (!cursor) return
+        console.log(cursor)
+    }, [cursor])
 
 
     const completeInterview = async (id: string) => {
@@ -327,7 +377,7 @@ export default function RecruiterInterviewsPage() {
 
                         {/* Table */}
                         <div className="mt-6">
-                            {!intialLoading ? <InterviewTable
+                            {!intialLoading ? <><InterviewTable
                                 interviews={filteredInterviews.map((int) => {
                                     return {
                                         id: int.id,
@@ -391,12 +441,14 @@ export default function RecruiterInterviewsPage() {
                                 onMarkCompleted={(int) => {
                                     completeInterview(int.id)
                                 }}
-                            /> : <div className="w-full h-50 bg-muted-foreground/50 border border-border rounded-lg animate-pulse">
+                            />
+                                {hasMore && <div ref={setLoaderRef} className="w-full flex justify-center items-center mt-5">
+                                    <Spinner className="w-10 h-10" />
+                                </div>}
+                            </> : <div className="w-full h-50 bg-muted-foreground/50 border border-border rounded-lg animate-pulse">
 
                             </div>}
-                            {hasMore && <div ref={setLoaderRef} className="w-full flex justify-center items-center mt-5">
-                                <Spinner className="w-10 h-10" />
-                            </div>}
+
                         </div>
                     </TabsContent>
                 </Tabs>
@@ -407,6 +459,7 @@ export default function RecruiterInterviewsPage() {
                     onOpenChange={setIsScheduleModalOpen}
                     onSchedule={handleSchedule}
                     setTrigger={setTrigger}
+                    trigger={trigger}
                     applications={applicationList}
                     selectedApplicationIds={selectedApplicationIds}
                 />

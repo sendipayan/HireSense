@@ -23,6 +23,7 @@ export type Interview = {
     candidate: {
       user: {
         name: string;
+        profilePic?: string;
       };
     };
     job: {
