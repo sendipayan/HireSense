@@ -99,59 +99,29 @@ export default function ResumeUploadPage() {
     setUploadProgress(0)
 
     try {
-      // 1. Get Signature from our backend
-      const timestamp = Math.round(new Date().getTime() / 1000);
-
-      const signRes = await axios.post("/api/cloudinary/sign", {
-        paramsToSign: { timestamp },
-        uploadType: "resume"
-      }, { withCredentials: true });
-
-      const { signature, params, apiKey, cloudName } = signRes.data;
-
-      // 2. Prepare Direct Upload
       const formData = new FormData();
       formData.append("file", file);
-      formData.append("api_key", apiKey);
-      formData.append("timestamp", params.timestamp.toString());
-      formData.append("signature", signature);
-      if (params.folder) formData.append("folder", params.folder);
 
-      // 3. Upload directly to Cloudinary (raw resource type for docs)
-      const uploadRes = await axios.post(
-        `https://api.cloudinary.com/v1_1/${cloudName}/raw/upload`,
-        formData,
-        {
-          onUploadProgress: (progressEvent) => {
-            if (progressEvent.total) {
-              const percent = Math.round((progressEvent.loaded * 100) / progressEvent.total);
-              setUploadProgress(Math.floor(percent * 0.9)); // Reserve 10% for final save
-            }
+      const res = await axios.post("/api/candidate/upload_resume", formData, {
+        withCredentials: true,
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+        onUploadProgress: (progressEvent) => {
+          if (progressEvent.total) {
+            const percent = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+            // Cap visual progress at 90% so user knows we are still processing/verifying even after bits are sent
+            setUploadProgress(Math.min(percent, 90));
           }
-        }
-      );
+        },
+      });
 
-      const data = uploadRes.data;
-
-      if (uploadRes.status === 200) {
-        setUploadProgress(90);
-
-        // 4. Save metadata to our backend
-        const res2 = await axios.post("/api/candidate/add_resume", {
-          fileUrl: data.secure_url,
-          fileName: file.name,
-          fileMime: file.type, // Cloudinary 'raw' might not return accurate mime on response, use original
-          fileSize: data.bytes
-        }, { withCredentials: true });
-
-        const data2 = res2.data;
-        if (res2.status === 200) {
-          setResumeId(data2.id)
-          setUploadProgress(100)
-          setTrigger(!trigger)
-          setIsComplete(true)
-          setIsUploading(false)
-        }
+      if (res.status === 200) {
+        setResumeId(res.data.id);
+        setUploadProgress(100);
+        setTrigger(!trigger);
+        setIsComplete(true);
+        setIsUploading(false);
       }
 
     } catch (err) {

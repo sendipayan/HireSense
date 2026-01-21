@@ -141,19 +141,22 @@ export default function AIFeedbackClientPage({ resumeId }: { resumeId: string })
                     title="AI Resume Feedback"
                     description="Detailed analysis of your resume with actionable suggestions to improve your chances."
                 >
-                    {resume.resumeMimeType === "application/pdf" ? < Button variant="outline" className="bg-transparent cursor-pointer"
+                    {resume.resumeMimeType === "application/pdf" && < Button variant="outline" className="bg-transparent cursor-pointer"
                         onClick={() => window.open(viewurl, "_blank", "noopener,noreferrer")}
                         disabled={!viewurl}
                     >
                         <Eye className="mr-2 h-4 w-4" aria-hidden="true" />
                         View Resume
-                    </Button> : <Button variant="outline" className="bg-transparent cursor-pointer"
+                    </Button>}
+                    <Button variant="outline" className="bg-transparent cursor-pointer"
                         onClick={() => window.open(resume.resumeUrl, "_blank", "noopener,noreferrer")}
                         disabled={!resume.resumeUrl}
                     >
-                        <Download className="mr-2 h-4 w-4" aria-hidden="true" />
-                        Download Resume
-                    </Button>}
+                        <Link href={resume.resumeUrl} download={resume.resumeName} target="_blank" rel="noopener noreferrer" className="flex items-center">
+                            <Download className="mr-2 h-4 w-4" aria-hidden="true" />
+                            Download Resume
+                        </Link>
+                    </Button>
                 </PageHeader>
 
                 {/* Overall Score */}
