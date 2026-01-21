@@ -1,101 +1,92 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { verifyJwt } from "@/lib/jwt";
+import { withAuth } from "@/lib/api-middleware";
 
-export async function GET(req: NextRequest) {
-  const token = req.cookies.get("auth_token")?.value;
+type UserPayload = {
+  userId: string;
+  role: string;
+  isVerified?: string;
+};
 
-  if (!token) {
+async function handler(req: NextRequest, user: UserPayload) {
+  if (!user.isVerified) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  try {
-    const payload = verifyJwt(token);
-    console.log(payload);
+  const recruiter = await prisma.recruiter.findUnique({
+    where: { userId: user.userId },
+    select: { id: true },
+  });
 
-    if (!payload || payload.role !== "RECRUITER" || !payload.isVerified) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+  if (!recruiter) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
 
-    const recruiter = await prisma.recruiter.findUnique({
-      where: { userId: payload.userId },
-      select: { id: true },
-    });
+  const limit = 5;
 
-    if (!recruiter) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const limit = 5;
-
-    let interviews = await prisma.interview.findMany({
-      where: {
-        recruiterId: recruiter.id,
-      },
-      select: {
-        id: true,
-        application: {
-          select: {
-            candidate: {
-              select: {
-                user: {
-                  select: {
-                    name: true,
-                  },
+  let interviews = await prisma.interview.findMany({
+    where: {
+      recruiterId: recruiter.id,
+    },
+    select: {
+      id: true,
+      application: {
+        select: {
+          candidate: {
+            select: {
+              user: {
+                select: {
+                  name: true,
                 },
               },
             },
-            job: {
-              select: {
-                title: true,
-              },
+          },
+          job: {
+            select: {
+              title: true,
             },
-            resume: {
-              select: {
-                resumeMimeType: true,
-                resumeUrl: true,
-                resumeName: true,
-                resumeSize: true,
-                id: true,
-              },
+          },
+          resume: {
+            select: {
+              resumeMimeType: true,
+              resumeUrl: true,
+              resumeName: true,
+              resumeSize: true,
+              id: true,
             },
           },
         },
-        startAt: true,
-        createdAt: true,
-        duration: true,
-        status: true,
-        type: true,
-        location: true,
-        meetingLink: true,
-        notes: true,
-        phno: true,
       },
-      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
-      take: limit + 1,
-    });
+      startAt: true,
+      createdAt: true,
+      duration: true,
+      status: true,
+      type: true,
+      location: true,
+      meetingLink: true,
+      notes: true,
+      phno: true,
+    },
+    orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+    take: limit + 1,
+  });
 
-    const hasMore = interviews.length > limit;
-    interviews = hasMore ? interviews.slice(0, limit) : interviews;
+  const hasMore = interviews.length > limit;
+  interviews = hasMore ? interviews.slice(0, limit) : interviews;
 
-    return NextResponse.json(
-      {
-        interviews,
-        cursor: hasMore
-          ? {
-              createdAt: interviews[interviews.length - 1].createdAt,
-              id: interviews[interviews.length - 1].id,
-            }
-          : null,
-        hasMore,
-      },
-      { status: 200 },
-    );
-  } catch (err) {
-    console.error("Error fetching applications:", err);
-    return NextResponse.json(
-      { error: "Internal Server Error" },
-      { status: 500 },
-    );
-  }
+  return NextResponse.json(
+    {
+      interviews,
+      cursor: hasMore
+        ? {
+            createdAt: interviews[interviews.length - 1].createdAt,
+            id: interviews[interviews.length - 1].id,
+          }
+        : null,
+      hasMore,
+    },
+    { status: 200 },
+  );
 }
+
+export const GET = withAuth(handler, { allowedRoles: ["RECRUITER"] });

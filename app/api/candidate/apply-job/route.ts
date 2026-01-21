@@ -1,108 +1,93 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyJwt } from "@/lib/jwt";
 import prisma from "@/lib/prisma";
+import { withAuth } from "@/lib/api-middleware";
 
-export async function POST(req: NextRequest) {
-  const token = req.cookies.get("auth_token")?.value;
+type UserPayload = {
+  userId: string;
+  role: string;
+};
 
-  if (!token) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+async function handler(req: NextRequest, user: UserPayload) {
+  const body = await req.json();
+  const { jobId, candidateId, resumeId } = body;
+
+  if (!jobId || !candidateId || !resumeId) {
+    return NextResponse.json(
+      { error: "Missing user Id or job Id or resume Id or all" },
+      { status: 400 },
+    );
   }
 
-  try {
-    const payload = verifyJwt(token);
-    if (!payload) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-    if (payload.role !== "CANDIDATE") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+  const candidate = await prisma.candidate.findUnique({
+    where: {
+      id: candidateId,
+    },
+    select: {
+      isVerified: true,
+    },
+  });
 
-    const body = await req.json();
-    const { jobId, candidateId, resumeId } = body;
-
-    if (!jobId || !candidateId || !resumeId) {
-      return NextResponse.json(
-        { error: "Missing user Id or job Id or resume Id or all" },
-        { status: 400 },
-      );
-    }
-
-    const candidate = await prisma.candidate.findUnique({
-      where: {
-        id: candidateId,
+  if (!candidate?.isVerified) {
+    return NextResponse.json(
+      {
+        error:
+          "Candidate is not verified yet. Please verify your profile first",
       },
-      select: {
-        isVerified: true,
-      },
-    });
+      { status: 400 },
+    );
+  }
 
-    if (!candidate?.isVerified) {
-      return NextResponse.json(
-        {
-          error:
-            "Candidate is not verified yet. Please verify your profile first",
-        },
-        { status: 400 },
-      );
-    }
-
-    const findApplication = await prisma.application.findUnique({
-      where: {
-        jobId_candidateId: {
-          jobId,
-          candidateId,
-        },
-      },
-    });
-
-    if (findApplication) {
-      return NextResponse.json(
-        { error: "Application already exists" },
-        { status: 400 },
-      );
-    }
-
-    const job = await prisma.postJob.findUnique({
-      where: {
-        id: jobId,
-      },
-    });
-
-    if (!candidate || !job) {
-      return NextResponse.json(
-        { error: "Job or Candidate Not Found" },
-        { status: 404 },
-      );
-    }
-
-    const resume = await prisma.resume.findUnique({
-      where: {
-        id: resumeId,
-      },
-    });
-
-    if (!resume) {
-      return NextResponse.json({ error: "Resume Not Found" }, { status: 404 });
-    }
-
-    const application = await prisma.application.create({
-      data: {
+  const findApplication = await prisma.application.findUnique({
+    where: {
+      jobId_candidateId: {
         jobId,
         candidateId,
-        resumeId,
       },
-    });
+    },
+  });
 
+  if (findApplication) {
     return NextResponse.json(
-      { message: "Application submitted successfully", application },
-      { status: 201 },
-    );
-  } catch (err: any) {
-    console.log(err);
-    return NextResponse.json(
-      { error: "Internal Server Error" },
-      { status: 500 },
+      { error: "Application already exists" },
+      { status: 400 },
     );
   }
+
+  const job = await prisma.postJob.findUnique({
+    where: {
+      id: jobId,
+    },
+  });
+
+  if (!candidate || !job) {
+    return NextResponse.json(
+      { error: "Job or Candidate Not Found" },
+      { status: 404 },
+    );
+  }
+
+  const resume = await prisma.resume.findUnique({
+    where: {
+      id: resumeId,
+    },
+  });
+
+  if (!resume) {
+    return NextResponse.json({ error: "Resume Not Found" }, { status: 404 });
+  }
+
+  const application = await prisma.application.create({
+    data: {
+      jobId,
+      candidateId,
+      resumeId,
+    },
+  });
+
+  return NextResponse.json(
+    { message: "Application submitted successfully", application },
+    { status: 201 },
+  );
 }
+
+export const POST = withAuth(handler, { allowedRoles: ["CANDIDATE"] });

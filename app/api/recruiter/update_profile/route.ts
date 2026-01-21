@@ -1,116 +1,90 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { verifyJwt } from "@/lib/jwt";
 import { qstash } from "@/lib/qstash";
+import { withAuth } from "@/lib/api-middleware";
 
-export async function PATCH(req: NextRequest) {
-  const token = req.cookies.get("auth_token")?.value;
+type UserPayload = {
+  userId: string;
+  role: string;
+};
 
-  if (!token) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+async function handler(req: NextRequest, user: UserPayload) {
+  const body = await req.json();
+
+  const {
+    id,
+    name,
+    email,
+    phoneNumber,
+    jobTitle,
+    companyName,
+    companyWebsite,
+    companyLinkedIn,
+    industry,
+    companySize,
+    hiringForRoles,
+    isVerified,
+  } = body;
+
+  // Enforce ownership: the id in body must match the token user id
+  if (id !== user.userId) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  let authUser: any;
+  const recruiter = await prisma.recruiter.findUnique({
+    where: { userId: id },
+  });
 
-  try {
-    // 1️⃣ Verify token
-    authUser = verifyJwt(token);
-  } catch {
-    return NextResponse.json(
-      { error: "Invalid or expired token" },
-      { status: 401 }
-    );
+  if (!recruiter) {
+    return NextResponse.json({ error: "Candidate not found" }, { status: 404 });
   }
 
-  try {
-    const body = await req.json();
-
-    const {
-      id,
-      name,
-      email,
-      phoneNumber,
-      jobTitle,
-      companyName,
-      companyWebsite,
-      companyLinkedIn,
-      industry,
-      companySize,
-      hiringForRoles,
-      isVerified,
-    } = body;
-
-    // 2️⃣ Enforce ownership: the id must match the token user id
-    if (id !== authUser.userId) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
-
-    if (authUser.role !== "RECRUITER") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
-
-    const user = await prisma.recruiter.findUnique({
+  // Use a transaction to keep data consistent
+  await prisma.$transaction([
+    prisma.user.update({
+      where: { id },
+      data: { name },
+    }),
+    prisma.recruiter.update({
       where: { userId: id },
-    });
+      data: {
+        phoneNumber,
+        jobTitle,
+        companyName,
+        companyWebsite,
+        companyLinkedIn,
+        industry,
+        companySize,
+        hiringForRoles,
+        isVerified,
+      },
+    }),
+  ]);
 
-    if (!user) {
-      return NextResponse.json(
-        { error: "Candidate not found" },
-        { status: 404 }
-      );
-    }
-
-    // 3️⃣ Use a transaction to keep data consistent
-    await prisma.$transaction([
-      prisma.user.update({
-        where: { id },
-        data: { name },
-      }),
-      prisma.recruiter.update({
-        where: { userId: id },
-        data: {
-          phoneNumber,
-          jobTitle,
-          companyName,
-          companyWebsite,
-          companyLinkedIn,
-          industry,
-          companySize,
-          hiringForRoles,
-          isVerified,
-        },
-      }),
-    ]);
-
-    if (isVerified === "PENDING") {
-      if (id && email && companyWebsite && companyLinkedIn && companyName) {
-        const payload = {
-          id,
-          email,
-          companyWebsite,
-          companyLinkedIn,
-          companyName,
-        };
-        if (process.env.NODE_ENV === "production") {
-          await qstash.publishJSON({
-            url: `${process.env.NEXTAUTH_URL}/api/recruiter/verify`,
-            body: {
-              payload,
-            },
-          });
-        }
+  if (isVerified === "PENDING") {
+    if (id && email && companyWebsite && companyLinkedIn && companyName) {
+      const payload = {
+        id,
+        email,
+        companyWebsite,
+        companyLinkedIn,
+        companyName,
+      };
+      if (process.env.NODE_ENV === "production") {
+        await qstash.publishJSON({
+          url: `${process.env.NEXTAUTH_URL}/api/recruiter/verify`,
+          body: {
+            payload,
+          },
+        });
       }
     }
-
-    return NextResponse.json(
-      { message: "Profile updated successfully" },
-      { status: 200 }
-    );
-  } catch (error) {
-    console.error("Error updating candidate profile:", error);
-    return NextResponse.json(
-      { error: "Failed to update profile" },
-      { status: 500 }
-    );
   }
+
+  return NextResponse.json(
+    { message: "Profile updated successfully" },
+    { status: 200 },
+  );
 }
+
+export const PATCH = withAuth(handler, { allowedRoles: ["RECRUITER"] });

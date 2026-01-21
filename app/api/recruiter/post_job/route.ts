@@ -1,11 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyJwt } from "@/lib/jwt";
 import prisma from "@/lib/prisma";
+import { withAuth } from "@/lib/api-middleware";
 
-export async function POST(request: NextRequest) {
-  const token = request.cookies.get("auth_token")?.value;
+type UserPayload = {
+  userId: string;
+  role: string;
+  isVerified?: string;
+};
 
-  const body = await request.json();
+async function handler(req: NextRequest, user: UserPayload) {
+  if (user.isVerified !== "APPROVED") {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const body = await req.json();
   const {
     id,
     title,
@@ -21,63 +29,45 @@ export async function POST(request: NextRequest) {
     location,
   } = body;
 
-  try {
-    if (!token)
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    const payload = verifyJwt(token);
-    if (!payload) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-    if (payload.role !== "RECRUITER") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-    if (payload.isVerified !== "APPROVED") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-    if (
-      !id ||
-      !title ||
-      !description ||
-      !location ||
-      !minSalary ||
-      !maxSalary ||
-      !requirements ||
-      !jobType ||
-      !experienceRequired ||
-      !department
-    ) {
-      return NextResponse.json(
-        { error: "All fields are required" },
-        { status: 400 }
-      );
-    }
-
-    const job = await prisma.postJob.create({
-      data: {
-        title,
-        description,
-        location,
-        minSalary,
-        maxSalary,
-        requirements,
-        jobType,
-        experienceRequired,
-        department,
-        optional,
-        benifits,
-        recruiterId: id,
-      },
-    });
-
+  if (
+    !id ||
+    !title ||
+    !description ||
+    !location ||
+    !minSalary ||
+    !maxSalary ||
+    !requirements ||
+    !jobType ||
+    !experienceRequired ||
+    !department
+  ) {
     return NextResponse.json(
-      { message: "Job created successfully" },
-      { status: 201 }
-    );
-  } catch (err) {
-    console.error("job creation error: ", err);
-    return NextResponse.json(
-      { error: "Something went wrong" },
-      { status: 500 }
+      { error: "All fields are required" },
+      { status: 400 },
     );
   }
+
+  await prisma.postJob.create({
+    data: {
+      title,
+      description,
+      location,
+      minSalary,
+      maxSalary,
+      requirements,
+      jobType,
+      experienceRequired,
+      department,
+      optional,
+      benifits,
+      recruiterId: id,
+    },
+  });
+
+  return NextResponse.json(
+    { message: "Job created successfully" },
+    { status: 201 },
+  );
 }
+
+export const POST = withAuth(handler, { allowedRoles: ["RECRUITER"] });

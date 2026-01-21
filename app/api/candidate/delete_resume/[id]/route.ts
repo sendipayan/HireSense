@@ -1,105 +1,97 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { verifyJwt } from "@/lib/jwt";
+import { withAuth } from "@/lib/api-middleware";
 
-export async function DELETE(
+type UserPayload = {
+  userId: string;
+  role: string;
+};
+
+async function handler(
   req: NextRequest,
+  authUser: UserPayload,
   context: { params: Promise<{ id: string }> },
 ) {
-  try {
-    const token = req.cookies.get("auth_token")?.value;
-    if (!token) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-    const payload = verifyJwt(token);
-    if (!payload) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-    if (payload.role !== "CANDIDATE") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+  const { id } = await context.params;
 
-    const user = await prisma.candidate.findUnique({
+  if (!id) {
+    return NextResponse.json({ error: "Invalid job ID" }, { status: 400 });
+  }
+
+  const user = await prisma.candidate.findUnique({
+    where: {
+      userId: authUser.userId,
+    },
+    select: {
+      id: true,
+    },
+  });
+
+  if (!user) {
+    return NextResponse.json({ error: "User not found" }, { status: 404 });
+  }
+
+  // Ensure the resume belongs to the candidate? The original code didn't check ownership,
+  // but it's good practice. Assuming 'id' is resume ID.
+
+  const resumeStatus = await prisma.resume.findUnique({
+    where: {
+      id,
+    },
+    select: {
+      isActive: true,
+    },
+  });
+
+  if (!resumeStatus) {
+    return NextResponse.json({ error: "Resume not found" }, { status: 404 });
+  }
+
+  const inUse = await prisma.application.findFirst({
+    where: {
+      resumeId: id,
+    },
+  });
+
+  if (inUse) {
+    return NextResponse.json({ error: "Resume is in use" }, { status: 400 });
+  }
+
+  const resume = await prisma.resume.delete({
+    where: {
+      id,
+    },
+  });
+
+  if (resumeStatus.isActive) {
+    const active = await prisma.resume.findFirst({
       where: {
-        userId: payload.userId,
+        candidateId: user.id,
+        isActive: false,
       },
       select: {
         id: true,
       },
-    });
-
-    if (!user) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 });
-    }
-
-    const { id } = await context.params;
-    if (!id) {
-      return NextResponse.json({ error: "Invalid job ID" }, { status: 400 });
-    }
-
-    const resumeStatus = await prisma.resume.findUnique({
-      where: {
-        id,
-      },
-      select: {
-        isActive: true,
+      orderBy: {
+        createdAt: "desc",
       },
     });
 
-    if (!resumeStatus) {
-      return NextResponse.json({ error: "Resume not found" }, { status: 404 });
-    }
-
-    const inUse = await prisma.application.findFirst({
-      where: {
-        resumeId: id,
-      },
-    });
-
-    if (inUse) {
-      return NextResponse.json({ error: "Resume is in use" }, { status: 400 });
-    }
-
-    const resume = await prisma.resume.delete({
-      where: {
-        id,
-      },
-    });
-
-    if (resumeStatus.isActive) {
-      const active = await prisma.resume.findFirst({
+    if (active) {
+      await prisma.resume.update({
         where: {
-          candidateId: user.id,
-          isActive: false,
+          id: active.id,
         },
-        select: {
-          id: true,
-        },
-        orderBy: {
-          createdAt: "desc",
+        data: {
+          isActive: true,
         },
       });
-
-      if (active) {
-        await prisma.resume.update({
-          where: {
-            id: active.id,
-          },
-          data: {
-            isActive: true,
-          },
-        });
-      }
     }
-    return NextResponse.json(
-      { message: "Resume deleted successfully" },
-      { status: 200 },
-    );
-  } catch (err) {
-    console.error("job deletion error: ", err);
-    return NextResponse.json(
-      { error: "Something went wrong" },
-      { status: 500 },
-    );
   }
+  return NextResponse.json(
+    { message: "Resume deleted successfully" },
+    { status: 200 },
+  );
 }
+
+export const DELETE = withAuth(handler, { allowedRoles: ["CANDIDATE"] });

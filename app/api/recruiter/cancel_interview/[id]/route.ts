@@ -1,88 +1,78 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { verifyJwt } from "@/lib/jwt";
+import { withAuth } from "@/lib/api-middleware";
 
-export async function DELETE(
+type UserPayload = {
+  userId: string;
+  role: string;
+  isVerified?: string;
+};
+
+async function handler(
   req: NextRequest,
-  context: { params: Promise<{ id: string }> }
+  user: UserPayload,
+  context: { params: Promise<{ id: string }> },
 ) {
-  const token = req.cookies.get("auth_token")?.value;
-
-  if (!token) {
+  if (!user.isVerified) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  try {
-    const payload = verifyJwt(token);
+  const recruiter = await prisma.recruiter.findUnique({
+    where: { userId: user.userId },
+    select: { id: true },
+  });
 
-    if (!payload || payload.role !== "RECRUITER" || !payload.isVerified) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+  if (!recruiter) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
 
-    const recruiter = await prisma.recruiter.findUnique({
-      where: { userId: payload.userId },
-      select: { id: true },
-    });
+  const { id } = await context.params;
 
-    if (!recruiter) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const { id } = await context.params;
-
-    if (!id) {
-      return NextResponse.json(
-        { error: "Missing required fields" },
-        { status: 400 }
-      );
-    }
-
-    const interview = await prisma.interview.findUnique({
-      where: { id: id },
-    });
-
-    if (!interview) {
-      return NextResponse.json(
-        { error: "Interview not found" },
-        { status: 404 }
-      );
-    }
-
-    if (interview.status === "CANCELLED" || interview.status === "CONFIRMED") {
-      return NextResponse.json(
-        { error: "Interview cannot be deleted" },
-        { status: 400 }
-      );
-    }
-
-    const application = await prisma.application.findUnique({
-      where: { id: interview.applicationId },
-    });
-
-    if (!application) {
-      return NextResponse.json(
-        { error: "Application not found" },
-        { status: 404 }
-      );
-    }
-
-    await prisma.application.update({
-      where: { id: application.id },
-      data: { status: "WAITLIST" },
-    });
-    await prisma.interview.delete({
-      where: { id: id },
-    });
-
+  if (!id) {
     return NextResponse.json(
-      { message: "Interview deleted successfully" },
-      { status: 200 }
-    );
-  } catch (err) {
-    console.error("Error fetching applications:", err);
-    return NextResponse.json(
-      { error: "Internal Server Error" },
-      { status: 500 }
+      { error: "Missing required fields" },
+      { status: 400 },
     );
   }
+
+  const interview = await prisma.interview.findUnique({
+    where: { id: id },
+  });
+
+  if (!interview) {
+    return NextResponse.json({ error: "Interview not found" }, { status: 404 });
+  }
+
+  if (interview.status === "CANCELLED" || interview.status === "CONFIRMED") {
+    return NextResponse.json(
+      { error: "Interview cannot be deleted" },
+      { status: 400 },
+    );
+  }
+
+  const application = await prisma.application.findUnique({
+    where: { id: interview.applicationId },
+  });
+
+  if (!application) {
+    return NextResponse.json(
+      { error: "Application not found" },
+      { status: 404 },
+    );
+  }
+
+  await prisma.application.update({
+    where: { id: application.id },
+    data: { status: "WAITLIST" },
+  });
+  await prisma.interview.delete({
+    where: { id: id },
+  });
+
+  return NextResponse.json(
+    { message: "Interview deleted successfully" },
+    { status: 200 },
+  );
 }
+
+export const DELETE = withAuth(handler, { allowedRoles: ["RECRUITER"] });

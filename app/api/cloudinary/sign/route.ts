@@ -1,7 +1,7 @@
 import { v2 as cloudinary } from "cloudinary";
 import { NextRequest, NextResponse } from "next/server";
-import { verifyJwt } from "@/lib/jwt";
 import prisma from "@/lib/prisma";
+import { withAuth } from "@/lib/api-middleware";
 
 export const runtime = "nodejs";
 
@@ -11,55 +11,43 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET!,
 });
 
-export async function POST(req: NextRequest) {
-  try {
-    const token = req.cookies.get("auth_token")?.value;
-    if (!token)
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+async function handler(
+  req: NextRequest,
+  user: { userId: string; role: string },
+) {
+  const body = await req.json();
+  const { paramsToSign, uploadType } = body;
 
-    // We verify the user is logged in before allowing them to sign an upload
-    const payload = verifyJwt(token);
-    if (!payload?.userId)
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  // Dynamically set folder based on upload type
+  if (uploadType === "resume") {
+    const candidate = await prisma.candidate.findUnique({
+      where: { userId: user.userId },
+      select: { id: true },
+    });
 
-    const body = await req.json();
-    const { paramsToSign, uploadType } = body;
-
-    // Dynamically set folder based on upload type
-    if (uploadType === "resume") {
-      const candidate = await prisma.candidate.findUnique({
-        where: { userId: payload.userId },
-        select: { id: true },
-      });
-
-      if (!candidate) {
-        return NextResponse.json(
-          { error: "Candidate profile not found" },
-          { status: 404 },
-        );
-      }
-
-      paramsToSign.folder = `resumes/${candidate.id}`;
-    } else if (uploadType === "profile") {
-      paramsToSign.folder = `profile/${payload.userId}`;
+    if (!candidate) {
+      return NextResponse.json(
+        { error: "Candidate profile not found" },
+        { status: 404 },
+      );
     }
 
-    const signature = cloudinary.utils.api_sign_request(
-      paramsToSign,
-      process.env.CLOUDINARY_API_SECRET!,
-    );
-
-    return NextResponse.json({
-      signature,
-      params: paramsToSign,
-      apiKey: process.env.CLOUDINARY_API_KEY,
-      cloudName: process.env.CLOUDINARY_CLOUD_NAME,
-    });
-  } catch (error) {
-    console.error("Signature error:", error);
-    return NextResponse.json(
-      { error: "Internal Server Error" },
-      { status: 500 },
-    );
+    paramsToSign.folder = `resumes/${candidate.id}`;
+  } else if (uploadType === "profile") {
+    paramsToSign.folder = `profile/${user.userId}`;
   }
+
+  const signature = cloudinary.utils.api_sign_request(
+    paramsToSign,
+    process.env.CLOUDINARY_API_SECRET!,
+  );
+
+  return NextResponse.json({
+    signature,
+    params: paramsToSign,
+    apiKey: process.env.CLOUDINARY_API_KEY,
+    cloudName: process.env.CLOUDINARY_CLOUD_NAME,
+  });
 }
+
+export const POST = withAuth(handler);
