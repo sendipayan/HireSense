@@ -2,10 +2,10 @@
 
 import { Button } from "@/components/ui/button"
 
-import { useState, useEffect, useMemo, useRef } from "react"
+import { useState, useEffect, useMemo, useRef, useCallback } from "react"
 import { Breadcrumbs } from "@/components/breadcrumbs"
 import { PageHeader } from "@/components/page-header"
-import { InterviewCard, type CandidateInterview } from "@/components/interview/interview-card"
+import { InterviewCard } from "@/components/interview/interview-card"
 import { InterviewDetailModal, type InterviewDetail } from "@/components/interview/interview-detail-modal"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -13,14 +13,15 @@ import { InterviewStatusBadge } from "@/components/interview/interview-status-ba
 import { InterviewHistoryFilters } from "@/components/interview/interview-history-filters"
 import { Calendar, History, Briefcase, User, Info } from "lucide-react"
 import axios from "axios"
-import { useCandidateInterviewStore } from "@/store/useCandidateInterviewStore"
-import { useCursorStore } from "@/store/nextCursorStore"
+import { useCandidateInterviewStore, type CandidateInterview } from "@/store/useCandidateInterviewStore"
+import { useCursorStore, type Cursor } from "@/store/nextCursorStore"
 import { Spinner } from "@/components/ui/spinner"
 
 export default function CandidateInterviewsPage() {
     const [selectedInterview, setSelectedInterview] = useState<InterviewDetail | null>(null)
     const { interviews, setInterviews } = useCandidateInterviewStore()
     const [trigger, setTrigger] = useState(false)
+    const [tab, setTab] = useState("upcoming")
     const [intialLoading, setIntialLoading] = useState(true)
     const { cursor, setPage, hasMore } = useCursorStore()
     const [searchQuery, setSearchQuery] = useState("")
@@ -28,29 +29,58 @@ export default function CandidateInterviewsPage() {
     const [typeFilter, setTypeFilter] = useState("all")
     const observerRef = useRef<IntersectionObserver | null>(null);
     const loadingRef = useRef(false);
+    const [completedInterviews, setCompletedInterviews] = useState<CandidateInterview[]>([])
+    const [upcomingInterviews, setUpcomingInterviews] = useState<CandidateInterview[]>([])
+    const [upcomingCursor, setUpcomingCursor] = useState<Cursor | null>(null)
+    const [completedCursor, setCompletedCursor] = useState<Cursor | null>(null)
+    const [completedHasMore, setCompletedHasMore] = useState(false)
+    const [upcomingHasMore, setUpcomingHasMore] = useState(false)
     const [loading, setLoading] = useState(false);
 
+    // dependent on these local states instead of global store
     const fetchMore = async () => {
-        if (loadingRef.current || !hasMore || !cursor) return;
+        // 1. Determine which cursor/hasMore to use based on current tab
+        const currentCursor = tab === "upcoming" ? upcomingCursor : completedCursor;
+        const currentHasMore = tab === "upcoming" ? upcomingHasMore : completedHasMore;
+
+        // 2. Use local checks directly
+        if (loadingRef.current || !currentHasMore || !currentCursor) return;
+
+        loadingRef.current = true;
+        setLoading(true);
 
         try {
-            loadingRef.current = true;
-            setLoading(true);
-            console.log("fetching more");
-            const response = await axios.post('/api/candidate/next_interviews', { cursor }, { withCredentials: true })
-            const data = await response.data
-            setInterviews([...interviews, ...data.interviews])
-            setPage({ cursor: data.cursor, hasMore: data.hasMore })
-
+            if (tab === "upcoming") {
+                const response = await axios.post('/api/candidate/next_interviews',
+                    { cursor: currentCursor }, // Use local cursor
+                    { withCredentials: true }
+                );
+                const data = await response.data;
+                // 3. functional update
+                setUpcomingInterviews(prev => [...prev, ...data.interviews]);
+                setUpcomingCursor(data.cursor);
+                setUpcomingHasMore(data.hasMore);
+            } else if (tab === "history") {
+                const response = await axios.post('/api/candidate/next_interviews/completed',
+                    { cursor: currentCursor }, // Use local cursor
+                    { withCredentials: true }
+                );
+                const data = await response.data;
+                // 3. functional update
+                setCompletedInterviews(prev => [...prev, ...data.interviews]);
+                setCompletedCursor(data.cursor);
+                setCompletedHasMore(data.hasMore);
+            }
         } catch (error) {
-            console.log(error)
+            console.log(error);
         } finally {
             setLoading(false);
             loadingRef.current = false;
         }
     };
 
-    const setLoaderRef = (node: HTMLDivElement | null) => {
+    // 4. Wrap in useCallback to prevent recreating observer on every render
+    const setLoaderRef = useCallback((node: HTMLDivElement | null) => {
         if (!node) return;
 
         if (observerRef.current) {
@@ -67,8 +97,7 @@ export default function CandidateInterviewsPage() {
         );
 
         observerRef.current.observe(node);
-    };
-
+    }, [tab, upcomingCursor, completedCursor, upcomingHasMore, completedHasMore]); // Add dependencies needed for fetchMore closure if fetchMore isn't stable
 
     const filteredHistory = useMemo(() => {
         return interviews?.filter((interview) => {
@@ -86,16 +115,51 @@ export default function CandidateInterviewsPage() {
     useEffect(() => {
         const fetchInterviews = async () => {
 
-            const response = await axios.get('/api/candidate/get_interviews', { withCredentials: true })
-            const data = await response.data
-            const interviews = data.interviews
-            setInterviews(interviews)
-            setPage({ cursor: data.cursor, hasMore: data.hasMore })
-            console.log(data)
-            setIntialLoading(false)
+            try {
+                const res = await axios.get("/api/candidate/get_interviews/completed", { withCredentials: true })
+                const data = await res.data
+                setCompletedInterviews(data.interviews)
+                setCompletedCursor(data.cursor)
+                setCompletedHasMore(data.hasMore)
+                console.log(data)
+
+            } catch (err) {
+                console.log(err)
+            }
+
+
+            try {
+                const response = await axios.get('/api/candidate/get_interviews', { withCredentials: true })
+                const data = await response.data
+                const interviews = data.interviews
+                setUpcomingInterviews(interviews)
+                setUpcomingCursor(data.cursor)
+                setUpcomingHasMore(data.hasMore)
+                console.log(data)
+
+            } catch (err) {
+                console.log(err)
+            } finally {
+                setIntialLoading(false)
+            }
+
+
         }
         fetchInterviews()
     }, [])
+
+    useEffect(() => {
+
+        if (intialLoading || loading) return
+
+        if (tab === "upcoming") {
+            setInterviews(upcomingInterviews)
+            setPage({ cursor: upcomingCursor, hasMore: upcomingHasMore })
+        } else if (tab === "history") {
+            setInterviews(completedInterviews)
+            setPage({ cursor: completedCursor, hasMore: completedHasMore })
+        }
+    }, [tab, intialLoading, loading])
 
     useEffect(() => {
         if (cursor)
@@ -111,7 +175,7 @@ export default function CandidateInterviewsPage() {
             jobTitle: interview.jobTitle,
             date: interview.date,
             time: interview.time,
-            duration: interview.duration, // Mock duration
+            duration: interview.duration,
             type: interview.meetingLink ? "online" : "in-person",
             status: interview.status,
             meetingLink: interview.meetingLink,
@@ -131,7 +195,7 @@ export default function CandidateInterviewsPage() {
 
                 <PageHeader title="Interviews" description="Track and prepare for your upcoming and past job interviews." />
 
-                <Tabs defaultValue="upcoming" className="mt-8">
+                <Tabs defaultValue="upcoming" className="mt-8" onValueChange={(value) => { setTab(value) }}>
                     {!intialLoading ? <TabsList className="grid w-full grid-cols-2 lg:w-[400px] mb-8">
                         <TabsTrigger value="upcoming" className="gap-2">
                             <Calendar className="h-4 w-4" />
@@ -146,23 +210,10 @@ export default function CandidateInterviewsPage() {
 
                     <TabsContent value="upcoming" className="space-y-6">
                         {/* Preparation Tips Card */}
-                        <div className="rounded-xl border border-primary/20 bg-primary/5 p-6 ">
-                            <div className="flex items-start gap-4">
-                                <div className="p-2 rounded-lg bg-primary/10">
-                                    <Info className="h-5 w-5 text-primary" />
-                                </div>
-                                <div className="space-y-2">
-                                    <h3 className="font-semibold">Interview Preparation Tips</h3>
-                                    <p className="text-sm text-muted-foreground leading-relaxed">
-                                        Make sure to research the company and the interviewers. Prepare 3-5 questions to ask at the end of
-                                        the session. Check your technology and environment at least 15 minutes before any online interview.
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
+
                         {!intialLoading ? <> <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                             {interviews?.length > 0 ? (
-                                interviews?.filter((interview) => interview.status === "SCHEDULED")?.map((interview) => (
+                                interviews?.map((interview) => (
                                     <InterviewCard
                                         key={interview.id}
                                         interview={{
@@ -220,6 +271,21 @@ export default function CandidateInterviewsPage() {
                                 ))}
                             </div>}
 
+                        <div className="rounded-xl border border-primary/20 bg-primary/5 p-6 ">
+                            <div className="flex items-start gap-4">
+                                <div className="p-2 rounded-lg bg-primary/10">
+                                    <Info className="h-5 w-5 text-primary" />
+                                </div>
+                                <div className="space-y-2">
+                                    <h3 className="font-semibold">Interview Preparation Tips</h3>
+                                    <p className="text-sm text-muted-foreground leading-relaxed">
+                                        Make sure to research the company and the interviewers. Prepare 3-5 questions to ask at the end of
+                                        the session. Check your technology and environment at least 15 minutes before any online interview.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
 
                     </TabsContent>
 
@@ -242,8 +308,8 @@ export default function CandidateInterviewsPage() {
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    {filteredHistory?.filter((interview) => interview.status !== "SCHEDULED").length > 0 ? (
-                                        filteredHistory?.filter((interview) => interview.status !== "SCHEDULED").map((interview) => (
+                                    {filteredHistory?.length > 0 ? (
+                                        filteredHistory?.map((interview) => (
                                             <TableRow key={interview.id}>
                                                 <TableCell>
                                                     <div className="flex items-center gap-2">
@@ -311,8 +377,12 @@ export default function CandidateInterviewsPage() {
                                             </TableCell>
                                         </TableRow>
                                     )}
+
                                 </TableBody>
                             </Table>
+                            {hasMore && <div ref={setLoaderRef} className="w-full flex justify-center items-center mt-5">
+                                <Spinner className="w-10 h-10" />
+                            </div>}
                         </div>
                     </TabsContent>
                 </Tabs>

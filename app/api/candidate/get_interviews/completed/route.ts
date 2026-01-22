@@ -17,14 +17,14 @@ async function handler(req: NextRequest, user: UserPayload) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const limit = 3;
+  const limit = 5;
 
   let interviews = await prisma.interview.findMany({
     where: {
       application: {
         candidateId: candidate.id,
       },
-      status: "SCHEDULED",
+      status: { in: ["COMPLETED", "CONFIRMED", "CANCELLED"] },
     },
     select: {
       id: true,

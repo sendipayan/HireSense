@@ -8,6 +8,10 @@ type UserPayload = {
 };
 
 async function handler(req: NextRequest, user: UserPayload) {
+  const { cursor } = await req.json();
+  if (!cursor)
+    return NextResponse.json({ error: "Invalid request" }, { status: 400 });
+
   const candidate = await prisma.candidate.findUnique({
     where: { userId: user.userId },
     select: { id: true },
@@ -17,14 +21,14 @@ async function handler(req: NextRequest, user: UserPayload) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const limit = 3;
+  const limit = 5;
 
   let interviews = await prisma.interview.findMany({
     where: {
       application: {
         candidateId: candidate.id,
       },
-      status: "SCHEDULED",
+      status: { in: ["COMPLETED", "CONFIRMED", "CANCELLED"] },
     },
     select: {
       id: true,
@@ -67,6 +71,11 @@ async function handler(req: NextRequest, user: UserPayload) {
       phno: true,
     },
     orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+    cursor: {
+      createdAt: cursor.createdAt,
+      id: cursor.id,
+    },
+    skip: 1,
     take: limit + 1,
   });
 
@@ -88,4 +97,4 @@ async function handler(req: NextRequest, user: UserPayload) {
   );
 }
 
-export const GET = withAuth(handler, { allowedRoles: ["CANDIDATE"] });
+export const POST = withAuth(handler, { allowedRoles: ["CANDIDATE"] });

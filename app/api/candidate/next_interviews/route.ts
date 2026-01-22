@@ -28,6 +28,7 @@ async function handler(req: NextRequest, user: UserPayload) {
       application: {
         candidateId: candidate.id,
       },
+      status: "SCHEDULED",
     },
     select: {
       id: true,
