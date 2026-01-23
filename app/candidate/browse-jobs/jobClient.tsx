@@ -18,9 +18,19 @@ import { useCandidateStore } from "@/store/candidateStore"
 import { useAuthStore } from "@/store/authStore"
 import { useCursorStore } from "@/store/nextCursorStore"
 import { Spinner } from "@/components/ui/spinner"
+import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 
 const jobTypes = ["FULL_TIME", "BOTH", "INTERNSHIP"]
-const experienceLevels = ["Entry Level", "Mid Level", "Senior Level", "Lead"]
+const experienceLevels = ["NONE", "ENTRY_LEVEL", "MID_LEVEL", "SENIOR_LEVEL", "LEAD", "EXECUTIVE"]
+const Department = ["NONE",
+    "ENGINEERING",
+    "DESIGN",
+    "MARKETING",
+    "SALES",
+    "SUPPORT",
+    "HR",
+    "FINANCE",
+    "OPERATIONS"]
 
 interface Job {
     id: string,
@@ -48,6 +58,7 @@ export function JobsBrowser() {
     const [searchQuery, setSearchQuery] = useState("")
     const [selectedTypes, setSelectedTypes] = useState<string[]>([])
     const [selectedExperience, setSelectedExperience] = useState<string[]>([])
+    const [selectedDepartment, setSelectedDepartment] = useState<string[]>([])
     const [sortBy, setSortBy] = useState("newest")
     const [applyingJob, setApplyingJob] = useState<Job | null>(null)
     const [users, setUsers] = useState<User | null>(null)
@@ -55,6 +66,7 @@ export function JobsBrowser() {
     const [trigger, setTrigger] = useState(false)
     const [loading, setLoading] = useState(false);
     const { cursor, hasMore, setPage } = useCursorStore()
+    const [search, setSearch] = useState("")
 
     const observerRef = useRef<IntersectionObserver | null>(null);
     const loadingRef = useRef(false);
@@ -66,10 +78,8 @@ export function JobsBrowser() {
             loadingRef.current = true;
             setLoading(true);
             console.log("fetching more");
-
-            const res = await axios.post("/api/candidate/next_Jobs", {
-                cursor,
-            },
+            const payload = { department: selectedDepartment, experience: selectedExperience, type: selectedTypes, search: search, cursor: cursor }
+            const res = await axios.post("/api/candidate/getjob", payload,
                 { withCredentials: true })
 
             const data = await res.data
@@ -85,26 +95,34 @@ export function JobsBrowser() {
         }
     };
 
-    const setLoaderRef = (node: HTMLDivElement | null) => {
-        if (!node) return;
+    // We use a ref to access the DOM element for the observer
+    const loaderRef = useRef<HTMLDivElement | null>(null);
 
-        if (observerRef.current) {
-            observerRef.current.disconnect();
-        }
-
-        observerRef.current = new IntersectionObserver(
+    useEffect(() => {
+        const observer = new IntersectionObserver(
             ([entry]) => {
-                if (entry.isIntersecting) {
+                // Check if intersecting AND if we have more to load AND we aren't currently loading
+                if (entry.isIntersecting && hasMore && !loadingRef.current) {
                     fetchMore();
                 }
             },
             { rootMargin: "100px" }
         );
 
-        observerRef.current.observe(node);
-    };
+        if (loaderRef.current) {
+            observer.observe(loaderRef.current);
+        }
+
+        return () => {
+            if (loaderRef.current) {
+                observer.unobserve(loaderRef.current);
+            }
+            observer.disconnect();
+        };
+    }, [hasMore, jobs, cursor]); // Re-run effect when data/cursor changes to keep closure fresh
 
     useEffect(() => {
+        setInitialLoad(true)
         async function loadUser() {
             const res = await axios.get("/api/auth/me")
             const data = await res.data
@@ -125,16 +143,53 @@ export function JobsBrowser() {
             return
         }
         const fetch = async () => {
-
-            const res = await axios.get("/api/getjob")
+            const payload = { department: [], experience: [], type: [], search: "" }
+            const res = await axios.post("/api/candidate/getjob", payload, { withCredentials: true })
             const data = await res.data
             console.log("jobs: ", data.job)
-            setJobs(data.job.job)
-            setPage({ cursor: data.job.cursor, hasMore: data.job.hasMore })
+            setJobs(data.job)
+            setPage({ cursor: data.cursor, hasMore: data.hasMore })
             setInitialLoad(false)
         }
         fetch()
     }, [candidateProfile])
+
+    const prevSearchQueryRef = useRef("")
+
+    useEffect(() => {
+        const currentTrimmed = searchQuery.trim()
+        const prevTrimmed = prevSearchQueryRef.current.trim()
+
+        if (currentTrimmed === prevTrimmed) {
+            prevSearchQueryRef.current = searchQuery
+            return
+        }
+
+        const timeoutId = setTimeout(async () => {
+            console.log("Search:", currentTrimmed);
+            setSearch(currentTrimmed)
+            prevSearchQueryRef.current = searchQuery;
+            const payload = { department: selectedDepartment, experience: selectedExperience, type: selectedTypes, search: currentTrimmed }
+            console.log(payload)
+            try {
+                setInitialLoad(true)
+                const res = await axios.post("/api/candidate/getjob", payload, { withCredentials: true })
+                const data = await res.data
+                console.log("jobs: ", data.job)
+                setJobs(data.job)
+                setPage({ cursor: data.cursor, hasMore: data.hasMore })
+                setInitialLoad(false)
+
+            } catch (error) {
+                console.log(error)
+            } finally {
+                setInitialLoad(false)
+            }
+
+        }, 500);
+
+        return () => clearTimeout(timeoutId);
+    }, [searchQuery]);
 
 
 
@@ -153,25 +208,29 @@ export function JobsBrowser() {
         })
     }, [user, candidateProfile, initialLoad])
 
-    const filteredJobs = useMemo(() => {
+    const applyFilter = async () => {
+        if (selectedDepartment.length === 0 && selectedExperience.length === 0 && selectedTypes.length === 0) {
+            return
+        }
+        const payload = { department: selectedDepartment, experience: selectedExperience, type: selectedTypes, search }
+        console.log(payload)
+        try {
+            setInitialLoad(true)
+            const res = await axios.post("/api/candidate/getjob", payload, { withCredentials: true })
+            const data = await res.data
+            console.log("jobs: ", data.job)
+            setJobs(data.job)
+            setPage({ cursor: data.cursor, hasMore: data.hasMore })
+            setInitialLoad(false)
 
-        if (jobs?.length === 0) return []
+        } catch (error) {
+            console.log(error)
+        } finally {
+            setInitialLoad(false)
+        }
 
-        return jobs?.filter((job) => {
-            const matchesSearch =
-                job.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                job.recruiter?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                job.description?.toLowerCase().includes(searchQuery.toLowerCase())
-
-            const matchesType = selectedTypes.length === 0 || selectedTypes.includes(job.jobType)
-
-            return matchesSearch && matchesType
-        })
-    }, [searchQuery, selectedTypes, jobs])
-
-    const toggleType = (type: string) => {
-        setSelectedTypes((prev) => (prev.includes(type) ? prev.filter((t) => t !== type) : [...prev, type]))
     }
+
 
     return (
         <>
@@ -181,7 +240,7 @@ export function JobsBrowser() {
 
             <div className="mt-8 grid gap-8 lg:grid-cols-4">
                 {/* Filters Sidebar */}
-                <aside className="space-y-6 lg:col-span-1">
+                <aside className="space-y-6 hidden lg:block lg:col-span-1 lg:sticky lg:top-6 lg:h-[calc(100vh-4rem)] lg:overflow-y-auto lg:pr-3">
                     <div className="rounded-xl border border-border bg-card p-6">
                         <div className="flex items-center justify-between mb-4">
                             <h2 className="font-semibold flex items-center gap-2">
@@ -193,8 +252,10 @@ export function JobsBrowser() {
                                 size="sm"
                                 className="h-8 text-xs"
                                 onClick={() => {
+                                    setTrigger(!trigger)
                                     setSelectedTypes([])
                                     setSelectedExperience([])
+                                    setSelectedDepartment([])
                                 }}
                             >
                                 Reset
@@ -211,7 +272,9 @@ export function JobsBrowser() {
                                             <Checkbox
                                                 id={`type-${type}`}
                                                 checked={selectedTypes.includes(type)}
-                                                onCheckedChange={() => toggleType(type)}
+                                                onCheckedChange={() => setSelectedTypes((prev) =>
+                                                    prev.includes(type) ? prev.filter((l) => l !== type) : [...prev, type],
+                                                )}
                                             />
                                             <label
                                                 htmlFor={`type-${type}`}
@@ -249,21 +312,41 @@ export function JobsBrowser() {
                                     ))}
                                 </div>
                             </div>
-                        </div>
-                    </div>
 
-                    <div className="rounded-xl bg-primary/10 p-6 border border-primary/20">
-                        <h3 className="font-semibold text-primary mb-2 flex items-center gap-2">
-                            <Search className="h-4 w-4" />
-                            AI Match Score
-                        </h3>
-                        <p className="text-sm text-muted-foreground mb-4">
-                            Upload your resume to see how well you match with these positions.
-                        </p>
-                        <Button size="sm" className="w-full bg-transparent" variant="outline">
-                            Boost My Search
+                            <div>
+                                <h3 className="text-sm font-medium mb-3">Department</h3>
+                                <div className="space-y-2">
+                                    {Department.map((type) => (
+                                        <div key={type} className="flex items-center space-x-2">
+                                            <Checkbox
+                                                id={`type-${type}`}
+                                                checked={selectedDepartment.includes(type)}
+                                                onCheckedChange={() => {
+                                                    setSelectedDepartment((prev) =>
+                                                        prev.includes(type) ? prev.filter((l) => l !== type) : [...prev, type],
+                                                    )
+                                                }}
+                                            />
+                                            <label
+                                                htmlFor={`type-${type}`}
+                                                className="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                                            >
+                                                {type}
+                                            </label>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                        <Button className="w-full mt-6" onClick={() => {
+                            applyFilter()
+                        }}
+                            disabled={selectedDepartment.length === 0 && selectedExperience.length === 0 && selectedTypes.length === 0}
+                        >
+                            Apply Filters
                         </Button>
                     </div>
+
                 </aside>
 
                 {/* Main Content */}
@@ -275,26 +358,129 @@ export function JobsBrowser() {
                                 placeholder="Search by job title or company..."
                                 className="pl-10"
                                 value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                            />
+                                onChange={(e) => setSearchQuery(e.target.value)} />
                         </div>
-                        <Select value={sortBy} onValueChange={setSortBy}>
-                            <SelectTrigger className="w-full sm:w-[180px]">
-                                <SelectValue placeholder="Sort by" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="newest">Newest first</SelectItem>
-                                <SelectItem value="salary-high">Highest salary</SelectItem>
-                                <SelectItem value="match">Best match</SelectItem>
-                            </SelectContent>
-                        </Select>
+                        <Sheet >
+                            <SheetTrigger asChild>
+                                <Button variant="outline" className="lg:hidden">
+                                    <Filter className="mr-2 h-4 w-4" />
+                                    Filters
+                                </Button>
+                            </SheetTrigger>
+                            <SheetContent side="left" className="w-[300px] sm:w-[540px] p-6 overflow-y-auto">
+
+                                <div className="py-6 space-y-6">
+                                    <div className="flex items-center justify-between mb-4">
+                                        <SheetHeader>
+                                            <SheetTitle className="flex items-center gap-2"><Filter className="h-4 w-4" />Filters</SheetTitle>
+                                        </SheetHeader>
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            className="h-8 text-xs"
+                                            onClick={() => {
+                                                setSelectedTypes([])
+                                                setSelectedExperience([])
+                                                setSelectedDepartment([])
+                                            }}
+                                        >
+                                            Reset
+                                        </Button>
+                                    </div>
+
+                                    {/* Job Type */}
+                                    <div>
+                                        <h3 className="text-sm font-medium mb-3">Job Type</h3>
+                                        <div className="space-y-2">
+                                            {jobTypes.map((type) => (
+                                                <div key={type} className="flex items-center space-x-2">
+                                                    <Checkbox
+                                                        id={`mobile-type-${type}`}
+                                                        checked={selectedTypes.includes(type)}
+                                                        onCheckedChange={() => setSelectedTypes((prev) =>
+                                                            prev.includes(type) ? prev.filter((l) => l !== type) : [...prev, type],
+                                                        )}
+                                                    />
+                                                    <label
+                                                        htmlFor={`mobile-type-${type}`}
+                                                        className="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                                                    >
+                                                        {type}
+                                                    </label>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    {/* Experience Level */}
+                                    <div>
+                                        <h3 className="text-sm font-medium mb-3">Experience Level</h3>
+                                        <div className="space-y-2">
+                                            {experienceLevels.map((level) => (
+                                                <div key={level} className="flex items-center space-x-2">
+                                                    <Checkbox
+                                                        id={`mobile-level-${level}`}
+                                                        checked={selectedExperience.includes(level)}
+                                                        onCheckedChange={() => {
+                                                            setSelectedExperience((prev) =>
+                                                                prev.includes(level) ? prev.filter((l) => l !== level) : [...prev, level],
+                                                            )
+                                                        }}
+                                                    />
+                                                    <label
+                                                        htmlFor={`mobile-level-${level}`}
+                                                        className="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                                                    >
+                                                        {level}
+                                                    </label>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    {/* Department */}
+                                    <div>
+                                        <h3 className="text-sm font-medium mb-3">Department</h3>
+                                        <div className="space-y-2">
+                                            {Department.map((type) => (
+                                                <div key={type} className="flex items-center space-x-2">
+                                                    <Checkbox
+                                                        id={`mobile-dept-${type}`}
+                                                        checked={selectedDepartment.includes(type)}
+                                                        onCheckedChange={() => {
+                                                            setSelectedDepartment((prev) =>
+                                                                prev.includes(type) ? prev.filter((l) => l !== type) : [...prev, type],
+                                                            )
+                                                        }}
+                                                    />
+                                                    <label
+                                                        htmlFor={`mobile-dept-${type}`}
+                                                        className="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                                                    >
+                                                        {type}
+                                                    </label>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    <Button className="w-full mt-6" onClick={() => {
+                                        applyFilter()
+                                    }}
+                                        disabled={selectedDepartment.length === 0 && selectedExperience.length === 0 && selectedTypes.length === 0}
+
+                                    >
+                                        Apply Filters
+                                    </Button>
+                                </div>
+                            </SheetContent>
+                        </Sheet>
                     </div>
 
-                    <p className="text-sm text-muted-foreground">Showing {filteredJobs?.length} job opportunities</p>
+                    <p className="text-sm text-muted-foreground">Showing {jobs?.length} job opportunities</p>
 
                     {!initialLoad ? <div className="space-y-4">
-                        {filteredJobs?.length > 0 ? (
-                            filteredJobs?.map((job) => (
+                        {jobs?.length > 0 ? (
+                            jobs?.map((job) => (
                                 <article
                                     key={job.id}
                                     className="group rounded-xl border border-border bg-card p-6 transition-all hover:border-primary/50 hover:shadow-lg hover:shadow-primary/5 "
@@ -365,7 +551,7 @@ export function JobsBrowser() {
                             </div>
                         )}
                         {hasMore && (
-                            <div ref={setLoaderRef} className="w-full flex justify-center items-center">
+                            <div ref={loaderRef} className="w-full flex justify-center items-center">
                                 <Spinner className="w-10 h-10" />
                             </div>
                         )}
