@@ -240,7 +240,7 @@ export function JobsBrowser() {
 
             <div className="mt-8 grid gap-8 lg:grid-cols-4">
                 {/* Filters Sidebar */}
-                <aside className="space-y-6 hidden lg:block lg:col-span-1 lg:sticky lg:top-6 lg:h-[calc(100vh-4rem)] lg:overflow-y-auto lg:pr-3">
+                <aside className="space-y-6 hidden lg:block lg:col-span-1 lg:sticky lg:top-6 lg:h-[calc(100vh-2rem)] lg:overflow-y-auto lg:pr-3">
                     <div className="rounded-xl border border-border bg-card p-6">
                         <div className="flex items-center justify-between mb-4">
                             <h2 className="font-semibold flex items-center gap-2">
@@ -257,6 +257,8 @@ export function JobsBrowser() {
                                     setSelectedExperience([])
                                     setSelectedDepartment([])
                                 }}
+                                disabled={selectedDepartment.length === 0 && selectedExperience.length === 0 && selectedTypes.length === 0}
+
                             >
                                 Reset
                             </Button>
@@ -280,7 +282,7 @@ export function JobsBrowser() {
                                                 htmlFor={`type-${type}`}
                                                 className="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
                                             >
-                                                {type}
+                                                {type.replace("_", " ")}
                                             </label>
                                         </div>
                                     ))}
@@ -306,7 +308,7 @@ export function JobsBrowser() {
                                                 htmlFor={`level-${level}`}
                                                 className="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
                                             >
-                                                {level}
+                                                {level.replace("_", " ")}
                                             </label>
                                         </div>
                                     ))}
@@ -331,7 +333,7 @@ export function JobsBrowser() {
                                                 htmlFor={`type-${type}`}
                                                 className="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
                                             >
-                                                {type}
+                                                {type.replace("_", " ")}
                                             </label>
                                         </div>
                                     ))}
@@ -379,10 +381,13 @@ export function JobsBrowser() {
                                             size="sm"
                                             className="h-8 text-xs"
                                             onClick={() => {
+                                                setTrigger(!trigger)
                                                 setSelectedTypes([])
                                                 setSelectedExperience([])
                                                 setSelectedDepartment([])
                                             }}
+                                            disabled={selectedDepartment.length === 0 && selectedExperience.length === 0 && selectedTypes.length === 0}
+
                                         >
                                             Reset
                                         </Button>
@@ -405,7 +410,7 @@ export function JobsBrowser() {
                                                         htmlFor={`mobile-type-${type}`}
                                                         className="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
                                                     >
-                                                        {type}
+                                                        {type.replace("_", " ")}
                                                     </label>
                                                 </div>
                                             ))}
@@ -431,7 +436,7 @@ export function JobsBrowser() {
                                                         htmlFor={`mobile-level-${level}`}
                                                         className="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
                                                     >
-                                                        {level}
+                                                        {level.replace("_", " ")}
                                                     </label>
                                                 </div>
                                             ))}
@@ -457,7 +462,7 @@ export function JobsBrowser() {
                                                         htmlFor={`mobile-dept-${type}`}
                                                         className="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
                                                     >
-                                                        {type}
+                                                        {type.replace("_", " ")}
                                                     </label>
                                                 </div>
                                             ))}

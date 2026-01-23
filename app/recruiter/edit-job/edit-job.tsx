@@ -62,6 +62,7 @@ type formType = {
     requirements: string[];
     optional?: string[];
     benifits: string[];
+    status: "ACTIVE" | "CLOSED" | "NONE";
 };
 
 export default function EditJob({ job }: { job: string }) {
@@ -82,6 +83,7 @@ export default function EditJob({ job }: { job: string }) {
         requirements: [],
         optional: [],
         benifits: [],
+        status: "NONE",
         minSalary: 0,
         maxSalary: 0,
     });
@@ -148,6 +150,7 @@ export default function EditJob({ job }: { job: string }) {
                 requirements: jobData.requirements ?? [],
                 optional: jobData.optional ?? [],
                 benifits: jobData.benifits ?? [],
+                status: (jobData.status as "ACTIVE" | "CLOSED" | "NONE") ?? "NONE",
                 minSalary: jobData.minSalary ?? 0,
                 maxSalary: Number(jobData.maxSalary ?? 0),
             }));
@@ -174,6 +177,7 @@ export default function EditJob({ job }: { job: string }) {
                 requirements: data.requirements ?? [],
                 optional: data.optional ?? [],
                 benifits: data.benifits ?? [],
+                status: (data.status as "ACTIVE" | "CLOSED" | "NONE") ?? "NONE",
                 minSalary: data.minSalary ?? 0,
                 maxSalary: Number(data.maxSalary ?? 0),
             }));
@@ -337,6 +341,26 @@ export default function EditJob({ job }: { job: string }) {
                                         </SelectContent>
                                     </Select>
                                 </div>
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="status">Job Status</Label>
+                                <Select
+                                    name="status"
+                                    value={form.status}
+
+                                    onValueChange={(value) => {
+                                        setForm((prev) => ({ ...prev, status: value as "ACTIVE" | "CLOSED" }));
+                                    }}
+                                    required
+                                >
+                                    <SelectTrigger id="status" aria-label="Select status">
+                                        <SelectValue placeholder="Select status" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="ACTIVE">ACTIVE</SelectItem>
+                                        <SelectItem value="CLOSED">CLOSED</SelectItem>
+                                    </SelectContent>
+                                </Select>
                             </div>
 
                             <div className="grid gap-6 sm:grid-cols-2">

@@ -57,6 +57,7 @@ async function handler(req: NextRequest, user: UserPayload) {
     }),
     where: {
       id: { notIn: applications.map((data) => data.jobId) },
+      status: "ACTIVE",
       ...(search && {
         OR: [
           {

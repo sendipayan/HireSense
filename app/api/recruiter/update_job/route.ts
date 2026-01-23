@@ -26,6 +26,7 @@ async function handler(request: NextRequest, user: UserPayload) {
     benifits,
     minSalary,
     maxSalary,
+    status,
     location,
   } = body;
 
@@ -59,6 +60,7 @@ async function handler(request: NextRequest, user: UserPayload) {
       maxSalary,
       requirements,
       jobType,
+      status,
       experienceRequired,
       department,
       optional,
