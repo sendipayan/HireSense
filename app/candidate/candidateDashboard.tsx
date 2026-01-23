@@ -40,9 +40,10 @@ export default function CandidateClientDashboardPage() {
 
     useEffect(() => {
         const fetch = async () => {
+            const payload1 = { filter: "", search: "", cursor: null }
             console.log("fetching jobs")
             const res = await axios.get("/api/getjob")
-            const res1 = await axios.get("/api/candidate/get_applications")
+            const res1 = await axios.post("/api/candidate/get_applications", payload1, { withCredentials: true })
             const res2 = await axios.get("/api/candidate/get_interviews", { withCredentials: true })
             const data2 = await res2.data
             setInterviews(data2.interviews)

@@ -21,11 +21,47 @@ async function handler(req: NextRequest, user: UserPayload) {
     return NextResponse.json({ error: "Candidate Not Found" }, { status: 404 });
   }
 
+  const { cursor, status, search } = await req.json();
+
   const limit = 3;
 
+  console.log(status);
+
   let applications = await prisma.application.findMany({
+    ...(cursor && {
+      cursor: {
+        createdAt: cursor.createdAt,
+        id: cursor.id,
+      },
+      skip: 1,
+    }),
     where: {
       candidateId: candidate?.id,
+      ...(status && {
+        status: status,
+      }),
+      ...(search && {
+        OR: [
+          {
+            job: {
+              title: {
+                contains: search,
+                mode: "insensitive",
+              },
+            },
+          },
+          {
+            job: {
+              recruiter: {
+                companyName: {
+                  contains: search,
+                  mode: "insensitive",
+                },
+              },
+            },
+          },
+        ],
+      }),
     },
     include: {
       job: {
@@ -87,4 +123,4 @@ async function handler(req: NextRequest, user: UserPayload) {
   );
 }
 
-export const GET = withAuth(handler, { allowedRoles: ["CANDIDATE"] });
+export const POST = withAuth(handler, { allowedRoles: ["CANDIDATE"] });

@@ -18,6 +18,8 @@ export default function ApplicationsPage() {
     const [statusFilter, setStatusFilter] = useState("all")
     const { applications, setApplications } = useApplicationsStore()
     const [initialLoad, setInitialLoad] = useState(true)
+    const [filter, setFilter] = useState("")
+    const [search, setSearch] = useState("")
     const { cursor, setPage, hasMore } = useCursorStore()
     const [loading, setLoading] = useState(false)
 
@@ -31,7 +33,8 @@ export default function ApplicationsPage() {
             loadingRef.current = true;
             setLoading(true);
             console.log("fetching more");
-            const response = await axios.post('/api/candidate/next_applications', { cursor }, { withCredentials: true })
+            const payload = { status: filter, search, cursor }
+            const response = await axios.post('/api/candidate/get_applications', payload, { withCredentials: true })
             const data = await response.data
             setApplications([...applications, ...data.applications])
             setPage({ cursor: data.cursor, hasMore: data.hasMore })
@@ -74,7 +77,8 @@ export default function ApplicationsPage() {
 
         const fetchApplications = async () => {
             try {
-                const response = await axios.get('/api/candidate/get_applications', { withCredentials: true })
+                const payload = { status: "", search: "", cursor: null }
+                const response = await axios.post('/api/candidate/get_applications', payload, { withCredentials: true })
                 const data = await response.data
                 console.log("data is", data)
                 setApplications(data.applications)
@@ -88,18 +92,82 @@ export default function ApplicationsPage() {
         fetchApplications()
     }, [])
 
+    const prevSearchQueryRef = useRef("")
+
+    useEffect(() => {
+        const currentTrimmed = searchQuery.trim()
+        const prevTrimmed = prevSearchQueryRef.current.trim()
+
+        if (currentTrimmed === prevTrimmed) {
+            prevSearchQueryRef.current = searchQuery
+            return
+        }
+
+        const timeoutId = setTimeout(async () => {
+            console.log("Search:", currentTrimmed);
+            setSearch(currentTrimmed)
+            prevSearchQueryRef.current = searchQuery;
+            const payload = { status: filter, search: currentTrimmed, cursor: null }
+            console.log(payload)
+
+            try {
+                setInitialLoad(true)
+                const response = await axios.post('/api/candidate/get_applications', payload, { withCredentials: true })
+                const data = await response.data
+                console.log("data is", data)
+                setApplications(data.applications)
+                setPage({ cursor: data.cursor, hasMore: data.hasMore })
+
+            } catch (error) {
+                console.log(error)
+            } finally {
+                setInitialLoad(false)
+
+            }
 
 
-    const filteredApplications = useMemo(() => {
-        return applications.filter((app) => {
-            const matchesSearch =
-                app.job.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                app.job.recruiter.companyName?.toLowerCase().includes(searchQuery.toLowerCase())
-            const matchesStatus = statusFilter === "all" || app.status === statusFilter
+        }, 500);
 
-            return matchesSearch && matchesStatus
-        })
-    }, [searchQuery, statusFilter, applications])
+        return () => clearTimeout(timeoutId);
+    }, [searchQuery]);
+
+
+
+    useEffect(() => {
+        if (statusFilter === "all") {
+            setFilter("")
+        } else {
+            setFilter(statusFilter)
+        }
+
+    }, [statusFilter])
+
+    useEffect(() => {
+        if (initialLoad) return
+
+        const fetchApplications = async () => {
+
+            const payload = { status: filter, search, cursor: null }
+            console.log(payload)
+            try {
+                setInitialLoad(true)
+                const response = await axios.post('/api/candidate/get_applications', payload, { withCredentials: true })
+                const data = await response.data
+                console.log("data is", data)
+                setApplications(data.applications)
+                setPage({ cursor: data.cursor, hasMore: data.hasMore })
+
+            } catch (error) {
+                console.log(error)
+            } finally {
+                setInitialLoad(false)
+
+            }
+        }
+
+        fetchApplications()
+
+    }, [filter])
 
     const getStatusBadge = (status: string) => {
         switch (status) {
@@ -172,17 +240,19 @@ export default function ApplicationsPage() {
                         </SelectTrigger>
                         <SelectContent>
                             <SelectItem value="all">All Statuses</SelectItem>
-                            <SelectItem value="Application Sent">Application Sent</SelectItem>
-                            <SelectItem value="Under Review">Under Review</SelectItem>
-                            <SelectItem value="Interview Scheduled">Interview Scheduled</SelectItem>
+                            <SelectItem value="PENDING">Application Sent</SelectItem>
+                            <SelectItem value="WAITLIST">Under Review</SelectItem>
+                            <SelectItem value="SCHEDULED">Interview Scheduled</SelectItem>
+                            <SelectItem value="REJECTED">Rejected</SelectItem>
+                            <SelectItem value="ACCEPTED">Hired</SelectItem>
                         </SelectContent>
                     </Select>
                 </div>
 
                 {/* Applications List */}
                 {!initialLoad ? <div className="grid gap-4">
-                    {filteredApplications.length > 0 ? (
-                        filteredApplications.map((app) => (
+                    {applications.length > 0 ? (
+                        applications.map((app) => (
                             <Card key={app.id} className="overflow-hidden transition-all hover:border-primary/50">
                                 <CardContent className="p-0">
                                     <div className="flex flex-col md:flex-row md:items-center">
