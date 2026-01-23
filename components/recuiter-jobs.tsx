@@ -40,7 +40,8 @@ export function RecruiterJobsClient() {
     const [loading, setLoading] = useState(false)
     const { cursor, hasMore, setPage } = useCursorStore()
     const [jobToDelete, setJobToDelete] = useState<string | null>(null)
-
+    const [search, setSearch] = useState("")
+    const [filter, setFilter] = useState("")
     const observerRef = useRef<IntersectionObserver | null>(null);
     const loadingRef = useRef(false);
 
@@ -51,10 +52,8 @@ export function RecruiterJobsClient() {
             loadingRef.current = true;
             setLoading(true);
             console.log("fetching more");
-
-            const res = await axios.post("/api/recruiter/next_jobs", {
-                cursor,
-            },
+            const payload = { status: filter, search: search, cursor: cursor }
+            const res = await axios.post("/api/recruiter/next_jobs", payload,
                 { withCredentials: true })
 
             const data = await res.data
@@ -70,31 +69,39 @@ export function RecruiterJobsClient() {
         }
     };
 
-    const setLoaderRef = (node: HTMLDivElement | null) => {
-        if (!node) return;
+    // We use a ref to access the DOM element for the observer
+    const loaderRef = useRef<HTMLDivElement | null>(null);
 
-        if (observerRef.current) {
-            observerRef.current.disconnect();
-        }
-
-        observerRef.current = new IntersectionObserver(
+    useEffect(() => {
+        const observer = new IntersectionObserver(
             ([entry]) => {
-                if (entry.isIntersecting) {
+                // Check if intersecting AND if we have more to load AND we aren't currently loading
+                if (entry.isIntersecting && hasMore && !loadingRef.current) {
                     fetchMore();
                 }
             },
             { rootMargin: "100px" }
         );
 
-        observerRef.current.observe(node);
-    };
+        if (loaderRef.current) {
+            observer.observe(loaderRef.current);
+        }
+
+        return () => {
+            if (loaderRef.current) {
+                observer.unobserve(loaderRef.current);
+            }
+            observer.disconnect();
+        };
+    }, [hasMore, jobs, cursor]); // Re-run effect when data/cursor changes to keep closure fresh
 
     useEffect(() => {
         const fetch = async () => {
-            const res = await axios.get("/api/getjob")
+            const payload = { status: "", search: "", cursor: null }
+            const res = await axios.post("/api/recruiter/getjob", payload, { withCredentials: true })
             const data = await res.data
-            setJobs(data.job.job)
-            setPage({ cursor: data.job.cursor, hasMore: data.job.hasMore })
+            setJobs(data.job)
+            setPage({ cursor: data.cursor, hasMore: data.hasMore })
             console.log(data.job)
             setInitialLoad(false);
         }
@@ -102,25 +109,73 @@ export function RecruiterJobsClient() {
 
     }, [setJobs])
 
+    const prevSearchQueryRef = useRef("")
+
     useEffect(() => {
-        if (cursor) {
-            console.log(cursor)
+        const currentTrimmed = searchQuery.trim()
+        const prevTrimmed = prevSearchQueryRef.current.trim()
+
+        if (currentTrimmed === prevTrimmed) {
+            prevSearchQueryRef.current = searchQuery
+            return
         }
-    }, [cursor])
+
+        const timeoutId = setTimeout(async () => {
+            console.log("Search:", currentTrimmed);
+            setSearch(currentTrimmed)
+            prevSearchQueryRef.current = searchQuery;
+            const payload = { status: filter, search: currentTrimmed, cursor: null }
+            try {
+                setInitialLoad(true)
+                const res = await axios.post("/api/recruiter/getjob", payload, { withCredentials: true })
+                const data = await res.data
+                setJobs(data.job)
+                setPage({ cursor: data.cursor, hasMore: data.hasMore })
+            } catch (err) {
+                console.log(err)
+            } finally {
+                setInitialLoad(false)
+            }
+
+        }, 500);
+
+        return () => clearTimeout(timeoutId);
+    }, [searchQuery]);
 
 
-    const filteredJobs = useMemo(() => {
+    useEffect(() => {
+        if (statusFilter === "all") {
+            setFilter("")
+        }
+        else {
+            setFilter(statusFilter)
+        }
+    }, [statusFilter])
+
+    useEffect(() => {
         if (initialLoad) {
-            return []
+            return
         }
-        return jobs.filter((job) => {
-            const matchesSearch =
-                job.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                job.location.toLowerCase().includes(searchQuery.toLowerCase())
-            const matchesStatus = statusFilter === "all" || job.status.toLowerCase() === statusFilter.toLowerCase()
-            return matchesSearch && matchesStatus
-        })
-    }, [searchQuery, statusFilter, jobs])
+
+        const fetch = async () => {
+            try {
+                setInitialLoad(true)
+                const payload = { status: filter, search: search, cursor: null }
+                console.log(payload)
+                const res = await axios.post("/api/recruiter/getjob", payload, { withCredentials: true })
+                const data = await res.data
+                setJobs(data.job)
+                setPage({ cursor: data.cursor, hasMore: data.hasMore })
+            } catch (err) {
+                console.log(err)
+            } finally {
+                setInitialLoad(false)
+            }
+
+        }
+        fetch()
+    }, [filter])
+
 
     const deleteJob = async () => {
         if (jobToDelete?.trim() === "") {
@@ -175,8 +230,8 @@ export function RecruiterJobsClient() {
 
             {/* Jobs Grid */}
             {!initialLoad ? (<><div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {filteredJobs.length > 0 ? (
-                    filteredJobs.map((job) => (
+                {jobs.length > 0 ? (
+                    jobs.map((job) => (
                         <div
                             key={job.id}
                             className="group relative bg-card border border-border rounded-xl p-5 hover:border-primary/50 transition-all"
@@ -274,7 +329,7 @@ export function RecruiterJobsClient() {
 
             </div>
                 {hasMore && (
-                    <div ref={setLoaderRef} className="w-full flex justify-center items-center">
+                    <div ref={loaderRef} className="w-full flex justify-center items-center">
                         <Spinner className="w-10 h-10" />
                     </div>
                 )}</>) :
