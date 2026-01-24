@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo, useEffect } from "react"
+import { useState, useRef, useEffect } from "react"
 import { Search, Target, Sparkles, Filter, BrainCircuit, Trophy, LayoutGrid, List, Calendar, UserPlus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -12,6 +12,8 @@ import { Breadcrumbs } from "@/components/breadcrumbs"
 import { useRecruiterApplicationsStore } from "@/store/recruiterApplication"
 import { useJobStore } from "@/store/jobStore"
 import axios from "axios"
+import { Spinner } from "./ui/spinner"
+import { useCursorStore } from "@/store/nextCursorStore"
 import { Checkbox } from "@/components/ui/checkbox"
 import { ScheduleInterviewModal } from "./interview/schedule-interview-modal"
 
@@ -26,20 +28,84 @@ interface ApplicationList {
 
 export function TopMatchesClient() {
     const { jobs, setJobs } = useJobStore()
+    const { cursor, setPage, hasMore } = useCursorStore()
     const [selectedJob, setSelectedJob] = useState("")
     const [searchQuery, setSearchQuery] = useState("")
     const [selectedIds, setSelectedIds] = useState<string[]>([]) // added state for multi-selection
     const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false) // added state for schedule modal
     const [minScore, setMinScore] = useState("0")
+    const [jobload, setJobload] = useState(true)
     const [trigger, setTrigger] = useState(false)
     const { applications, setApplications } = useRecruiterApplicationsStore()
     const [loading, setLoading] = useState(true)
-    const [jobload, setJobload] = useState(true)
+    const [search, setSearch] = useState<string[]>([])
     const [applicationList, setApplicationList] = useState<ApplicationList[]>([])
 
 
+    const loadingRef = useRef(false);
+
+    const fetchMore = async () => {
+        if (loadingRef.current || !hasMore) return;
+
+        try {
+            loadingRef.current = true;
+            setLoading(true);
+            console.log("fetching more");
+            try {
+                setLoading(true)
+                const payload = { search: search, cursor: cursor }
+                const response = await axios.post(`/api/recruiter/get_applications/${selectedJob}`,
+                    payload, { withCredentials: true })
+                const data = await response.data
+                console.log(data)
+                setApplications(data.applications)
+                setPage({ cursor: data.cursor, hasMore: data.hasMore })
+
+            } catch (err) {
+                console.log(err)
+            } finally {
+                setLoading(false)
+            }
+
+
+        } catch (error) {
+            console.log(error)
+        } finally {
+            setLoading(false);
+            loadingRef.current = false;
+        }
+    };
+
+    // We use a ref to access the DOM element for the observer
+    const loaderRef = useRef<HTMLDivElement | null>(null);
+
+    useEffect(() => {
+        const observer = new IntersectionObserver(
+            ([entry]) => {
+                // Check if intersecting AND if we have more to load AND we aren't currently loading
+                if (entry.isIntersecting && hasMore && !loadingRef.current) {
+                    fetchMore();
+                }
+            },
+            { rootMargin: "100px" }
+        );
+
+        if (loaderRef.current) {
+            observer.observe(loaderRef.current);
+        }
+
+        return () => {
+            if (loaderRef.current) {
+                observer.unobserve(loaderRef.current);
+            }
+            observer.disconnect();
+        };
+    }, [hasMore, jobs, cursor]);
+
     useEffect(() => {
         const fetch = async () => {
+            setJobload(true)
+            setLoading(true)
             const res = await axios.get("/api/getjob")
             const data = await res.data
             setJobs(data.job.job)
@@ -62,30 +128,66 @@ export function TopMatchesClient() {
                 return
             }
 
-            setLoading(true)
-            const response = await axios.get(`/api/recruiter/get_applications/${selectedJob}`)
-            console.log(response.data)
-            setApplications(response.data.applications)
-            setLoading(false)
+            try {
+                setLoading(true)
+                const payload = { search: [], cursor: null }
+                const response = await axios.post(`/api/recruiter/get_applications/${selectedJob}`,
+                    payload, { withCredentials: true })
+                const data = await response.data
+                console.log(data)
+                setApplications(data.applications)
+                setPage({ cursor: data.cursor, hasMore: data.hasMore })
+
+            } catch (error) {
+                console.log(error)
+            } finally {
+                setLoading(false)
+            }
         }
         fetchApplications()
     }, [selectedJob, trigger])
 
+    const prevSearchQueryRef = useRef("")
+    useEffect(() => {
+        const currentTrimmed = searchQuery.trim().toLowerCase()
+        const prevTrimmed = prevSearchQueryRef.current.trim().toLowerCase()
 
-    const filteredCandidates = useMemo(() => {
-        if (!applications || !Array.isArray(applications)) {
-            return []
+        if (currentTrimmed === prevTrimmed) {
+            prevSearchQueryRef.current = searchQuery
+            return
         }
-        return applications
-            .filter((c) => {
-                const matchesSearch =
-                    c.job.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                    c.job.title.toLowerCase().includes(searchQuery.toLowerCase())
-                const matchesScore = c.score >= Number.parseInt(minScore)
-                return matchesSearch && matchesScore
-            })
-            .sort((a, b) => b.score - a.score)
-    }, [searchQuery, minScore, applications])
+
+        const timeoutId = setTimeout(async () => {
+            console.log("Search:", currentTrimmed);
+            setSearch(currentTrimmed.split(" ").filter((s) => s.trim() !== ""))
+            prevSearchQueryRef.current = searchQuery;
+        }, 500);
+
+        return () => clearTimeout(timeoutId);
+    }, [searchQuery]);
+
+    useEffect(() => {
+        console.log("search: ", search)
+
+        const fetch = async () => {
+            try {
+                setLoading(true)
+                const payload = { search: search, cursor: null }
+                const response = await axios.post(`/api/recruiter/get_applications/${selectedJob}`,
+                    payload, { withCredentials: true })
+                const data = await response.data
+                console.log(data)
+                setApplications(data.applications)
+                setPage({ cursor: data.cursor, hasMore: data.hasMore })
+
+            } catch (err) {
+                console.log(err)
+            } finally {
+                setLoading(false)
+            }
+        }
+        fetch()
+    }, [search])
 
     const toggleSelect = (id: string, Aid: string) => {
         const app = applications.find(a => a.id === id);
@@ -142,23 +244,23 @@ export function TopMatchesClient() {
 
 
     const selectAll = () => {
-        if (selectedIds.length === filteredCandidates.length) {
+        if (selectedIds.length === applications.length) {
             setSelectedIds([])
             setApplicationList([])
         } else {
-            const select = Array.from(new Set(filteredCandidates.map((c) => c.candidate.id)))
+            const select = Array.from(new Set(applications.map((c) => c.candidate.id)))
             const application = select.map((id) => {
                 return {
                     CId: id,
-                    Cname: filteredCandidates.find((c) => c.candidate.id === id)?.candidate.user.name || "",
-                    resumeMimeType: filteredCandidates.find((c) => c.candidate.id === id)?.resume.resumeMimeType || "",
-                    resumeUrl: filteredCandidates.find((c) => c.candidate.id === id)?.resume.resumeUrl || "",
-                    JId: filteredCandidates.filter((c) => c.candidate.id === id)?.map((c) => c.job.id),
-                    Jname: filteredCandidates.filter((c) => c.candidate.id === id)?.map((c) => c.job.title)
+                    Cname: applications.find((c) => c.candidate.id === id)?.candidate.user.name || "",
+                    resumeMimeType: applications.find((c) => c.candidate.id === id)?.resume.resumeMimeType || "",
+                    resumeUrl: applications.find((c) => c.candidate.id === id)?.resume.resumeUrl || "",
+                    JId: applications.filter((c) => c.candidate.id === id)?.map((c) => c.job.id),
+                    Jname: applications.filter((c) => c.candidate.id === id)?.map((c) => c.job.title)
                 }
             })
             setApplicationList(application)
-            setSelectedIds(filteredCandidates.map((c) => c.id))
+            setSelectedIds(applications.map((c) => c.id))
         }
     }
 
@@ -224,7 +326,7 @@ export function TopMatchesClient() {
                                 </Select>
                                 <div className="mt-4 flex flex-col lg:flex-row items-center justify-between  text-xs text-muted-foreground">
                                     <span className="flex items-center gap-1 ">
-                                        <Target className="h-3 w-3 text-primary" /> {filteredCandidates.length} Total Matches
+                                        <Target className="h-3 w-3 text-primary" /> {applications.length} Total Matches
                                     </span>
                                     <span className="flex items-center gap-1">
                                         <BrainCircuit className="h-3 w-3 text-primary" /> High Confidence
@@ -243,16 +345,16 @@ export function TopMatchesClient() {
                 {/* Filters & Actions Bar */}
                 {!jobload ? <div className="mt-12 flex flex-col md:flex-row gap-4 items-center justify-between bg-card/50 backdrop-blur-md p-4 rounded-2xl border border-border shadow-sm">
                     <div className="flex flex-col lg:flex-row items-center gap-4 w-full md:max-w-md">
-                        <div className="flex items-center gap-2 px-2 lg:border-r border-border mr-2">
+                        {applications.length > 0 && <div className="flex items-center gap-2 px-2 lg:border-r border-border mr-2">
                             <Checkbox
-                                checked={selectedIds.length === filteredCandidates.length && filteredCandidates.length > 0}
+                                checked={selectedIds.length === applications.length && applications.length > 0}
                                 onCheckedChange={selectAll}
                                 className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
                             />
                             <span className="text-sm font-medium text-muted-foreground whitespace-nowrap">
                                 {selectedIds.length === 0 ? "Select All" : `${selectedIds.length} Selected`}
                             </span>
-                        </div>
+                        </div>}
                         <div className="relative flex-1">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                             <Input
@@ -299,9 +401,9 @@ export function TopMatchesClient() {
 
                 {/* Results Section */}
                 {!loading ? <div className="mt-8 grid gap-6 lg:grid-cols-1">
-                    {filteredCandidates.length > 0 ? (
+                    {applications.length > 0 ? (
                         <div className="space-y-4">
-                            {filteredCandidates.map((candidate, index) => (
+                            {applications.map((candidate, index) => (
                                 <div key={candidate.id} className="relative group flex items-center gap-4">
                                     <div className="shrink-0 pt-2">
                                         <Checkbox
@@ -331,13 +433,18 @@ export function TopMatchesClient() {
                                             resumeUrl={candidate.resume.resumeUrl}
                                             education={candidate.candidate.degree}
                                             status={candidate.status}
-                                            skills={candidate.candidate.primarySkills}
+                                            skills={[...candidate.candidate.primarySkills, ...candidate.candidate.secondarySkills]}
                                             matchScore={candidate.score}
                                             avatar={candidate.candidate.user.profilePic ? candidate.candidate.user.profilePic : ""}
                                         />
                                     </div>
                                 </div>
                             ))}
+                            {hasMore && (
+                                <div ref={loaderRef} className="w-full flex justify-center items-center">
+                                    <Spinner className="w-10 h-10" />
+                                </div>
+                            )}
                         </div>
                     ) : (
                         <Card className="border-dashed bg-transparent py-20">
