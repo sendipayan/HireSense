@@ -46,7 +46,6 @@ export function InterviewHistoryFilters({
                     </SelectTrigger>
                     <SelectContent>
                         <SelectItem value="all">All Statuses</SelectItem>
-                        <SelectItem value="SCHEDULED">Scheduled</SelectItem>
                         <SelectItem value="COMPLETED">Completed</SelectItem>
                         <SelectItem value="CONFIRMED">Accepted</SelectItem>
                         <SelectItem value="CANCELLED">Rejected</SelectItem>

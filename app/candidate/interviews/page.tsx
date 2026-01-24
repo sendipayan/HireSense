@@ -29,6 +29,9 @@ export default function CandidateInterviewsPage() {
     const [typeFilter, setTypeFilter] = useState("all")
     const observerRef = useRef<IntersectionObserver | null>(null);
     const loadingRef = useRef(false);
+    const [search, setSearch] = useState("")
+    const [status, setStatus] = useState("")
+    const [type, setType] = useState("")
     const [completedInterviews, setCompletedInterviews] = useState<CandidateInterview[]>([])
     const [upcomingInterviews, setUpcomingInterviews] = useState<CandidateInterview[]>([])
     const [upcomingCursor, setUpcomingCursor] = useState<Cursor | null>(null)
@@ -36,6 +39,7 @@ export default function CandidateInterviewsPage() {
     const [completedHasMore, setCompletedHasMore] = useState(false)
     const [upcomingHasMore, setUpcomingHasMore] = useState(false)
     const [loading, setLoading] = useState(false);
+    const [historyLoading, setHistoryLoading] = useState(false)
 
     // dependent on these local states instead of global store
     const fetchMore = async () => {
@@ -61,15 +65,24 @@ export default function CandidateInterviewsPage() {
                 setUpcomingCursor(data.cursor);
                 setUpcomingHasMore(data.hasMore);
             } else if (tab === "history") {
-                const response = await axios.post('/api/candidate/next_interviews/completed',
-                    { cursor: currentCursor }, // Use local cursor
-                    { withCredentials: true }
-                );
-                const data = await response.data;
-                // 3. functional update
-                setCompletedInterviews(prev => [...prev, ...data.interviews]);
-                setCompletedCursor(data.cursor);
-                setCompletedHasMore(data.hasMore);
+                const payload = { status, type, search, cursor: currentCursor }
+                console.log(payload)
+                try {
+                    setHistoryLoading(true)
+                    const response = await axios.post('/api/candidate/get_interviews/completed', payload, { withCredentials: true })
+                    const data = await response.data
+                    const interviews = data.interviews
+                    setCompletedInterviews(prev => [...prev, ...interviews])
+                    setCompletedCursor(data.cursor)
+                    setCompletedHasMore(data.hasMore)
+                    console.log(data)
+
+                } catch (err) {
+                    console.log(err)
+                } finally {
+                    setHistoryLoading(false)
+
+                }
             }
         } catch (error) {
             console.log(error);
@@ -99,24 +112,14 @@ export default function CandidateInterviewsPage() {
         observerRef.current.observe(node);
     }, [tab, upcomingCursor, completedCursor, upcomingHasMore, completedHasMore]); // Add dependencies needed for fetchMore closure if fetchMore isn't stable
 
-    const filteredHistory = useMemo(() => {
-        return interviews?.filter((interview) => {
-            const matchesSearch =
-                interview.application.job.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                interview.recruiter.companyName.toLowerCase().includes(searchQuery.toLowerCase())
 
-            const matchesStatus = statusFilter === "all" || interview.status === statusFilter
-            const matchesType = typeFilter === "all" || interview.type === typeFilter
-
-            return matchesSearch && matchesStatus && matchesType
-        })
-    }, [searchQuery, statusFilter, typeFilter, interviews])
 
     useEffect(() => {
         const fetchInterviews = async () => {
 
             try {
-                const res = await axios.get("/api/candidate/get_interviews/completed", { withCredentials: true })
+                const payload = { search: "", cursor: null }
+                const res = await axios.post("/api/candidate/get_interviews/completed", payload, { withCredentials: true })
                 const data = await res.data
                 setCompletedInterviews(data.interviews)
                 setCompletedCursor(data.cursor)
@@ -129,6 +132,7 @@ export default function CandidateInterviewsPage() {
 
 
             try {
+
                 const response = await axios.get('/api/candidate/get_interviews', { withCredentials: true })
                 const data = await response.data
                 const interviews = data.interviews
@@ -146,11 +150,94 @@ export default function CandidateInterviewsPage() {
 
         }
         fetchInterviews()
-    }, [])
+    }, [tab])
+
+    const prevSearchQueryRef = useRef("")
+
+    useEffect(() => {
+        const currentTrimmed = searchQuery.trim()
+        const prevTrimmed = prevSearchQueryRef.current.trim()
+
+        if (currentTrimmed === prevTrimmed) {
+            prevSearchQueryRef.current = searchQuery
+            return
+        }
+
+        const timeoutId = setTimeout(async () => {
+            console.log("Search:", currentTrimmed);
+            setSearch(currentTrimmed)
+            prevSearchQueryRef.current = searchQuery;
+            const payload = { status, type, search: currentTrimmed, cursor: null }
+            console.log(payload)
+            try {
+                setHistoryLoading(true)
+                const response = await axios.post('/api/candidate/get_interviews/completed', payload, { withCredentials: true })
+                const data = await response.data
+                const interviews = data.interviews
+                setCompletedInterviews(interviews)
+                setCompletedCursor(data.cursor)
+                setCompletedHasMore(data.hasMore)
+                console.log(data)
+
+            } catch (err) {
+                console.log(err)
+            } finally {
+                setHistoryLoading(false)
+
+            }
+        }, 500);
+
+        return () => clearTimeout(timeoutId);
+    }, [searchQuery]);
+
+
+    useEffect(() => {
+        if (intialLoading) return
+
+        if (typeFilter === "all") {
+            setTypeFilter("")
+        }
+        else {
+            setType(typeFilter)
+        }
+        if (statusFilter === "all") {
+            setStatusFilter("")
+        }
+        else {
+            setStatus(statusFilter)
+        }
+
+    }, [statusFilter, typeFilter])
+
+    useEffect(() => {
+        if (intialLoading) return
+
+        const fetch = async () => {
+            const payload = { status, type, search, cursor: null }
+            console.log(payload)
+            try {
+                setHistoryLoading(true)
+                const response = await axios.post('/api/candidate/get_interviews/completed', payload, { withCredentials: true })
+                const data = await response.data
+                const interviews = data.interviews
+                setCompletedInterviews(interviews)
+                setCompletedCursor(data.cursor)
+                setCompletedHasMore(data.hasMore)
+                console.log(data)
+
+            } catch (err) {
+                console.log(err)
+            } finally {
+                setHistoryLoading(false)
+
+            }
+        }
+        fetch()
+    }, [status, type])
 
     useEffect(() => {
 
-        if (intialLoading || loading) return
+        if (intialLoading || loading || historyLoading) return
 
         if (tab === "upcoming") {
             setInterviews(upcomingInterviews)
@@ -159,7 +246,7 @@ export default function CandidateInterviewsPage() {
             setInterviews(completedInterviews)
             setPage({ cursor: completedCursor, hasMore: completedHasMore })
         }
-    }, [tab, intialLoading, loading])
+    }, [tab, intialLoading, loading, historyLoading])
 
     useEffect(() => {
         if (cursor)
@@ -295,7 +382,7 @@ export default function CandidateInterviewsPage() {
                             onStatusChange={setStatusFilter}
                             onTypeChange={setTypeFilter}
                         />
-                        <div className="rounded-xl border border-border bg-card overflow-hidden">
+                        {!historyLoading ? <div className="rounded-xl border border-border bg-card overflow-hidden">
                             <Table>
                                 <TableHeader>
                                     <TableRow className="bg-muted/30">
@@ -308,8 +395,8 @@ export default function CandidateInterviewsPage() {
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    {filteredHistory?.length > 0 ? (
-                                        filteredHistory?.map((interview) => (
+                                    {interviews?.length > 0 ? (
+                                        interviews?.map((interview) => (
                                             <TableRow key={interview.id}>
                                                 <TableCell>
                                                     <div className="flex items-center gap-2">
@@ -383,7 +470,8 @@ export default function CandidateInterviewsPage() {
                             {hasMore && <div ref={setLoaderRef} className="w-full flex justify-center items-center mt-5">
                                 <Spinner className="w-10 h-10" />
                             </div>}
-                        </div>
+                        </div> : <div className="w-full h-80 bg-muted-foreground/50 border border-border rounded-xl animate-pulse">
+                        </div>}
                     </TabsContent>
                 </Tabs>
 
