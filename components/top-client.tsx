@@ -26,8 +26,13 @@ interface ApplicationList {
     Jname: string[];
 }
 
+interface Job {
+    id: string;
+    title: string;
+}
+
 export function TopMatchesClient() {
-    const { jobs, setJobs } = useJobStore()
+    const [jobs, setJobs] = useState<Job[]>([])
     const { cursor, setPage, hasMore } = useCursorStore()
     const [selectedJob, setSelectedJob] = useState("")
     const [searchQuery, setSearchQuery] = useState("")
@@ -108,9 +113,9 @@ export function TopMatchesClient() {
             setLoading(true)
             const res = await axios.get("/api/getjob")
             const data = await res.data
-            setJobs(data.job.job)
-            if (data.job.job.length > 0) {
-                setSelectedJob(data.job.job[0]?.id)
+            setJobs(data.job)
+            if (data.job.length > 0) {
+                setSelectedJob(data.job[0]?.id)
             }
             setJobload(false)
             console.log(data.job)

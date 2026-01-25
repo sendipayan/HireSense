@@ -22,6 +22,11 @@ import axios from "axios"
 import { Spinner } from "@/components/ui/spinner"
 
 
+interface Job {
+    id: string;
+    title: string;
+}
+
 interface ApplicationList {
     CId: string;
     Cname: string;
@@ -44,7 +49,7 @@ export default function RecruiterInterviewsPage() {
     const [selectedApplicationIds, setSelectedApplicationIds] = useState<string[]>([])
     const [applicationList, setApplicationList] = useState<ApplicationList[]>([])
     const [response, setResponse] = useState(false)
-    const { jobs, setJobs } = useJobStore()
+    const [jobs, setJobs] = useState<Job[]>([])
     const [loading, setLoading] = useState(false)
     const { cursor, hasMore, setPage } = useCursorStore()
     const [intialLoading, setIntialLoading] = useState(true)
@@ -139,7 +144,7 @@ export default function RecruiterInterviewsPage() {
                 const res3 = await axios.get("/api/getjob", { withCredentials: true })
                 console.log(res3.data)
                 if (res3.status === 200) {
-                    setJobs(res3.data.job.job)
+                    setJobs(res3.data.job)
                 }
             } catch (err) {
                 console.log("Error fetching jobs: ", err)

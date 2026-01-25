@@ -1,7 +1,45 @@
-import { getJob } from "@/lib/job";
-import { NextResponse } from "next/server";
+import prisma from "@/lib/prisma";
+import { NextResponse, NextRequest } from "next/server";
+import { withAuth } from "@/lib/api-middleware";
 
-export async function GET() {
-  const job = await getJob();
-  return NextResponse.json({ job });
+type UserPayload = {
+  userId: string;
+  role: string;
+  isVerified?: string;
+};
+
+async function handler(req: NextRequest, user: UserPayload) {
+  if (!user.isVerified) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  if (user.role === "RECRUITER") {
+    const job = await prisma.postJob.findMany({
+      where: {
+        recruiter: {
+          userId: user.userId,
+        },
+      },
+      select: {
+        id: true,
+        title: true,
+      },
+    });
+    return NextResponse.json({ job });
+  } else {
+    const job = await prisma.postJob.findMany({
+      where: {
+        status: "ACTIVE",
+      },
+      select: {
+        id: true,
+        title: true,
+      },
+    });
+    return NextResponse.json({ job });
+  }
 }
+
+export const GET = withAuth(handler, {
+  allowedRoles: ["RECRUITER", "CANDIDATE"],
+});
