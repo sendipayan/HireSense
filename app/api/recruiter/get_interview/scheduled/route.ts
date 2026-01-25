@@ -22,49 +22,10 @@ async function handler(req: NextRequest, user: UserPayload) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { status, job, startDate, endDate, search, cursor } = await req.json();
-
-  const limit = 5;
-
   let interviews = await prisma.interview.findMany({
-    ...(cursor && {
-      cursor: {
-        createdAt: cursor.createdAt,
-        id: cursor.id,
-      },
-      skip: 1,
-    }),
     where: {
       recruiterId: recruiter.id,
-
-      ...(status && { status }),
-
-      ...(startDate || endDate
-        ? {
-            startAt: {
-              ...(startDate && { gte: startDate }),
-              ...(endDate && { lte: endDate }),
-            },
-          }
-        : {}),
-
-      ...(job || search
-        ? {
-            application: {
-              ...(job && { jobId: job }),
-              ...(search && {
-                candidate: {
-                  user: {
-                    name: {
-                      contains: search,
-                      mode: "insensitive",
-                    },
-                  },
-                },
-              }),
-            },
-          }
-        : {}),
+      status: "SCHEDULED",
     },
     select: {
       id: true,
@@ -107,26 +68,16 @@ async function handler(req: NextRequest, user: UserPayload) {
       notes: true,
       phno: true,
     },
-    orderBy: [{ createdAt: "desc" }, { id: "desc" }],
-    take: limit + 1,
+    orderBy: { startAt: "asc" },
+    take: 2,
   });
-
-  const hasMore = interviews.length > limit;
-  interviews = hasMore ? interviews.slice(0, limit) : interviews;
 
   return NextResponse.json(
     {
       interviews,
-      cursor: hasMore
-        ? {
-            createdAt: interviews[interviews.length - 1].createdAt,
-            id: interviews[interviews.length - 1].id,
-          }
-        : null,
-      hasMore,
     },
     { status: 200 },
   );
 }
 
-export const POST = withAuth(handler, { allowedRoles: ["RECRUITER"] });
+export const GET = withAuth(handler, { allowedRoles: ["RECRUITER"] });

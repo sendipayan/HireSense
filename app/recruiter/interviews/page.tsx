@@ -27,6 +27,13 @@ interface Job {
     title: string;
 }
 
+interface Stats {
+    upcoming: number;
+    completed: number;
+    rejected: number;
+    today: number;
+}
+
 interface ApplicationList {
     CId: string;
     Cname: string;
@@ -58,6 +65,12 @@ export default function RecruiterInterviewsPage() {
     const [thirdCursor, setThirdCursor] = useState<Cursor | null>(null)
     const [thirdHasMore, setThirdHasMore] = useState(false)
     const [interviewLoading, setInterviewLoading] = useState(false)
+    const [stat, setStat] = useState<Stats>({
+        upcoming: 0,
+        completed: 0,
+        rejected: 0,
+        today: 0,
+    })
     // Filter states
     const [searchQuery, setSearchQuery] = useState("")
     const [statusFilter, setStatusFilter] = useState("all")
@@ -125,6 +138,16 @@ export default function RecruiterInterviewsPage() {
 
             } catch (err) {
                 console.log("Error fetching waitiing list: ", err)
+            }
+
+            try {
+                const res = await axios.get("/api/recruiter/stats/interview", { withCredentials: true })
+                console.log(res.data)
+                if (res.status === 200) {
+                    setStat(res.data)
+                }
+            } catch (err) {
+                console.log("Error fetching stats: ", err)
             }
 
             try {
@@ -345,12 +368,12 @@ export default function RecruiterInterviewsPage() {
     const stats = [
         {
             title: "Upcoming",
-            value: interviews.filter((i) => i.status === "CONFIRMED" || i.status === "SCHEDULED").length,
+            value: stat.upcoming,
             icon: Calendar,
         },
-        { title: "Today", value: 1, icon: Clock, description: "Oct 24, 2025" },
-        { title: "Completed", value: interviews.filter((i) => i.status === "COMPLETED").length, icon: CheckCircle2 },
-        { title: "Canceled", value: interviews.filter((i) => i.status === "CANCELLED").length, icon: XCircle },
+        { title: "Today", value: stat.today, icon: Clock, description: `${new Date().toLocaleDateString("en-IN")}` },
+        { title: "Completed", value: stat.completed, icon: CheckCircle2 },
+        { title: "Canceled", value: stat.rejected, icon: XCircle },
     ]
 
     const handleSchedule = (values: any) => {

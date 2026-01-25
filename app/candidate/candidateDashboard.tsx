@@ -29,6 +29,11 @@ import { Inbox, Calendar } from "lucide-react"
 import { InterviewStatusBadge } from "@/components/interview/interview-status-badge"
 import { useCandidateInterviewStore } from "@/store/useCandidateInterviewStore"
 
+interface Stats {
+    applications: number;
+    jobs: number;
+    resumeScore: number;
+}
 
 
 export default function CandidateClientDashboardPage() {
@@ -37,6 +42,11 @@ export default function CandidateClientDashboardPage() {
     const { jobs, setJobs } = useJobStore()
     const { applications, setApplications } = useApplicationsStore()
     const { interviews, setInterviews } = useCandidateInterviewStore()
+    const [stat, setStat] = useState<Stats>({
+        applications: 0,
+        jobs: 0,
+        resumeScore: 0
+    })
 
     useEffect(() => {
         const fetch = async () => {
@@ -46,12 +56,19 @@ export default function CandidateClientDashboardPage() {
             const res = await axios.post("/api/candidate/getjob", payload2)
             const res1 = await axios.post("/api/candidate/get_applications", payload1, { withCredentials: true })
             const res2 = await axios.get("/api/candidate/get_interviews", { withCredentials: true })
+            const res3 = await axios.get("/api/candidate/stats/dashboard", { withCredentials: true })
             const data2 = await res2.data
             setInterviews(data2.interviews)
             const data = await res.data
             const data1 = await res1.data
+            const data3 = await res3.data
             setApplications(data1.applications)
             setJobs(data.job)
+            setStat({
+                applications: data3.applications,
+                jobs: data3.jobs,
+                resumeScore: data3.resumeScore
+            })
             setInitialLoad(false);
         }
 
@@ -65,10 +82,10 @@ export default function CandidateClientDashboardPage() {
 
 
     const stats = [
-        { title: "Applications", value: `${applications?.length}`, icon: Briefcase, description: "Based on your profile" },
-        { title: "Job Matches", value: `${jobs?.length}`, icon: Target, description: "Based on your profile" },
+        { title: "Applications", value: `${stat.applications}`, icon: Briefcase, description: "Based on your profile" },
+        { title: "Job Matches", value: `${stat.jobs}`, icon: Target, description: "Based on your profile" },
         { title: "Profile Views", value: 89, icon: TrendingUp, trend: { value: 15, positive: true } },
-        { title: "Resume Score", value: "85%", icon: FileText, description: "Good standing" },
+        { title: "Resume Score", value: `${stat.resumeScore}%`, icon: FileText, description: "Good standing" },
     ]
 
     // Get status badge variant

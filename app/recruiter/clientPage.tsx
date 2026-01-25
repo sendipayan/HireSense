@@ -20,7 +20,12 @@ import { useAuthStore } from "@/store/authStore"
 import { InterviewStatusBadge } from "@/components/interview/interview-status-badge"
 import { useInterviewStore } from "@/store/useInterviewStore"
 
-
+interface stats {
+    jobs: number;
+    applications: number;
+    interviews: number;
+    scheduled: number;
+}
 
 
 export default function RecruiterDashboardPage() {
@@ -31,6 +36,12 @@ export default function RecruiterDashboardPage() {
     const { RecuiterProfile } = useRecruiterStore()
     const { jobs, setJobs } = useJobStore()
     const { user } = useAuthStore()
+    const [stat, setStat] = useState<stats>({
+        jobs: 0,
+        applications: 0,
+        interviews: 0,
+        scheduled: 0,
+    })
     const { interviews, setInterviews } = useInterviewStore()
     const { applications, setApplications } = useRecruiterApplicationsStore()
 
@@ -61,9 +72,18 @@ export default function RecruiterDashboardPage() {
             const res1 = await axios.get("/api/recruiter/get_applications")
             const data1 = await res1.data
             setApplications(data1.applications)
-            const res2 = await axios.post("/api/recruiter/get_interview", { withCredentials: true })
+            const res2 = await axios.get("/api/recruiter/get_interview/scheduled", { withCredentials: true })
             const data2 = await res2.data
             setInterviews(data2.interviews)
+            const res3 = await axios.get("/api/recruiter/stats/dashboard")
+            const data3 = await res3.data
+            setStat({
+                jobs: data3.jobs,
+                applications: data3.applications,
+                interviews: data3.interviews,
+                scheduled: data3.scheduled,
+            })
+            console.log(data3)
 
             setInitialLoad(false);
         }
@@ -73,15 +93,15 @@ export default function RecruiterDashboardPage() {
 
 
     const stats = [
-        { title: "Active Jobs", value: `${jobs?.length}`, icon: Briefcase, description: "Currently hiring" },
+        { title: "Active Jobs", value: `${stat.jobs}`, icon: Briefcase, description: "Currently hiring" },
         {
             title: "Total Candidates",
-            value: `${applications?.length + interviews?.length}`,
+            value: `${stat.applications}`,
             icon: Users,
-            trend: { value: interviews?.length, positive: true },
+            description: "Total candidates applied"
         },
-        { title: "Avg. Match Score", value: "87%", icon: Target, description: "AI matching accuracy" },
-        { title: "Time to Hire", value: "18 days", icon: TrendingUp, trend: { value: 25, positive: true } },
+        { title: "Avg. Match Score", value: `${stat.interviews}%`, icon: Target, description: "AI matching accuracy" },
+        { title: "Scheduled Interviews", value: `${stat.scheduled}`, icon: Clock },
     ]
 
     // Mock active jobs with stats
@@ -271,7 +291,7 @@ export default function RecruiterDashboardPage() {
                         </div>
                         {!initialLoad ? <div className="rounded-xl border border-border bg-card overflow-hidden">
                             {interviews.length > 0 && <div className="divide-y divide-border">
-                                {interviews?.slice(0, 2).map((interview, i) => (
+                                {interviews?.filter((interview) => interview.status === "SCHEDULED")?.slice(0, 2)?.map((interview, i) => (
                                     <div key={i} className="flex items-center justify-between p-4 hover:bg-muted/50 transition-colors">
                                         <div className="flex items-center gap-4">
                                             <Avatar className="h-10 w-10 border border-border/50">
