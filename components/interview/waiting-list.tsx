@@ -44,6 +44,8 @@ export function WaitingList({ onScheduleBatch, response, setApplicationsList, se
     const [selectedIds, setSelectedIds] = useState<string[]>([])
     const [job, setJob] = useState<ApplicationJob[]>([])
     const { applications, setApplications } = useRecruiterApplicationsStore()
+    const [filter, setFilter] = useState("")
+    const [search, setSearch] = useState("")
     const [selectApplications, setSelectApplications] = useState<string[]>([])
     const [applicationList, setApplicationList] = useState<ApplicationList[]>([])
     const observerRef = useRef<IntersectionObserver | null>(null);
@@ -58,11 +60,16 @@ export function WaitingList({ onScheduleBatch, response, setApplicationsList, se
     const fetchMore = async () => {
         if (loadingRef.current || !hasMore || !cursor) return;
 
+        const payload = {
+            search: search,
+            filter: filter,
+            cursor: cursor
+        }
+
         try {
             loadingRef.current = true;
-            setLoading(true);
             console.log("fetching more");
-            const res = await axios.post("/api/recruiter/next_waitlist", { cursor }, { withCredentials: true })
+            const res = await axios.post("/api/recruiter/get_waitlist", payload, { withCredentials: true })
             console.log(res.data)
             setApplications([...applications, ...res.data.applications])
             setPage({ cursor: res.data.cursor, hasMore: res.data.hasMore })
@@ -70,7 +77,6 @@ export function WaitingList({ onScheduleBatch, response, setApplicationsList, se
         } catch (error) {
             console.log(error)
         } finally {
-            setLoading(false);
             loadingRef.current = false;
         }
     };
@@ -112,16 +118,7 @@ export function WaitingList({ onScheduleBatch, response, setApplicationsList, se
         }
     }, [response])
 
-    const filteredCandidates = useMemo(() => {
-        console.log("aplication useMemo")
-        return applications.filter((c) => {
-            const matchesSearch =
-                c.candidate.user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                c.job.title.toLowerCase().includes(searchQuery.toLowerCase())
-            // In this mock, we'll just show all candidates as "waiting" if they aren't in the interview list
-            return matchesSearch
-        })
-    }, [searchQuery, applications, setApplications])
+
 
     const toggleSelect = (id: string, Aid: string) => {
         const app = applications.find(a => a.id === Aid);
@@ -179,7 +176,7 @@ export function WaitingList({ onScheduleBatch, response, setApplicationsList, se
     };
 
 
-    const allSelected = filteredCandidates.length > 0 && selectedIds.length === filteredCandidates.length
+    const allSelected = applications.length > 0 && selectedIds.length === applications.length
 
     const selectAll = () => {
         if (allSelected) {
@@ -187,20 +184,20 @@ export function WaitingList({ onScheduleBatch, response, setApplicationsList, se
             setSelectApplications([])
             setApplicationList([])
         } else {
-            const select = Array.from(new Set(filteredCandidates.map((c) => c.candidate.id)))
+            const select = Array.from(new Set(applications.map((c) => c.candidate.id)))
             const application = select.map((id) => {
                 return {
                     CId: id,
-                    Cname: filteredCandidates.find((c) => c.candidate.id === id)?.candidate.user.name || "",
-                    resumeMimeType: filteredCandidates.find((c) => c.candidate.id === id)?.resume.resumeMimeType || "",
-                    resumeUrl: filteredCandidates.find((c) => c.candidate.id === id)?.resume.resumeUrl || "",
-                    JId: filteredCandidates.filter((c) => c.candidate.id === id)?.map((c) => c.job.id),
-                    Jname: filteredCandidates.filter((c) => c.candidate.id === id)?.map((c) => c.job.title)
+                    Cname: applications.find((c) => c.candidate.id === id)?.candidate.user.name || "",
+                    resumeMimeType: applications.find((c) => c.candidate.id === id)?.resume.resumeMimeType || "",
+                    resumeUrl: applications.find((c) => c.candidate.id === id)?.resume.resumeUrl || "",
+                    JId: applications.filter((c) => c.candidate.id === id)?.map((c) => c.job.id),
+                    Jname: applications.filter((c) => c.candidate.id === id)?.map((c) => c.job.title)
                 }
             })
             setApplicationList(application)
-            setSelectedIds(filteredCandidates.map((c) => c.candidate.id))
-            setSelectApplications(filteredCandidates.map((c) => c.id))
+            setSelectedIds(applications.map((c) => c.candidate.id))
+            setSelectApplications(applications.map((c) => c.id))
         }
     }
 
@@ -227,6 +224,82 @@ export function WaitingList({ onScheduleBatch, response, setApplicationsList, se
         }
     }
 
+    const prevSearchQueryRef = useRef("")
+
+    useEffect(() => {
+        const currentTrimmed = searchQuery.trim()
+        const prevTrimmed = prevSearchQueryRef.current.trim()
+
+        if (currentTrimmed === prevTrimmed) {
+            prevSearchQueryRef.current = searchQuery
+            return
+        }
+
+        const timeoutId = setTimeout(async () => {
+            console.log("Search:", currentTrimmed);
+            setSearch(currentTrimmed)
+            prevSearchQueryRef.current = searchQuery;
+            const payload = { filter, search: currentTrimmed, cursor: null }
+            console.log(payload)
+            try {
+                setLoading(true)
+                const res = await axios.post("/api/recruiter/get_waitlist", payload, { withCredentials: true })
+                console.log(res.data)
+                if (res.status === 200) {
+                    setApplications(res.data.applications)
+                    setPage({ cursor: res.data.cursor, hasMore: res.data.hasMore })
+                }
+            } catch (err) {
+                console.log(err)
+            } finally {
+                setLoading(false)
+            }
+
+
+        }, 500);
+
+        return () => clearTimeout(timeoutId);
+    }, [searchQuery]);
+
+    useEffect(() => {
+
+        if (jobFilter === "all") {
+            setFilter("")
+        }
+        else {
+            setFilter(jobFilter)
+        }
+    }, [jobFilter])
+
+    useEffect(() => {
+        const payload = {
+            search: search,
+            filter: filter,
+            cursor: null
+        }
+
+        const fetch = async () => {
+            try {
+                setLoading(true)
+                const res = await axios.post("/api/recruiter/get_waitlist", payload, { withCredentials: true })
+                console.log(res.data)
+                if (res.status === 200) {
+                    setApplications(res.data.applications)
+                    setPage({ cursor: res.data.cursor, hasMore: res.data.hasMore })
+                }
+            } catch (err) {
+                console.log(err)
+            } finally {
+                setLoading(false)
+            }
+        }
+
+        fetch()
+
+        console.log(payload)
+    }, [filter])
+
+
     return (
         <Card className="border-border/40 shadow-sm overflow-hidden">
             <CardHeader className="bg-muted/30 pb-4">
@@ -238,7 +311,7 @@ export function WaitingList({ onScheduleBatch, response, setApplicationsList, se
                                 variant="secondary"
                                 className="rounded-full h-5 px-1.5 text-[10px] font-medium bg-primary/10 text-primary border-primary/20"
                             >
-                                {filteredCandidates.length}
+                                {applications.length}
                             </Badge>
                         </CardTitle>
                         <CardDescription>Qualified candidates waiting to be scheduled for interviews.</CardDescription>
@@ -278,7 +351,7 @@ export function WaitingList({ onScheduleBatch, response, setApplicationsList, se
                             onChange={(e) => setSearchQuery(e.target.value)}
                         />
                     </div>
-                    <div className="flex items-center gap-3">
+                    <div className="flex flex-col lg:flex-row items-center gap-3">
                         <Select value={jobFilter} onValueChange={setJobFilter}>
                             <SelectTrigger className="w-full md:w-[200px] bg-background h-10 overflow-hidden">
                                 <div className="flex items-center gap-2">
@@ -288,7 +361,7 @@ export function WaitingList({ onScheduleBatch, response, setApplicationsList, se
                             </SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="all">All Jobs</SelectItem>
-                                {job.map((job) => (
+                                {job?.map((job) => (
                                     <SelectItem key={job.id} value={job.id}>
                                         {job.title}
                                     </SelectItem>
@@ -309,9 +382,9 @@ export function WaitingList({ onScheduleBatch, response, setApplicationsList, se
             </CardHeader>
 
             <CardContent className="p-0">
-                <div className="divide-y divide-border/40">
-                    {filteredCandidates.length > 0 ? (
-                        filteredCandidates.map((candidate) => (
+                {!loading ? <div className="divide-y divide-border/40">
+                    {applications.length > 0 ? (
+                        applications.map((candidate) => (
                             <div
                                 key={candidate.id}
                                 className={`flex items-center gap-4 p-4 transition-colors hover:bg-muted/20 ${selectApplications.includes(candidate.id) ? "bg-primary/5" : ""}`}
@@ -367,7 +440,15 @@ export function WaitingList({ onScheduleBatch, response, setApplicationsList, se
                     {hasMore && <div ref={setLoaderRef} className="w-full flex justify-center items-center mt-5">
                         <Spinner className="w-10 h-10" />
                     </div>}
-                </div>
+                </div> :
+                    <div className="divide-y divide-border/40">
+                        {[1, 2].map((item) => (
+                            <div key={item} className="w-full h-15 bg-muted-foreground/50 border border-border rounded-lg animate-pulse">
+
+                            </div>
+                        ))}
+                    </div>
+                }
             </CardContent>
         </Card>
     )

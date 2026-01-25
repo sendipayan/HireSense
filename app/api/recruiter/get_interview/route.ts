@@ -22,11 +22,31 @@ async function handler(req: NextRequest, user: UserPayload) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const { status, job, startDate, endDate, search, cursor } = await req.json();
+
   const limit = 5;
 
   let interviews = await prisma.interview.findMany({
+    ...(cursor && {
+      cursor: {
+        createdAt: cursor.createdAt,
+        id: cursor.id,
+      },
+      skip: 1,
+    }),
     where: {
       recruiterId: recruiter.id,
+      ...(status && { status }),
+      ...(job && { application: { jobId: job } }),
+      ...(startDate && { startAt: { gte: startDate } }),
+      ...(endDate && { startAt: { lte: endDate } }),
+      ...(search && {
+        application: {
+          candidate: {
+            user: { name: { contains: search, mode: "insensitive" } },
+          },
+        },
+      }),
     },
     select: {
       id: true,
@@ -47,6 +67,7 @@ async function handler(req: NextRequest, user: UserPayload) {
               title: true,
             },
           },
+          jobId: true,
           resume: {
             select: {
               resumeMimeType: true,
@@ -90,4 +111,4 @@ async function handler(req: NextRequest, user: UserPayload) {
   );
 }
 
-export const GET = withAuth(handler, { allowedRoles: ["RECRUITER"] });
+export const POST = withAuth(handler, { allowedRoles: ["RECRUITER"] });

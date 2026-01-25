@@ -52,12 +52,17 @@ export default function RecruiterInterviewsPage() {
     const [secondHasMore, setSecondHasMore] = useState(false)
     const [thirdCursor, setThirdCursor] = useState<Cursor | null>(null)
     const [thirdHasMore, setThirdHasMore] = useState(false)
+    const [interviewLoading, setInterviewLoading] = useState(false)
     // Filter states
     const [searchQuery, setSearchQuery] = useState("")
     const [statusFilter, setStatusFilter] = useState("all")
     const [jobFilter, setJobFilter] = useState("all")
     const [dateRange, setDateRange] = useState<DateRange | undefined>()
-
+    const [status, setStatus] = useState("")
+    const [job, setJob] = useState("")
+    const [search, setSearch] = useState("")
+    const [startDate, setStartDate] = useState<Date | null>(null)
+    const [endDate, setEndDate] = useState<Date | null>(null)
     const observerRef = useRef<IntersectionObserver | null>(null);
     const loadingRef = useRef(false);
 
@@ -68,7 +73,8 @@ export default function RecruiterInterviewsPage() {
             loadingRef.current = true;
             setLoading(true);
             console.log("fetching more");
-            const res = await axios.post("/api/recruiter/next_interviews", { cursor }, { withCredentials: true })
+            const payload = { status, job, startDate, endDate, search, cursor }
+            const res = await axios.post("/api/recruiter/get_interview", payload, { withCredentials: true })
             setInterviews([...interviews, ...res.data.interviews])
             setThirdCursor(res.data.cursor)
             setThirdHasMore(res.data.hasMore)
@@ -104,7 +110,7 @@ export default function RecruiterInterviewsPage() {
             setIntialLoading(true)
 
             try {
-                const res = await axios.get("/api/recruiter/get_waitlist", { withCredentials: true })
+                const res = await axios.post("/api/recruiter/get_waitlist", { withCredentials: true })
                 console.log(res.data)
                 if (res.status === 200) {
                     setApplications(res.data.applications)
@@ -117,7 +123,7 @@ export default function RecruiterInterviewsPage() {
             }
 
             try {
-                const res2 = await axios.get("/api/recruiter/get_interview", { withCredentials: true })
+                const res2 = await axios.post("/api/recruiter/get_interview", { withCredentials: true })
                 console.log(res2.data)
                 if (res2.status === 200) {
                     setInterviews(res2.data.interviews)
@@ -236,30 +242,100 @@ export default function RecruiterInterviewsPage() {
         }
     };
 
+    const prevSearchQueryRef = useRef("")
 
+    useEffect(() => {
+        const currentTrimmed = searchQuery.trim()
+        const prevTrimmed = prevSearchQueryRef.current.trim()
 
+        if (currentTrimmed === prevTrimmed) {
+            prevSearchQueryRef.current = searchQuery
+            return
+        }
 
-
-    const filteredInterviews = useMemo(() => {
-        if (interviews.length === 0) return []
-        return interviews.filter((int) => {
-            const matchesSearch = int.application.candidate.user.name.toLowerCase().includes(searchQuery.toLowerCase())
-            const matchesStatus = statusFilter === "all" || int.status.toLowerCase() === statusFilter.toLowerCase()
-            const matchesJob = jobFilter === "all" || jobs.find((j) => j.title === int.application.job.title)?.id === jobFilter
-
-            let matchesDate = true
-            if (dateRange?.from) {
-                const interviewDate = parseISO(new Date(int.startAt).toISOString())
-                if (dateRange.to) {
-                    matchesDate = isWithinInterval(interviewDate, { start: dateRange.from, end: dateRange.to })
-                } else {
-                    matchesDate = interviewDate.getTime() >= dateRange.from.getTime()
+        const timeoutId = setTimeout(async () => {
+            console.log("Search:", currentTrimmed);
+            setSearch(currentTrimmed)
+            prevSearchQueryRef.current = searchQuery;
+            const payload = { status, job, startDate, endDate, search: currentTrimmed, cursor: null }
+            console.log(payload)
+            try {
+                setInterviewLoading(true)
+                const res2 = await axios.post("/api/recruiter/get_interview", payload, { withCredentials: true })
+                console.log(res2.data)
+                if (res2.status === 200) {
+                    setInterviews(res2.data.interviews)
+                    setThirdCursor(res2.data.cursor)
+                    setThirdHasMore(res2.data.hasMore)
                 }
+
+            } catch (err) {
+                console.log("Error fetching interviews: ", err)
+            } finally {
+                setInterviewLoading(false)
             }
 
-            return matchesSearch && matchesStatus && matchesJob && matchesDate
-        })
-    }, [interviews, searchQuery, statusFilter, jobFilter, dateRange])
+
+        }, 500);
+
+        return () => clearTimeout(timeoutId);
+    }, [searchQuery]);
+
+
+
+    useEffect(() => {
+        if (intialLoading) {
+            return
+        }
+        if (statusFilter === "all")
+            setStatus("")
+        else
+            setStatus(statusFilter)
+
+        if (jobFilter === "all")
+            setJob("")
+        else
+            setJob(jobFilter)
+
+
+        setStartDate(dateRange?.from || null)
+        setEndDate(dateRange?.to || null)
+
+    }, [statusFilter, jobFilter, dateRange])
+
+    useEffect(() => {
+        const payload = {
+            status,
+            job,
+            startDate,
+            endDate,
+            search,
+            cursor: null
+        }
+
+        console.log(payload)
+        const fetch = async () => {
+            try {
+                setInterviewLoading(true)
+                const res2 = await axios.post("/api/recruiter/get_interview", payload, { withCredentials: true })
+                console.log(res2.data)
+                if (res2.status === 200) {
+                    setInterviews(res2.data.interviews)
+                    setThirdCursor(res2.data.cursor)
+                    setThirdHasMore(res2.data.hasMore)
+                }
+
+            } catch (err) {
+                console.log("Error fetching interviews: ", err)
+            } finally {
+                setInterviewLoading(false)
+            }
+        }
+        fetch()
+    }, [status, job, startDate, endDate])
+
+
+
 
     const stats = [
         {
@@ -351,7 +427,7 @@ export default function RecruiterInterviewsPage() {
                             <div className="flex items-center justify-between">
                                 <h2 className="text-2xl font-bold tracking-tight">Upcoming Interviews</h2>
                                 {!intialLoading && <Badge variant="outline" className="font-medium">
-                                    {filteredInterviews.length} Scheduled
+                                    {interviews?.length} Scheduled
                                 </Badge>}
                             </div>
                             {!intialLoading ? <InterviewFilters
@@ -369,6 +445,7 @@ export default function RecruiterInterviewsPage() {
                                     setStatusFilter("all")
                                     setJobFilter("all")
                                     setDateRange(undefined)
+                                    setTrigger(!trigger)
                                 }}
                             /> : <div className="w-full h-15 bg-muted-foreground/50 border border-border rounded-lg animate-pulse">
 
@@ -377,8 +454,8 @@ export default function RecruiterInterviewsPage() {
 
                         {/* Table */}
                         <div className="mt-6">
-                            {!intialLoading ? <><InterviewTable
-                                interviews={filteredInterviews.map((int) => {
+                            {(!intialLoading && !interviewLoading) ? <><InterviewTable
+                                interviews={interviews?.map((int) => {
                                     return {
                                         id: int.id,
                                         candidateName: int.application.candidate.user.name,

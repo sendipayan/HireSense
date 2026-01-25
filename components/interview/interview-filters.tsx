@@ -77,10 +77,10 @@ export function InterviewFilters({
                         </SelectTrigger>
                         <SelectContent>
                             <SelectItem value="all">All Status</SelectItem>
-                            <SelectItem value="scheduled">Scheduled</SelectItem>
-                            <SelectItem value="confirmed">Confirmed</SelectItem>
-                            <SelectItem value="completed">Completed</SelectItem>
-                            <SelectItem value="canceled">Canceled</SelectItem>
+                            <SelectItem value="SCHEDULED">Scheduled</SelectItem>
+                            <SelectItem value="CONFIRMED">Confirmed</SelectItem>
+                            <SelectItem value="COMPLETED">Completed</SelectItem>
+                            <SelectItem value="CANCELLED">Canceled</SelectItem>
                         </SelectContent>
                     </Select>
 

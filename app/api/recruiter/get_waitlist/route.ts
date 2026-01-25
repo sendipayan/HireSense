@@ -21,14 +21,36 @@ async function handler(req: NextRequest, user: UserPayload) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const { search, filter, cursor } = await req.json();
+
   const limit = 5;
 
   let applications = await prisma.application.findMany({
+    ...(cursor && {
+      cursor: {
+        createdAt: cursor.createdAt,
+        id: cursor.id,
+      },
+      skip: 1,
+    }),
     where: {
       job: {
         recruiterId: recruiter.id,
       },
       status: "WAITLIST",
+      ...(search && {
+        candidate: {
+          user: {
+            name: {
+              contains: search,
+              mode: "insensitive",
+            },
+          },
+        },
+      }),
+      ...(filter && {
+        jobId: filter,
+      }),
     },
     select: {
       id: true,
@@ -94,4 +116,4 @@ async function handler(req: NextRequest, user: UserPayload) {
   );
 }
 
-export const GET = withAuth(handler, { allowedRoles: ["RECRUITER"] });
+export const POST = withAuth(handler, { allowedRoles: ["RECRUITER"] });
