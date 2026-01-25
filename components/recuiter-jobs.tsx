@@ -53,7 +53,7 @@ export function RecruiterJobsClient() {
             setLoading(true);
             console.log("fetching more");
             const payload = { status: filter, search: search, cursor: cursor }
-            const res = await axios.post("/api/recruiter/next_jobs", payload,
+            const res = await axios.post("/api/recruiter/getjob", payload,
                 { withCredentials: true })
 
             const data = await res.data
