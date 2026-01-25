@@ -17,7 +17,7 @@ import {
 } from "lucide-react"
 import { usePathname } from "next/navigation"
 import Link from "next/link"
-import { useEffect } from "react"
+import { useState } from "react"
 
 import {
     Sidebar,
@@ -46,6 +46,7 @@ import axios from "axios"
 import { useRecruiterApplicationsStore } from "@/store/recruiterApplication"
 import { useApplicationsStore } from "@/store/candidateApplication"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Spinner } from "./ui/spinner"
 
 // Define the navigation items for each role
 const candidateNav = [
@@ -123,6 +124,7 @@ export function AppSidebar({ type, ...props }: AppSidebarProps) {
     const clearApplications = useRecruiterApplicationsStore((s) => s.clear)
     const clearCandidateApplications = useApplicationsStore((s) => s.clear)
     const { user, setUser } = useAuthStore()
+    const [loading, setLoading] = useState(false)
 
     // Close sidebar on route change
 
@@ -138,6 +140,7 @@ export function AppSidebar({ type, ...props }: AppSidebarProps) {
         }
 
         try {
+            setLoading(true)
             // 1. Get Signature
             const timestamp = Math.round(new Date().getTime() / 1000);
             const signRes = await axios.post("/api/cloudinary/sign", {
@@ -170,6 +173,8 @@ export function AppSidebar({ type, ...props }: AppSidebarProps) {
 
         } catch (error) {
             console.error("Error uploading image:", error)
+        } finally {
+            setLoading(false)
         }
     }
 
@@ -203,16 +208,16 @@ export function AppSidebar({ type, ...props }: AppSidebarProps) {
                                 <div className="absolute bottom-1 right-1 w-5 h-5 bg-green-500 border-4 border-background rounded-full shadow-sm z-30 pointer-events-none" />
                             </div>
                         </DialogTrigger>
-                        <DialogContent aria-describedby="profile-picture" className="sm:max-w-md">
+                        <DialogContent aria-describedby="profile-picture" className="sm:max-w-md lg:max-w-2xl">
                             <DialogHeader>
                                 <DialogTitle className="text-center">Profile Picture</DialogTitle>
                             </DialogHeader>
                             <div className="flex flex-col items-center justify-center lg:p-6 gap-6">
-                                <div className="relative w-64 h-64 rounded-full border-4 border-primary/20 shadow-2xl">
+                                <div className="relative w-64 h-64 lg:w-96 lg:h-96 rounded-full border-4 border-primary/20 shadow-2xl">
                                     <Avatar className="w-full h-full">
                                         <AvatarImage src={user?.profilePic} alt={user?.name || "User"} className="object-cover" />
-                                        <AvatarFallback className="text-6xl font-bold bg-muted text-primary/80">
-                                            {user?.name ? user.name.charAt(0).toUpperCase() : <UserCircle className="w-32 h-32" />}
+                                        <AvatarFallback className="text-6xl lg:text-8xl font-bold bg-muted text-primary/80">
+                                            {user?.name ? user.name.charAt(0).toUpperCase() : <UserCircle className="w-32 h-32 lg:w-48 lg:h-48" />}
                                         </AvatarFallback>
                                     </Avatar>
 
@@ -220,11 +225,12 @@ export function AppSidebar({ type, ...props }: AppSidebarProps) {
                                         htmlFor="popup-profile-upload"
                                         className="absolute bottom-4 right-4 p-3 bg-primary text-primary-foreground rounded-full shadow-lg cursor-pointer hover:bg-primary/90 transition-colors ring-4 ring-background"
                                     >
-                                        <Camera className="w-6 h-6" />
+                                        {loading ? <Spinner className="h-5 w-5" /> : <Camera className="w-6 h-6" />}
                                         <input
                                             type="file"
                                             id="popup-profile-upload"
                                             className="hidden"
+                                            disabled={loading}
                                             accept="image/jpeg,image/png,image/webp,image/avif"
                                             onChange={handleImageUpload}
                                         />
