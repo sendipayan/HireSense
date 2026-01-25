@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -16,17 +10,12 @@ model User {
   id         String     @id @default(uuid())
   name       String
   email      String     @unique
-  password   String
-  profilePic String?
   role       Role       @default(CANDIDATE)
   createdAt  DateTime   @default(now())
-  recruiter  Recruiter?
+  password   String
+  profilePic String?
   candidate  Candidate?
-}
-
-enum Role {
-  CANDIDATE
-  RECRUITER
+  recruiter  Recruiter?
 }
 
 model EmailOtp {
@@ -41,7 +30,6 @@ model EmailOtp {
 
 model Recruiter {
   id              String             @id @default(uuid())
-  user            User               @relation(fields: [userId], references: [id])
   userId          String             @unique
   jobTitle        String?
   phoneNumber     String?
@@ -51,30 +39,17 @@ model Recruiter {
   industry        String?
   companySize     CompanySize?
   hiringForRoles  Json?
-  isVerified      verificationStatus @default(PENDING)
-  failedReasons   Json?
-  postJob         PostJob[]
-  interviews      Interview[]
   createdAt       DateTime           @default(now())
   updatedAt       DateTime           @updatedAt
-}
-
-enum CompanySize {
-  SMALL
-  MEDIUM
-  LARGE
-  ENTERPRISE
-}
-
-enum verificationStatus {
-  PENDING
-  APPROVED
-  REJECTED
+  failedReasons   Json?
+  isVerified      verificationStatus @default(PENDING)
+  interviews      Interview[]
+  postJob         PostJob[]
+  user            User               @relation(fields: [userId], references: [id])
 }
 
 model Candidate {
   id                String           @id @default(uuid())
-  user              User             @relation(fields: [userId], references: [id])
   userId            String           @unique
   phoneNumber       String?
   status            CandidateStatus?
@@ -90,62 +65,34 @@ model Candidate {
   portfolioUrl      String?
   jobTypePreference JobType?
   openToWork        Boolean          @default(true)
-  isVerified        Boolean          @default(false)
   availability      Availability?
-  applications      Application[]
-  resumes           Resume[]
   createdAt         DateTime         @default(now())
   updatedAt         DateTime         @updatedAt
+  isVerified        Boolean          @default(false)
+  applications      Application[]
+  user              User             @relation(fields: [userId], references: [id])
+  resumes           Resume[]
 }
 
 model Resume {
   id             String        @id @default(uuid())
-  candidate      Candidate     @relation(fields: [candidateId], references: [id])
   candidateId    String
-  applications   Application[]
   resumeUrl      String
   resumeMimeType String
   resumeName     String
   resumeSize     Int
+  resumeScore    Int           @default(0)
   isActive       Boolean       @default(false)
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
+  applications   Application[]
+  candidate      Candidate     @relation(fields: [candidateId], references: [id])
 
   @@index([createdAt, id])
 }
 
-enum CandidateStatus {
-  NONE
-  STUDENT
-  GRADUATE
-  WORKING_PROFESSIONAL
-}
-
-enum ExperienceLevel {
-  NONE
-  BEGINNER
-  INTERMEDIATE
-  ADVANCED
-}
-
-enum JobType {
-  NONE
-  INTERNSHIP
-  BOTH
-  FULL_TIME
-}
-
-enum Availability {
-  NONE
-  IMMEDIATE
-  ONE_TO_THREE_MONTHS
-  THREE_TO_SIX_MONTHS
-  LATER
-}
-
 model PostJob {
   id                 String             @id @default(uuid())
-  recruiter          Recruiter          @relation(fields: [recruiterId], references: [id])
   recruiterId        String
   title              String
   description        String
@@ -155,15 +102,100 @@ model PostJob {
   department         Department
   jobType            JobType
   experienceRequired ExperienceRequired
-  requirements       Json
-  optional           Json?
   benifits           Json?
-  applications       Application[]
-  status             JobStatus          @default(ACTIVE)
   createdAt          DateTime           @default(now())
   updatedAt          DateTime           @updatedAt
+  requirements       Json
+  optional           Json?
+  status             JobStatus          @default(ACTIVE)
+  applications       Application[]
+  recruiter          Recruiter          @relation(fields: [recruiterId], references: [id])
 
   @@index([createdAt, id])
+}
+
+model Application {
+  id          String            @id @default(uuid())
+  candidateId String
+  jobId       String
+  status      ApplicationStatus @default(PENDING)
+  score       Int               @default(0)
+  createdAt   DateTime          @default(now())
+  resumeId    String
+  candidate   Candidate         @relation(fields: [candidateId], references: [id])
+  job         PostJob           @relation(fields: [jobId], references: [id])
+  resume      Resume            @relation(fields: [resumeId], references: [id])
+  interview   Interview?
+
+  @@unique([jobId, candidateId])
+  @@index([createdAt, id])
+}
+
+model Interview {
+  id            String          @id @default(uuid())
+  applicationId String          @unique
+  recruiterId   String
+  type          InterviewType
+  status        InterviewStatus @default(SCHEDULED)
+  duration      Int
+  location      String?
+  meetingLink   String?
+  notes         String?
+  phno          String?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  startAt       DateTime
+  application   Application     @relation(fields: [applicationId], references: [id])
+  recruiter     Recruiter       @relation(fields: [recruiterId], references: [id])
+
+  @@index([createdAt, id])
+}
+
+enum Role {
+  CANDIDATE
+  RECRUITER
+}
+
+enum CompanySize {
+  SMALL
+  MEDIUM
+  LARGE
+  ENTERPRISE
+}
+
+enum verificationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum CandidateStatus {
+  STUDENT
+  GRADUATE
+  WORKING_PROFESSIONAL
+  NONE
+}
+
+enum ExperienceLevel {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+  NONE
+}
+
+enum JobType {
+  INTERNSHIP
+  BOTH
+  FULL_TIME
+  NONE
+}
+
+enum Availability {
+  IMMEDIATE
+  ONE_TO_THREE_MONTHS
+  THREE_TO_SIX_MONTHS
+  LATER
+  NONE
 }
 
 enum JobStatus {
@@ -172,7 +204,6 @@ enum JobStatus {
 }
 
 enum Department {
-  NONE
   ENGINEERING
   DESIGN
   MARKETING
@@ -181,60 +212,24 @@ enum Department {
   HR
   FINANCE
   OPERATIONS
+  NONE
 }
 
 enum ExperienceRequired {
-  NONE
   ENTRY_LEVEL
   MID_LEVEL
   SENIOR_LEVEL
   LEAD
   EXECUTIVE
-}
-
-model Application {
-  id          String            @id @default(uuid())
-  candidate   Candidate         @relation(fields: [candidateId], references: [id])
-  candidateId String
-  job         PostJob           @relation(fields: [jobId], references: [id])
-  jobId       String
-  status      ApplicationStatus @default(PENDING)
-  score       Int               @default(0)
-  resume      Resume            @relation(fields: [resumeId], references: [id])
-  resumeId    String
-  createdAt   DateTime          @default(now())
-  interview   Interview?
-
-  @@unique([jobId, candidateId])
-  @@index([createdAt, id])
+  NONE
 }
 
 enum ApplicationStatus {
   PENDING
-  WAITLIST
   ACCEPTED
-  SCHEDULED
   REJECTED
-}
-
-model Interview {
-  id            String          @id @default(uuid())
-  application   Application     @relation(fields: [applicationId], references: [id])
-  applicationId String          @unique
-  recruiter     Recruiter       @relation(fields: [recruiterId], references: [id])
-  recruiterId   String
-  type          InterviewType
-  status        InterviewStatus @default(SCHEDULED)
-  startAt       DateTime
-  duration      Int
-  location      String?
-  meetingLink   String?
-  notes         String?
-  phno          String?
-  createdAt     DateTime        @default(now())
-  updatedAt     DateTime        @updatedAt
-
-  @@index([createdAt, id])
+  WAITLIST
+  SCHEDULED
 }
 
 enum InterviewType {
