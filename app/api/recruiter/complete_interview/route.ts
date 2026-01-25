@@ -54,10 +54,34 @@ async function handler(req: NextRequest, user: UserPayload) {
     );
   }
 
-  await prisma.interview.update({
-    where: { id: interviewId },
-    data: { status: status },
-  });
+  if (status === "COMPLETED") {
+    await prisma.interview.update({
+      where: { id: interviewId },
+      data: { status: "COMPLETED" },
+    });
+  } else if (status === "CANCELLED") {
+    await prisma.$transaction([
+      prisma.interview.update({
+        where: { id: interviewId },
+        data: { status: "CANCELLED" },
+      }),
+      prisma.application.update({
+        where: { id: interview.applicationId },
+        data: { status: "REJECTED" },
+      }),
+    ]);
+  } else if (status === "CONFIRMED") {
+    await prisma.$transaction([
+      prisma.interview.update({
+        where: { id: interviewId },
+        data: { status: "CONFIRMED" },
+      }),
+      prisma.application.update({
+        where: { id: interview.applicationId },
+        data: { status: "ACCEPTED" },
+      }),
+    ]);
+  }
 
   return NextResponse.json(
     { message: "Interview completed successfully" },

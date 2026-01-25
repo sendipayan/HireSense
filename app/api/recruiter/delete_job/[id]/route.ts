@@ -22,6 +22,19 @@ async function handler(
     return NextResponse.json({ error: "Invalid job ID" }, { status: 400 });
   }
 
+  const applications = await prisma.application.findMany({
+    where: {
+      jobId: id,
+    },
+  });
+
+  if (applications.length > 0) {
+    return NextResponse.json(
+      { error: "Cannot delete job with applications" },
+      { status: 400 },
+    );
+  }
+
   const job = await prisma.postJob.delete({
     where: {
       id,
