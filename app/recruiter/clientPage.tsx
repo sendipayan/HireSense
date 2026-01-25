@@ -51,13 +51,17 @@ export default function RecruiterDashboardPage() {
 
     useEffect(() => {
         const fetch = async () => {
-            const res = await axios.get("/api/getjob")
+            const res = await axios.post("/api/recruiter/getjob", {
+                status: "ACTIVE",
+                search: "",
+                cursor: null,
+            })
             const data = await res.data
-            setJobs(data.job.job)
+            setJobs(data.job)
             const res1 = await axios.get("/api/recruiter/get_applications")
             const data1 = await res1.data
             setApplications(data1.applications)
-            const res2 = await axios.get("/api/recruiter/get_interview", { withCredentials: true })
+            const res2 = await axios.post("/api/recruiter/get_interview", { withCredentials: true })
             const data2 = await res2.data
             setInterviews(data2.interviews)
 
@@ -220,7 +224,7 @@ export default function RecruiterDashboardPage() {
                                     experience={candidate.candidate.experienceLevel}
                                     status={candidate.status}
                                     education={candidate.candidate.degree}
-                                    skills={candidate.candidate.primarySkills}
+                                    skills={[...candidate.candidate.primarySkills, ...candidate.candidate.secondarySkills]}
                                     resumeId={candidate.resume.id}
                                     resumeUrl={candidate.resume.resumeUrl}
                                     resumeMimeType={candidate.resume.resumeMimeType}
