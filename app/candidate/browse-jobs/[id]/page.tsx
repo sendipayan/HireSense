@@ -10,6 +10,7 @@ import { useParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import axios from "axios"
 import type { Job } from "@/store/jobStore"
+import { Breadcrumbs } from "@/components/breadcrumbs"
 
 
 export default function JobDetailsPage() {
@@ -48,6 +49,13 @@ export default function JobDetailsPage() {
     return (
         <main className="min-h-screen bg-background py-8 sm:py-12">
             <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
+                {/* Breadcrumbs */}
+                <Breadcrumbs items={[
+                    { label: "Candidate", href: "/candidate/dashboard" },
+                    { label: "Browse Jobs", href: "/candidate/browse-jobs" },
+                    { label: jobs?.title || "Job Details" }
+                ]} />
+
                 <Button
                     onClick={() => router.back()}
                     className="inline-flex items-center gap-2 text-sm text-muted-foreground bg-transparent hover:bg-transparent hover:text-primary transition-colors cursor-pointer mb-8"

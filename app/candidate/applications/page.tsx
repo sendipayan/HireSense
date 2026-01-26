@@ -12,6 +12,7 @@ import { useCursorStore } from "@/store/nextCursorStore"
 import { useApplicationsStore } from "@/store/candidateApplication"
 import axios from "axios"
 import { Spinner } from "@/components/ui/spinner"
+import { Breadcrumbs } from "@/components/breadcrumbs"
 
 export default function ApplicationsPage() {
     const [searchQuery, setSearchQuery] = useState("")
@@ -206,6 +207,9 @@ export default function ApplicationsPage() {
     return (
         <div className="min-h-screen bg-background">
             <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+                {/* Breadcrumbs */}
+                <Breadcrumbs items={[{ label: "Candidate", href: "/candidate/dashboard" }, { label: "Applications" }]} />
+
                 <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                         <Button
