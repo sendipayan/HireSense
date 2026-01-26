@@ -91,7 +91,7 @@ export default function LoginPage() {
         setIsLoggedIn(true)
         const path = data2.user.user.role.toLowerCase()
         console.log(path)
-        router.push(`/${path}/dashboard`)
+        window.location.href = `/${path}/dashboard`
 
       }
       setLoading(false)
@@ -124,7 +124,7 @@ export default function LoginPage() {
           setUser(data2.user.user)
           setIsLoggedIn(true)
           const path = data2.user.user.role.toLowerCase()
-          router.push(`/${path}/dashboard`)
+          window.location.href = `/${path}/dashboard`
 
         }
       } catch (error: any) {

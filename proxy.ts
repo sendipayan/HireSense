@@ -16,7 +16,7 @@ export default async function proxy(req: NextRequest) {
     if (pathname.startsWith("/login")) {
       if (payload) {
         return NextResponse.redirect(
-          new URL(`/${payload.role.toLowerCase()}/dashboard`, req.url)
+          new URL(`/${payload.role.toLowerCase()}/dashboard`, req.url),
         );
       }
     }
@@ -41,7 +41,7 @@ export default async function proxy(req: NextRequest) {
       payload.isVerified !== "APPROVED"
     ) {
       return NextResponse.redirect(
-        new URL("/recruiter/dashboard/profile", req.url)
+        new URL("/recruiter/dashboard/profile", req.url),
       );
     }
 

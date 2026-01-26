@@ -236,7 +236,7 @@ export default function ResumeUploadPage() {
                 {isComplete && (
                   <div className="mt-6 flex flex-col gap-3 sm:flex-row">
                     <Button asChild className="flex-1">
-                      <Link href={`/candidate/ai-feedback?resume=${resumeId}`}>
+                      <Link href={`/candidate/ai-feedback/${resumeId}`}>
                         <Sparkles className="mr-2 h-4 w-4" aria-hidden="true" />
                         Get AI Feedback
                       </Link>
@@ -254,7 +254,7 @@ export default function ResumeUploadPage() {
                   <article
                     key={file.id}
                     className="flex items-center gap-4 rounded-xl border border-border bg-card p-4 cursor-pointer hover:border-primary/50 hover:shadow-lg hover:shadow-primary/5"
-                    onClick={() => { router.push(`/candidate/ai-feedback?resume=${file.id}`) }}
+                    onClick={() => { router.push(`/candidate/ai-feedback/${file.id}`) }}
                   >
                     <FileText className="h-5 w-5 text-muted-foreground shrink-0" aria-hidden="true" />
                     <div className="flex-1 min-w-0">
