@@ -99,7 +99,7 @@ export function Navbar() {
                 await signOut({
                   redirect: false,
                 })
-                router.replace("/login")
+                window.location.href = "/login"
               }}
             />)}
         </div>
@@ -149,7 +149,7 @@ export function Navbar() {
                 <Link href={`/${user?.role.toLowerCase()}/dashboard`}>Dashboard</Link>
               </Button>}
               {isLoggedIn && <Button asChild className="w-full">
-                <Link href={`/${user?.role.toLowerCase()}/dashboard/profile`}>Profile</Link>
+                <Link href={`/${user?.role.toLowerCase()}/profile`}>Profile</Link>
               </Button>}
               {isLoggedIn && <Button asChild className="w-full bg-red-500" onClick={async () => {
                 const res = await axios.post("/api/auth/logout")
@@ -164,7 +164,7 @@ export function Navbar() {
                 await signOut({
                   redirect: false,
                 })
-                router.replace("/login")
+                window.location.href = "/login"
               }}>
                 <p >Logout</p>
               </Button>}

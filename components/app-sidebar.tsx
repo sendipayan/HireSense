@@ -57,13 +57,18 @@ const candidateNav = [
     },
     {
         title: "Profile",
-        url: "/candidate/dashboard/profile",
+        url: "/candidate/profile",
         icon: User,
     },
     {
         title: "Jobs",
         url: "/candidate/browse-jobs",
         icon: Briefcase,
+    },
+    {
+        title: "AI Feedback",
+        url: "/candidate/ai-feedback",
+        icon: Sparkles,
     },
     {
         title: "Resume",
@@ -90,7 +95,7 @@ const recruiterNav = [
     },
     {
         title: "Profile",
-        url: "/recruiter/dashboard/profile",
+        url: "/recruiter/profile",
         icon: User,
     },
     {
@@ -257,7 +262,8 @@ export function AppSidebar({ type, ...props }: AppSidebarProps) {
             <SidebarContent>
                 <SidebarMenu className="py-4 gap-1 px-2">
                     {navItems.map((item) => {
-                        const isActive = pathname === item.url
+                        const isActive = pathname.includes(item.url)
+                        const url = isActive ? pathname : item.url
                         return (
                             <SidebarMenuItem key={item.title}>
                                 <SidebarMenuButton
@@ -267,7 +273,7 @@ export function AppSidebar({ type, ...props }: AppSidebarProps) {
                                     size="lg"
                                     className="px-4 py-3 data-[active=true]:bg-primary/10 data-[active=true]:text-primary transition-all duration-200 hover:translate-x-1"
                                 >
-                                    <Link href={item.url}>
+                                    <Link href={url}>
                                         <item.icon className="w-5! h-5!" />
                                         <span className="text-base font-medium">{item.title}</span>
                                     </Link>
@@ -297,7 +303,7 @@ export function AppSidebar({ type, ...props }: AppSidebarProps) {
                                 await signOut({
                                     redirect: false,
                                 })
-                                router.replace("/login")
+                                window.location.href = "/login"
                             }}
                             tooltip="Logout"
                         >
