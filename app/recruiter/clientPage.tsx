@@ -9,7 +9,7 @@ import { StatCard } from "@/components/stat-card"
 import { CandidateCard } from "@/components/candidate-card"
 import { useRecruiterStore } from "@/store/RecuiterStore"
 import { useRouter } from "next/navigation";
-import { Users, Briefcase, Target, TrendingUp, Plus, ArrowRight, Eye, Clock, CheckCircle2, SearchX, Inbox } from "lucide-react"
+import { Users, Briefcase, Target, TrendingUp, Plus, ArrowRight, Eye, Clock, CheckCircle2, SearchX, Inbox, CircleAlert } from "lucide-react"
 import { useEffect, useState } from "react"
 import { useJobStore } from "@/store/jobStore"
 import axios from "axios"
@@ -290,7 +290,7 @@ export default function RecruiterDashboardPage() {
                             </Button>}
                         </div>
                         {!initialLoad ? <div className="rounded-xl border border-border bg-card overflow-hidden">
-                            {interviews.length > 0 && <div className="divide-y divide-border">
+                            {interviews.length > 0 ? <div className="divide-y divide-border">
                                 {interviews?.filter((interview) => interview.status === "SCHEDULED")?.slice(0, 2)?.map((interview, i) => (
                                     <div key={i} className="flex items-center justify-between p-4 hover:bg-muted/50 transition-colors">
                                         <div className="flex items-center gap-4">
@@ -321,7 +321,19 @@ export default function RecruiterDashboardPage() {
                                         </div>
                                     </div>
                                 ))}
-                            </div>}
+                            </div> : (
+                                <Card className="border-dashed bg-transparent py-4">
+                                    <CardContent className="flex flex-col items-center text-center">
+                                        <div className="h-16 w-16 rounded-full bg-muted/20 flex items-center justify-center mb-4">
+                                            <CircleAlert className="h-8 w-8 text-muted-foreground" />
+                                        </div>
+                                        <h3 className="text-xl font-semibold">No Upcoming Interviews</h3>
+                                        <p className="text-muted-foreground mt-2 max-w-sm">
+                                            Try scheduling an interview to get started.
+                                        </p>
+                                    </CardContent>
+                                </Card>
+                            )}
                         </div> : <div className="bg-muted-foreground/50 border border-border rounded-lg p-6 mb-8 animate-pulse h-25">
 
                         </div>}

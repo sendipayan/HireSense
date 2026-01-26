@@ -9,8 +9,12 @@ type UserPayload = {
 };
 
 async function handler(req: NextRequest, user: UserPayload) {
+  console.log(user);
   if (user.isVerified !== "APPROVED") {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json(
+      { jobs: 0, applications: 0, interviews: 0, scheduled: 0 },
+      { status: 200 },
+    );
   }
 
   const jobs = await prisma.postJob.count({

@@ -173,7 +173,7 @@ export default function CandidateClientDashboardPage() {
                             </div>
                         </Link>
                         <Link
-                            href="/ai-feedback"
+                            href="/candidate/ai-feedback"
                             className="group flex items-center gap-4 rounded-xl border border-border bg-card p-4 transition-all hover:border-primary/50 hover:shadow-lg"
                         >
                             <div className="rounded-lg bg-primary/10 p-3">

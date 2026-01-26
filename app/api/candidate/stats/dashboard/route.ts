@@ -23,7 +23,7 @@ async function handler(req: NextRequest, user: UserPayload) {
     },
   });
 
-  const resume = await prisma.resume.findFirst({
+  const present = await prisma.resume.findFirst({
     where: {
       candidate: {
         userId: user.userId,
@@ -35,10 +35,17 @@ async function handler(req: NextRequest, user: UserPayload) {
     },
   });
 
+  if (!present) {
+    return NextResponse.json(
+      { applications, jobs, resumeScore: 0 },
+      { status: 200 },
+    );
+  }
+
   return NextResponse.json(
-    { applications, jobs, resumeScore: resume?.resumeScore },
+    { applications, jobs, resumeScore: present?.resumeScore },
     { status: 200 },
   );
 }
 
-export const GET = withAuth(handler, { allowedRoles: ["RECRUITER"] });
+export const GET = withAuth(handler, { allowedRoles: ["CANDIDATE"] });

@@ -19,6 +19,20 @@ type UserPayload = {
 };
 
 async function handler(request: NextRequest, user: UserPayload) {
+  const recruiter = await prisma.recruiter.findUnique({
+    where: { userId: user.userId },
+    select: {
+      isVerified: true,
+    },
+  });
+
+  if (recruiter?.isVerified === "APPROVED") {
+    return NextResponse.json(
+      { error: "User already verified" },
+      { status: 400 },
+    );
+  }
+
   const body = await request.json();
   const {
     email,
