@@ -10,7 +10,7 @@ model User {
   id         String     @id @default(uuid())
   name       String
   email      String     @unique
-  role       Role       @default(CANDIDATE)
+  role       UserRole   @default(CANDIDATE)
   createdAt  DateTime   @default(now())
   password   String
   profilePic String?
@@ -38,7 +38,7 @@ model Recruiter {
   companyLinkedIn String?
   industry        String?
   companySize     CompanySize?
-  hiringForRoles  Json?
+  hiringForRoles  Role[]             @relation("RecruiterHiringRoles")
   createdAt       DateTime           @default(now())
   updatedAt       DateTime           @updatedAt
   failedReasons   Json?
@@ -56,10 +56,10 @@ model Candidate {
   institution       String?
   graduationYear    String?
   degree            String?
-  primarySkills     Json?
-  secondarySkills   Json?
+  primarySkills     Skill[]          @relation("CandidatePrimarySkills")
+  secondarySkills   Skill[]          @relation("CandidateSecondarySkills")
   experienceLevel   ExperienceLevel?
-  preferredRoles    Json?
+  preferredRoles    Role[]           @relation("CandidatePreferredRoles")
   githubUrl         String?
   linkedinUrl       String?
   portfolioUrl      String?
@@ -105,13 +105,46 @@ model PostJob {
   benifits           Json?
   createdAt          DateTime           @default(now())
   updatedAt          DateTime           @updatedAt
-  requirements       Json
-  optional           Json?
+  requirements       Skill[]            @relation("JobRequiredSkills")
+  optional           Skill[]            @relation("JobOptionalSkills")
   status             JobStatus          @default(ACTIVE)
   applications       Application[]
   recruiter          Recruiter          @relation(fields: [recruiterId], references: [id])
 
   @@index([createdAt, id])
+}
+
+model Skill {
+  id                      String     @id @default(uuid())
+  name                    String     @unique
+  aliases                 String[]   @default([])
+  category                String[]
+  popularity              Int        @default(0)
+  createdAt               DateTime   @default(now())
+  updatedAt               DateTime   @updatedAt
+  requiredForJobId        String?
+  optionalForJobId        String?
+  primaryForCandidateId   String?
+  secondaryForCandidateId String?
+  requiredForJob          PostJob?   @relation("JobRequiredSkills", fields: [requiredForJobId], references: [id])
+  optionalForJob          PostJob?   @relation("JobOptionalSkills", fields: [optionalForJobId], references: [id])
+  primaryForCandidate     Candidate? @relation("CandidatePrimarySkills", fields: [primaryForCandidateId], references: [id])
+  secondaryForCandidate   Candidate? @relation("CandidateSecondarySkills", fields: [secondaryForCandidateId], references: [id])
+}
+
+model Role {
+  id                     String     @id @default(uuid())
+  name                   String     @unique
+  aliases                String[]   @default([])
+  category               String[]
+  popularity             Int        @default(0)
+  createdAt              DateTime   @default(now())
+  updatedAt              DateTime   @updatedAt
+  jobId                  String?
+  recruiterId            String?
+  preferredByCandidateId String?
+  recruiter              Recruiter? @relation("RecruiterHiringRoles", fields: [recruiterId], references: [id])
+  preferredByCandidate   Candidate? @relation("CandidatePreferredRoles", fields: [preferredByCandidateId], references: [id])
 }
 
 model Application {
@@ -151,7 +184,7 @@ model Interview {
   @@index([createdAt, id])
 }
 
-enum Role {
+enum UserRole {
   CANDIDATE
   RECRUITER
 }

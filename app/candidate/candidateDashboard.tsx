@@ -49,31 +49,67 @@ export default function CandidateClientDashboardPage() {
     })
 
     useEffect(() => {
-        const fetch = async () => {
+        const fetchDashboardData = async () => {
             const payload1 = { filter: "", search: "", cursor: null }
             const payload2 = { department: [], experience: [], type: [], search: "", cursor: null }
+
             console.log("fetching jobs")
-            const res = await axios.post("/api/candidate/getjob", payload2)
-            const res1 = await axios.post("/api/candidate/get_applications", payload1, { withCredentials: true })
-            const res2 = await axios.get("/api/candidate/get_interviews", { withCredentials: true })
-            const res3 = await axios.get("/api/candidate/stats/dashboard", { withCredentials: true })
-            const data2 = await res2.data
-            setInterviews(data2.interviews)
-            const data = await res.data
-            const data1 = await res1.data
-            const data3 = await res3.data
-            setApplications(data1.applications)
-            setJobs(data.job)
-            setStat({
-                applications: data3.applications,
-                jobs: data3.jobs,
-                resumeScore: data3.resumeScore
-            })
-            setInitialLoad(false);
+
+            // Fetch jobs
+            try {
+                const res = await axios.post("/api/candidate/getjob", payload2)
+                const data = await res.data
+                setJobs(data.job || [])
+            } catch (error) {
+                console.error("Error fetching jobs:", error)
+                setJobs([])
+            }
+
+            // Fetch applications
+            try {
+                const res1 = await axios.post("/api/candidate/get_applications", payload1, { withCredentials: true })
+                const data1 = await res1.data
+                setApplications(data1.applications || [])
+            } catch (error) {
+                console.error("Error fetching applications:", error)
+                setApplications([])
+            }
+
+            // Fetch interviews
+            try {
+                const res2 = await axios.get("/api/candidate/get_interviews", { withCredentials: true })
+                const data2 = await res2.data
+                setInterviews(data2.interviews || [])
+            } catch (error) {
+                console.error("Error fetching interviews:", error)
+                setInterviews([])
+            }
+
+            // Fetch stats
+            try {
+                const res3 = await axios.get("/api/candidate/stats/dashboard", { withCredentials: true })
+                const data3 = await res3.data
+                setStat({
+                    applications: data3.applications || 0,
+                    jobs: data3.jobs || 0,
+                    resumeScore: data3.resumeScore || 0
+                })
+            } catch (error) {
+                console.error("Error fetching stats:", error)
+                setStat({
+                    applications: 0,
+                    jobs: 0,
+                    resumeScore: 0
+                })
+            } finally {
+                setInitialLoad(false)
+            }
+
+            // Always set loading to false, even if all requests fail
+
         }
 
-
-        fetch()
+        fetchDashboardData()
 
     }, [])
 

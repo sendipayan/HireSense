@@ -52,7 +52,7 @@ export function ProfileMenu({ name, role, profilePic, onLogout }: Props) {
                 </DropdownMenu.Item>
 
                 <DropdownMenu.Item className="flex cursor-pointer items-center gap-2 rounded px-2 py-2 text-sm outline-none hover:bg-muted"
-                    onClick={() => router.push(`/${role?.toLowerCase()}/dashboard/profile`)}
+                    onClick={() => router.push(`/${role?.toLowerCase()}/profile`)}
                 >
                     <User className="h-4 w-4" />
                     Profile

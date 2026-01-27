@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { X } from "lucide-react"
+import { X, Search, Loader2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 interface MultiSelectProps {
@@ -14,6 +14,9 @@ interface MultiSelectProps {
   required?: boolean
   description?: string
   error?: string
+  query?: string
+  setQuery?: (query: string) => void
+  loading?: boolean
 }
 
 /**
@@ -21,6 +24,9 @@ interface MultiSelectProps {
  * - Accessible with proper ARIA labels
  * - Shows selected items as removable tags
  * - Dropdown with checkboxes for selection
+ * - Search functionality to filter options
+ * - Optional controlled search state via query/setQuery props
+ * - Loading state with spinner animation
  */
 export function MultiSelect({
   label,
@@ -32,9 +38,23 @@ export function MultiSelect({
   required = false,
   description,
   error,
+  query,
+  setQuery,
+  loading = false,
 }: MultiSelectProps) {
   const [isOpen, setIsOpen] = useState(false)
+  const [internalSearchQuery, setInternalSearchQuery] = useState("")
   const inputId = `field-${name}`
+
+  // Use controlled query if provided, otherwise use internal state
+  const searchQuery = query !== undefined ? query : internalSearchQuery
+  const handleSearchChange = (value: string) => {
+    if (setQuery) {
+      setQuery(value)
+    } else {
+      setInternalSearchQuery(value)
+    }
+  }
 
   const toggleOption = (value: string) => {
     const newSelected = selected.includes(value) ? selected.filter((v) => v !== value) : [...selected, value]
@@ -44,6 +64,9 @@ export function MultiSelect({
   const removeOption = (value: string) => {
     onChange(selected.filter((v) => v !== value))
   }
+
+  // Filter options based on search query
+
 
   return (
     <div className="space-y-2">
@@ -57,7 +80,7 @@ export function MultiSelect({
           id={inputId}
           onClick={() => setIsOpen(!isOpen)}
           className={cn(
-            "w-full flex items-center flex-wrap gap-2 p-2 border rounded-md bg-background text-foreground",
+            "w-full flex items-center flex-wrap gap-2 p-2 border rounded-md bg-background text-foreground cursor-pointer",
             "hover:bg-accent focus:outline-none focus:ring-2 focus:ring-primary",
             error && "border-destructive focus:ring-destructive",
           )}
@@ -95,22 +118,50 @@ export function MultiSelect({
         {/* Dropdown menu */}
         {isOpen && (
           <div className="absolute top-full left-0 right-0 z-50 mt-1 border border-border rounded-md bg-popover shadow-lg">
+            {/* Search Input */}
+            <div className="p-2 border-b border-border">
+              <div className="relative">
+                <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <input
+                  type="text"
+                  placeholder="Search..."
+                  value={searchQuery}
+                  onChange={(e) => handleSearchChange(e.target.value)}
+                  onClick={(e) => e.stopPropagation()}
+                  className="w-full pl-8 pr-3 py-2 text-sm border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                  aria-label="Search options"
+                />
+              </div>
+            </div>
+
+            {/* Options List */}
             <div className="p-2 space-y-1 max-h-64 overflow-y-auto" role="listbox">
-              {options.map((option) => (
-                <label
-                  key={option.value}
-                  className="flex items-center gap-2 p-2 rounded hover:bg-accent cursor-pointer"
-                >
-                  <input
-                    type="checkbox"
-                    checked={selected.includes(option.value)}
-                    onChange={() => toggleOption(option.value)}
-                    className="w-4 h-4 rounded border-border bg-background cursor-pointer"
-                    aria-label={option.label}
-                  />
-                  <span className="text-sm">{option.label}</span>
-                </label>
-              ))}
+              {loading ? (
+                <div className="flex items-center justify-center gap-2 p-4 text-sm text-muted-foreground">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Loading...</span>
+                </div>
+              ) : options.length > 0 ? (
+                options.map((option) => (
+                  <label
+                    key={option.value}
+                    className="flex items-center gap-2 p-2 rounded hover:bg-accent cursor-pointer"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={selected.includes(option.value)}
+                      onChange={() => toggleOption(option.value)}
+                      className="w-4 h-4 rounded border-border bg-background cursor-pointer"
+                      aria-label={option.label}
+                    />
+                    <span className="text-sm">{option.label}</span>
+                  </label>
+                ))
+              ) : (
+                <div className="p-2 text-sm text-muted-foreground text-center">
+                  No results found
+                </div>
+              )}
             </div>
           </div>
         )}

@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useRef } from "react"
 import { Save, AlertCircle, Upload, CheckCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { FormField } from "@/components/form-field"
@@ -90,6 +90,11 @@ const AVAILABILITY_OPTIONS = [
 export default function CandidateProfileClientPage() {
   const { candidateProfile, setCandidateProfile } = useCandidateStore()
   const { user } = useAuthStore()
+  const [searchQuery, setSearchQuery] = useState("")
+  const [rolesearch, setRoleSearch] = useState("")
+  const [skills, setSkills] = useState([])
+  const [roles, setRoles] = useState([])
+  const [searchLoading, setSearchLoading] = useState(false)
   const [initialLoad, setInitialLoad] = useState(true)
   const [loading, setLoading] = useState(false)
   const [formData, setFormData] = useState<CandidateFormData>({
@@ -214,6 +219,80 @@ export default function CandidateProfileClientPage() {
       setLoading(false)
     }
   }
+
+  const prevSearchQueryRef = useRef("")
+
+  useEffect(() => {
+    const currentTrimmed = searchQuery.trim()
+    const prevTrimmed = prevSearchQueryRef.current.trim()
+
+    if (currentTrimmed === "") {
+      setSkills([])
+      return
+    }
+
+    if (currentTrimmed === prevTrimmed) {
+      prevSearchQueryRef.current = searchQuery
+      return
+    }
+
+    const timeoutId = setTimeout(async () => {
+      console.log("Search:", currentTrimmed);
+      prevSearchQueryRef.current = searchQuery;
+
+      try {
+        setSearchLoading(true)
+        const res = await axios.get(`/api/search/skills?query=${currentTrimmed}`, { withCredentials: true })
+        console.log(res.data)
+        setSkills(res.data.result)
+      } catch (err) {
+        console.log(err)
+      } finally {
+        setSearchLoading(false)
+      }
+
+
+    }, 500);
+
+    return () => clearTimeout(timeoutId);
+  }, [searchQuery]);
+
+  const prevRoleSearchQueryRef = useRef("")
+
+  useEffect(() => {
+    const currentTrimmed = rolesearch.trim()
+    const prevTrimmed = prevRoleSearchQueryRef.current.trim()
+
+    if (currentTrimmed === "") {
+      setRoles([])
+      return
+    }
+
+    if (currentTrimmed === prevTrimmed) {
+      prevRoleSearchQueryRef.current = rolesearch
+      return
+    }
+
+    const timeoutId = setTimeout(async () => {
+      console.log("Search:", currentTrimmed);
+      prevRoleSearchQueryRef.current = rolesearch;
+
+      try {
+        setSearchLoading(true)
+        const res = await axios.get(`/api/search/roles?query=${currentTrimmed}`, { withCredentials: true })
+        console.log(res.data)
+        setRoles(res.data.result)
+      } catch (err) {
+        console.log(err)
+      } finally {
+        setSearchLoading(false)
+      }
+
+
+    }, 500);
+
+    return () => clearTimeout(timeoutId);
+  }, [rolesearch]);
 
   const breadcrumbs = [
     { label: "Dashboard", href: "/candidate/dashboard" },
@@ -346,20 +425,26 @@ export default function CandidateProfileClientPage() {
             <MultiSelect
               label="Primary Skills"
               name="primarySkills"
-              options={SKILLS_OPTIONS}
+              options={skills}
               selected={formData.primarySkills || []}
               onChange={(selected) => handleChange("primarySkills", selected)}
               placeholder="Select your primary skills"
               required
+              loading={searchLoading}
+              query={searchQuery}
+              setQuery={setSearchQuery}
             />
 
             <MultiSelect
               label="Secondary Skills"
               name="secondarySkills"
-              options={SKILLS_OPTIONS}
+              options={skills}
               selected={formData.secondarySkills || []}
               onChange={(selected) => handleChange("secondarySkills", selected)}
               placeholder="Select additional skills"
+              loading={searchLoading}
+              query={searchQuery}
+              setQuery={setSearchQuery}
             />
 
             <div className="space-y-2">
@@ -384,11 +469,14 @@ export default function CandidateProfileClientPage() {
             <MultiSelect
               label="Preferred Roles"
               name="preferredRoles"
-              options={PREFERRED_ROLES_OPTIONS}
+              options={roles}
               selected={formData.preferredRoles || []}
               onChange={(selected) => handleChange("preferredRoles", selected)}
               placeholder="Select roles you're interested in"
               required
+              loading={searchLoading}
+              query={rolesearch}
+              setQuery={setRoleSearch}
             />
           </FormSection>
 

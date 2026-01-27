@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useRef } from "react"
 import { Save, AlertCircle, CheckCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { FormField } from "@/components/form-field"
@@ -69,6 +69,9 @@ export function RecruiterProfileClientPage() {
 
   const { RecuiterProfile, setRecuiterProfile } = useRecruiterStore()
   const { user } = useAuthStore()
+  const [rolesearch, setRoleSearch] = useState("")
+  const [roles, setRoles] = useState([])
+  const [searchLoading, setSearchLoading] = useState(false)
   const [initialLoad, setInitialLoad] = useState(true)
   const [loading, setLoading] = useState(false)
 
@@ -189,6 +192,43 @@ export function RecruiterProfileClientPage() {
       setLoading(false)
     }
   }
+
+  const prevRoleSearchQueryRef = useRef("")
+
+  useEffect(() => {
+    const currentTrimmed = rolesearch.trim()
+    const prevTrimmed = prevRoleSearchQueryRef.current.trim()
+
+    if (currentTrimmed === "") {
+      setRoles([])
+      return
+    }
+
+    if (currentTrimmed === prevTrimmed) {
+      prevRoleSearchQueryRef.current = rolesearch
+      return
+    }
+
+    const timeoutId = setTimeout(async () => {
+      console.log("Search:", currentTrimmed);
+      prevRoleSearchQueryRef.current = rolesearch;
+
+      try {
+        setSearchLoading(true)
+        const res = await axios.get(`/api/search/roles?query=${currentTrimmed}`, { withCredentials: true })
+        console.log(res.data)
+        setRoles(res.data.result)
+      } catch (err) {
+        console.log(err)
+      } finally {
+        setSearchLoading(false)
+      }
+
+
+    }, 500);
+
+    return () => clearTimeout(timeoutId);
+  }, [rolesearch]);
 
   const breadcrumbs = [
     { label: "Dashboard", href: "/recruiter/dashboard" },
@@ -346,10 +386,12 @@ export function RecruiterProfileClientPage() {
             <MultiSelect
               label="Hiring For Roles"
               name="hiringRoles"
-              options={HIRING_ROLES}
+              options={roles}
               selected={formData?.hiringForRoles || []}
               onChange={(selected) => setFormData({ ...formData, hiringForRoles: selected })}
               placeholder="Select roles you're hiring for"
+              query={rolesearch}
+              setQuery={setRoleSearch}
               required
             />
 

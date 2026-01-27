@@ -18,7 +18,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Sparkles, Eye, Save, ArrowLeft } from "lucide-react";
 import { useRouter } from "next/navigation";
 import axios from "axios";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRecruiterStore } from "@/store/RecuiterStore";
 import { Spinner } from "@/components/ui/spinner";
 
@@ -57,6 +57,10 @@ type formType = {
 export default function PostJob() {
     const [loading, setLoading] = useState(false);
     const { RecuiterProfile } = useRecruiterStore()
+    const [searchQuery, setSearchQuery] = useState("")
+    const [skills, setSkills] = useState([])
+    const [roles, setRoles] = useState([])
+    const [searchLoading, setSearchLoading] = useState(false)
     const [form, setForm] = useState<formType>({
         id: "",
         title: "",
@@ -156,6 +160,45 @@ export default function PostJob() {
             setLoading(false)
         }
     };
+
+
+    const prevSearchQueryRef = useRef("")
+
+    useEffect(() => {
+        const currentTrimmed = searchQuery.trim()
+        const prevTrimmed = prevSearchQueryRef.current.trim()
+
+        if (currentTrimmed === "") {
+            setSkills([])
+            return
+        }
+
+        if (currentTrimmed === prevTrimmed) {
+            prevSearchQueryRef.current = searchQuery
+            return
+        }
+
+        const timeoutId = setTimeout(async () => {
+            console.log("Search:", currentTrimmed);
+            prevSearchQueryRef.current = searchQuery;
+
+            try {
+                setSearchLoading(true)
+                const res = await axios.get(`/api/search/skills?query=${currentTrimmed}`, { withCredentials: true })
+                console.log(res.data)
+                setSkills(res.data.result)
+            } catch (err) {
+                console.log(err)
+            } finally {
+                setSearchLoading(false)
+            }
+
+
+        }, 500);
+
+        return () => clearTimeout(timeoutId);
+    }, [searchQuery]);
+
     return (
         <main className="py-8 sm:py-12">
             <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
@@ -364,20 +407,24 @@ export default function PostJob() {
                             <MultiSelect
                                 label="Primary Skills"
                                 name="primarySkills"
-                                options={SKILLS_OPTIONS}
+                                options={skills}
                                 selected={form.requirements || []}
                                 onChange={(selected) => setForm({ ...form, requirements: selected })}
                                 placeholder="Select your primary skills"
+                                query={searchQuery}
+                                setQuery={setSearchQuery}
                                 required
                             />
 
                             <MultiSelect
                                 label="Nice to Have"
                                 name="niceToHave"
-                                options={SKILLS_OPTIONS}
+                                options={skills}
                                 selected={form.optional || []}
                                 onChange={(selected) => setForm({ ...form, optional: selected })}
                                 placeholder="Select your nice to have skills"
+                                query={searchQuery}
+                                setQuery={setSearchQuery}
                             />
 
 
