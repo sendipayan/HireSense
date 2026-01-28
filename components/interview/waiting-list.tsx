@@ -424,7 +424,7 @@ export function WaitingList({ onScheduleBatch, response, setApplicationsList, se
 
                                 <div className="hidden sm:flex items-center gap-2">
                                     <Badge variant="outline" className="text-[10px] py-0 h-5 font-normal border-border/60">
-                                        {candidate.candidate.experienceLevel.split(" ")[0]}
+                                        {candidate.candidate.experienceLevel?.split(" ")[0]}
                                     </Badge>
                                 </div>
 

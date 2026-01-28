@@ -377,7 +377,7 @@ export default function CandidateClientDashboardPage() {
                                     salary={job.minSalary + " - " + job.maxSalary}
                                     type={job.jobType}
                                     posted={new Date(job.createdAt).toISOString().split("T")[0]}
-                                    tags={job.requirements}
+                                    tags={[...job.requirements.map((requirement) => requirement.name), ...job.optional.map((optional) => optional.name)]}
                                     matchScore={95 - index * 5}
                                 />
                             ))) : (<Card className="border-dashed bg-transparent py-4">

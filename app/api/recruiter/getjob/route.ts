@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { withAuth } from "@/lib/api-middleware";
+import { id } from "date-fns/locale";
 
 type UserPayload = {
   userId: string;
@@ -63,6 +64,18 @@ async function handler(req: NextRequest, user: UserPayload) {
       recruiter: {
         select: {
           companyName: true,
+        },
+      },
+      requirements: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
+      optional: {
+        select: {
+          id: true,
+          name: true,
         },
       },
     },

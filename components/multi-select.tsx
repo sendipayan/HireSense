@@ -8,8 +8,8 @@ interface MultiSelectProps {
   label: string
   name: string
   options: { value: string; label: string }[]
-  selected: string[]
-  onChange: (selected: string[]) => void
+  selected: { value: string; label: string; }[]
+  onChange: (selected: { value: string; label: string }[]) => void
   placeholder?: string
   required?: boolean
   description?: string
@@ -56,13 +56,24 @@ export function MultiSelect({
     }
   }
 
-  const toggleOption = (value: string) => {
-    const newSelected = selected.includes(value) ? selected.filter((v) => v !== value) : [...selected, value]
+  // Merge selected items with options so they're always visible
+  const mergedOptions = [...selected]
+  options.forEach((option) => {
+    if (!selected.find((s) => s.value === option.value)) {
+      mergedOptions.push(option)
+    }
+  })
+
+  const toggleOption = (option: { value: string; label: string }) => {
+    const isSelected = selected.find((s) => s.value === option.value)
+    const newSelected = isSelected
+      ? selected.filter((s) => s.value !== option.value)
+      : [...selected, option]
     onChange(newSelected)
   }
 
   const removeOption = (value: string) => {
-    onChange(selected.filter((v) => v !== value))
+    onChange(selected.filter((s) => s.value !== value))
   }
 
   // Filter options based on search query
@@ -88,22 +99,22 @@ export function MultiSelect({
           aria-expanded={isOpen}
         >
           {selected.length > 0 ? (
-            selected.map((value) => {
-              const option = options.find((opt) => opt.value === value)
+            selected.map((val) => {
+
               return (
                 <div
-                  key={value}
+                  key={val.value}
                   className="inline-flex items-center gap-1 px-2 py-1 bg-primary text-primary-foreground rounded text-sm"
                 >
-                  {option?.label}
+                  {val.label}
                   <button
                     type="button"
                     onClick={(e) => {
                       e.stopPropagation()
-                      removeOption(value)
+                      removeOption(val.value)
                     }}
                     className="hover:bg-primary/80 rounded p-0.5"
-                    aria-label={`Remove ${option?.label}`}
+                    aria-label={`Remove ${val.label}`}
                   >
                     <X className="w-3 h-3" />
                   </button>
@@ -141,16 +152,16 @@ export function MultiSelect({
                   <Loader2 className="w-4 h-4 animate-spin" />
                   <span>Loading...</span>
                 </div>
-              ) : options.length > 0 ? (
-                options.map((option) => (
+              ) : mergedOptions.length > 0 ? (
+                mergedOptions.map((option) => (
                   <label
                     key={option.value}
                     className="flex items-center gap-2 p-2 rounded hover:bg-accent cursor-pointer"
                   >
                     <input
                       type="checkbox"
-                      checked={selected.includes(option.value)}
-                      onChange={() => toggleOption(option.value)}
+                      checked={selected.find((s) => s.value === option.value) !== undefined}
+                      onChange={() => toggleOption(option)}
                       className="w-4 h-4 rounded border-border bg-background cursor-pointer"
                       aria-label={option.label}
                     />

@@ -22,10 +22,10 @@ type CandidateProfile = {
   institution?: string | null;
   graduationYear?: string | null;
   degree?: string | null;
-  primarySkills?: any;
-  secondarySkills?: any;
+  primarySkills?: { id: string; name: string }[];
+  secondarySkills?: { id: string; name: string }[];
   experienceLevel?: string | null;
-  preferredRoles?: any;
+  preferredRoles?: { id: string; name: string }[];
   githubUrl?: string | null;
   linkedinUrl?: string | null;
   portfolioUrl?: string | null;

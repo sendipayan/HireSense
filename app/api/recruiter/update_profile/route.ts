@@ -39,6 +39,44 @@ async function handler(req: NextRequest, user: UserPayload) {
     return NextResponse.json({ error: "Candidate not found" }, { status: 404 });
   }
 
+  if (hiringForRoles.length === 0) {
+    await prisma.role.updateMany({
+      where: {
+        recruiterId: recruiter.id,
+        id: {
+          notIn: hiringForRoles,
+        },
+      },
+      data: {
+        recruiterId: null,
+        popularity: { decrement: 1 },
+      },
+    });
+  } else {
+    await prisma.$transaction([
+      prisma.role.updateMany({
+        where: {
+          recruiterId: recruiter.id,
+        },
+        data: {
+          recruiterId: null,
+          popularity: { decrement: 1 },
+        },
+      }),
+      prisma.role.updateMany({
+        where: {
+          id: {
+            in: hiringForRoles,
+          },
+        },
+        data: {
+          recruiterId: recruiter.id,
+          popularity: { increment: 1 },
+        },
+      }),
+    ]);
+  }
+
   // Use a transaction to keep data consistent
   await prisma.$transaction([
     prisma.user.update({
@@ -55,7 +93,6 @@ async function handler(req: NextRequest, user: UserPayload) {
         companyLinkedIn,
         industry,
         companySize,
-        hiringForRoles,
         isVerified,
       },
     }),

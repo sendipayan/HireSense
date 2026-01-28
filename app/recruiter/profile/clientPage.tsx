@@ -70,7 +70,8 @@ export function RecruiterProfileClientPage() {
   const { RecuiterProfile, setRecuiterProfile } = useRecruiterStore()
   const { user } = useAuthStore()
   const [rolesearch, setRoleSearch] = useState("")
-  const [roles, setRoles] = useState([])
+  const [roles, setRoles] = useState<{ value: string; label: string }[]>([])
+  const [selectedRoles, setSelectedRoles] = useState<{ value: string; label: string }[]>([])
   const [searchLoading, setSearchLoading] = useState(false)
   const [initialLoad, setInitialLoad] = useState(true)
   const [loading, setLoading] = useState(false)
@@ -115,6 +116,10 @@ export function RecruiterProfileClientPage() {
       else {
         setApprove("pending")
       }
+
+      // Convert string arrays to objects for MultiSelect display
+      const hiringRolesObjects = (RecuiterProfile?.hiringForRoles || []).map((role: string) => ({ value: role, label: role }))
+      setSelectedRoles(hiringRolesObjects)
     }
   }, [RecuiterProfile])
 
@@ -171,9 +176,28 @@ export function RecruiterProfileClientPage() {
     try {
       setLoading(true)
       const res = await axios.patch("/api/recruiter/update_profile", payload, { withCredentials: true })
+      if (res.status === 200) {
+        const res2 = await fetch("/api/auth/me")
+        const data2 = await res2.json()
+        setRecuiterProfile(data2.user)
+        setIsSaved(true)
+        setTimeout(() => {
+          setIsSaved(false)
+        }, 3000)
+      }
+    } catch (err) {
+      console.log(err)
+      setIsError(true)
+      setTimeout(() => {
+        setIsError(false)
+      }, 3000)
+
+    }
+
+    try {
       const res1 = await axios.post("/api/recruiter/verify", payload1, { withCredentials: true })
       console.log(res1)
-      if (res.status === 200) {
+      if (res1.status === 200) {
         const res2 = await fetch("/api/auth/me")
         const data2 = await res2.json()
         setRecuiterProfile(data2.user)
@@ -387,11 +411,15 @@ export function RecruiterProfileClientPage() {
               label="Hiring For Roles"
               name="hiringRoles"
               options={roles}
-              selected={formData?.hiringForRoles || []}
-              onChange={(selected) => setFormData({ ...formData, hiringForRoles: selected })}
+              selected={selectedRoles}
+              onChange={(selected) => {
+                setSelectedRoles(selected)
+                setFormData({ ...formData, hiringForRoles: selected.map(r => r.value) })
+              }}
               placeholder="Select roles you're hiring for"
               query={rolesearch}
               setQuery={setRoleSearch}
+              loading={searchLoading}
               required
             />
 

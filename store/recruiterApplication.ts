@@ -10,8 +10,8 @@ type Candidate = {
   institution: string;
   experienceLevel: string;
   degree: string;
-  primarySkills: string[];
-  secondarySkills: string[];
+  primarySkills: { id: string; name: string }[];
+  secondarySkills: { id: string; name: string }[];
   user: {
     name: string;
     profilePic?: string;

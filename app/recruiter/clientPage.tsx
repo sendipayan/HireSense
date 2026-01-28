@@ -70,6 +70,7 @@ export default function RecruiterDashboardPage() {
                     cursor: null,
                 })
                 const data = await res.data
+                console.log(data)
                 setJobs(data.job || [])
             } catch (error) {
                 console.error("Error fetching jobs:", error)
@@ -277,7 +278,7 @@ export default function RecruiterDashboardPage() {
                                     experience={candidate.candidate.experienceLevel}
                                     status={candidate.status}
                                     education={candidate.candidate.degree}
-                                    skills={[...candidate.candidate.primarySkills, ...candidate.candidate.secondarySkills]}
+                                    skills={[...candidate.candidate.primarySkills.map((skill) => skill.name), ...candidate.candidate.secondarySkills.map((skill) => skill.name)]}
                                     resumeId={candidate.resume.id}
                                     resumeUrl={candidate.resume.resumeUrl}
                                     resumeMimeType={candidate.resume.resumeMimeType}

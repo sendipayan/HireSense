@@ -126,12 +126,12 @@ export default function JobDetailsPage() {
                             <h2 className="text-xl font-semibold mb-4">Required Skills</h2>
                             <div className="flex flex-wrap gap-2">
                                 {jobs?.requirements.map((tag) => (
-                                    <Badge key={tag} variant="default" className="px-3 py-1 text-sm">
-                                        {tag}
+                                    <Badge key={tag.id} variant="default" className="px-3 py-1 text-sm">
+                                        {tag.name}
                                     </Badge>
                                 ))}
-                                {jobs?.optional.map((tag) => (<Badge key={tag} variant="outline" className="px-3 py-1 text-sm">
-                                    {tag}
+                                {jobs?.optional.map((tag) => (<Badge key={tag.id} variant="outline" className="px-3 py-1 text-sm">
+                                    {tag.name}
                                 </Badge>))}
                             </div>
                         </section>

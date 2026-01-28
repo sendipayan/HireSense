@@ -40,9 +40,7 @@ export default async function proxy(req: NextRequest) {
       pathname.startsWith("/recruiter/post-job") &&
       payload.isVerified !== "APPROVED"
     ) {
-      return NextResponse.redirect(
-        new URL("/recruiter/dashboard/profile", req.url),
-      );
+      return NextResponse.redirect(new URL("/recruiter/profile", req.url));
     }
 
     if (pathname.startsWith("/candidate") && payload.role !== "CANDIDATE") {

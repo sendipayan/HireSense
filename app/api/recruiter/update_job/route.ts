@@ -48,6 +48,77 @@ async function handler(request: NextRequest, user: UserPayload) {
     );
   }
 
+  if (requirements.length === 0) {
+    return NextResponse.json(
+      { error: "Requirements are required" },
+      { status: 400 },
+    );
+  }
+
+  await prisma.$transaction([
+    prisma.skill.updateMany({
+      where: {
+        id: {
+          in: requirements,
+        },
+      },
+      data: {
+        requiredForJobId: null,
+        popularity: { decrement: 1 },
+      },
+    }),
+    prisma.skill.updateMany({
+      where: {
+        id: {
+          in: requirements,
+        },
+      },
+      data: {
+        requiredForJobId: id,
+        popularity: { increment: 1 },
+      },
+    }),
+  ]);
+
+  if (optional.length === 0) {
+    await prisma.skill.updateMany({
+      where: {
+        id: {
+          in: optional,
+        },
+      },
+      data: {
+        optionalForJobId: null,
+        popularity: { decrement: 1 },
+      },
+    });
+  } else {
+    await prisma.$transaction([
+      prisma.skill.updateMany({
+        where: {
+          id: {
+            in: optional,
+          },
+        },
+        data: {
+          optionalForJobId: null,
+          popularity: { decrement: 1 },
+        },
+      }),
+      prisma.skill.updateMany({
+        where: {
+          id: {
+            in: optional,
+          },
+        },
+        data: {
+          optionalForJobId: id,
+          popularity: { increment: 1 },
+        },
+      }),
+    ]);
+  }
+
   let job = await prisma.postJob.update({
     where: {
       id,
@@ -58,12 +129,10 @@ async function handler(request: NextRequest, user: UserPayload) {
       location,
       minSalary,
       maxSalary,
-      requirements,
       jobType,
       status,
       experienceRequired,
       department,
-      optional,
       benifits,
     },
   });

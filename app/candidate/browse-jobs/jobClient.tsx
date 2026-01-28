@@ -523,8 +523,8 @@ export function JobsBrowser() {
                                             <div className="flex flex-wrap gap-2">
                                                 <Badge variant="secondary">{job.jobType}</Badge>
                                                 {job.requirements.map((tag) => (
-                                                    <Badge key={tag} variant="outline" className="font-normal">
-                                                        {tag}
+                                                    <Badge key={tag.id} variant="outline" className="font-normal">
+                                                        {tag.name}
                                                     </Badge>
                                                 ))}
                                             </div>

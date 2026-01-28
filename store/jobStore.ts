@@ -11,8 +11,8 @@ export interface Job {
   department: string;
   jobType: string;
   experienceRequired: string;
-  requirements: string[];
-  optional: string[];
+  requirements: { id: string; name: string }[];
+  optional: { id: string; name: string }[];
   benifits: string[];
   createdAt: string;
   updatedAt: string;

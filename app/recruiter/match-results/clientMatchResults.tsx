@@ -40,8 +40,8 @@ type Candidate = {
     institution: string;
     experienceLevel: string;
     degree: string;
-    primarySkills: string[];
-    secondarySkills: string[];
+    primarySkills: { id: string, name: string }[];
+    secondarySkills: { id: string, name: string }[];
     user: {
         name: string;
         profilePic?: string;
@@ -243,8 +243,8 @@ export default function MatchResultsClientPage({ candidateId, jobId }: { candida
                                 <p className="text-sm font-medium mb-2">Top Skills</p>
                                 <div className="flex flex-wrap gap-2">
                                     {uniqueApplication?.candidate.primarySkills.map((skill) => (
-                                        <Badge key={skill} variant="secondary">
-                                            {skill}
+                                        <Badge key={skill.id} variant="secondary">
+                                            {skill.name}
                                         </Badge>
                                     ))}
                                 </div>
@@ -283,8 +283,8 @@ export default function MatchResultsClientPage({ candidateId, jobId }: { candida
                                 <p className="text-sm font-medium mb-2">Required Skills</p>
                                 <div className="flex flex-wrap gap-2">
                                     {uniqueJob?.requirements.map((tag) => (
-                                        <Badge key={tag} variant="outline">
-                                            {tag}
+                                        <Badge key={tag.id} variant="outline">
+                                            {tag.name}
                                         </Badge>
                                     ))}
                                 </div>

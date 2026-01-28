@@ -40,6 +40,39 @@ export async function getAuthUser() {
           },
         },
       });
+      const primarySkills = await prisma.skill.findMany({
+        where: {
+          primaryForCandidateId: data?.id,
+        },
+        select: {
+          id: true,
+          name: true,
+        },
+      });
+      const secondarySkills = await prisma.skill.findMany({
+        where: {
+          secondaryForCandidateId: data?.id,
+        },
+        select: {
+          id: true,
+          name: true,
+        },
+      });
+      const preferredRoles = await prisma.role.findMany({
+        where: {
+          preferredByCandidateId: data?.id,
+        },
+        select: {
+          id: true,
+          name: true,
+        },
+      });
+      data = {
+        ...data,
+        primarySkills,
+        secondarySkills,
+        preferredRoles,
+      };
     }
     //const job = await getJob();
     //if (!job) {

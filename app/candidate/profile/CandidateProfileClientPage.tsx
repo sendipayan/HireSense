@@ -25,10 +25,10 @@ interface CandidateFormData {
   institution?: string | null;
   graduationYear?: string | null;
   degree?: string | null;
-  primarySkills?: any;
-  secondarySkills?: any;
+  primarySkills: string[];
+  secondarySkills?: string[];
   experienceLevel?: string | null;
-  preferredRoles?: any;
+  preferredRoles?: string[];
   githubUrl?: string | null;
   linkedinUrl?: string | null;
   portfolioUrl?: string | null;
@@ -92,8 +92,11 @@ export default function CandidateProfileClientPage() {
   const { user } = useAuthStore()
   const [searchQuery, setSearchQuery] = useState("")
   const [rolesearch, setRoleSearch] = useState("")
-  const [skills, setSkills] = useState([])
-  const [roles, setRoles] = useState([])
+  const [skills, setSkills] = useState<{ value: string; label: string }[]>([])
+  const [roles, setRoles] = useState<{ value: string; label: string }[]>([])
+  const [selectedSkills, setSelectedSkills] = useState<{ value: string; label: string }[]>([])
+  const [selectedSecondarySkills, setSelectedSecondarySkills] = useState<{ value: string; label: string }[]>([])
+  const [selectedRoles, setSelectedRoles] = useState<{ value: string; label: string }[]>([])
   const [searchLoading, setSearchLoading] = useState(false)
   const [initialLoad, setInitialLoad] = useState(true)
   const [loading, setLoading] = useState(false)
@@ -120,6 +123,7 @@ export default function CandidateProfileClientPage() {
 
   useEffect(() => {
     if (candidateProfile) {
+      console.log(candidateProfile)
       setFormData({
         fullName: user?.name,
         email: user?.email,
@@ -128,10 +132,10 @@ export default function CandidateProfileClientPage() {
         institution: candidateProfile.institution,
         degree: candidateProfile.degree,
         graduationYear: candidateProfile.graduationYear,
-        primarySkills: candidateProfile.primarySkills,
-        secondarySkills: candidateProfile.secondarySkills,
+        primarySkills: candidateProfile.primarySkills?.map((skill) => skill.id) || [],
+        secondarySkills: candidateProfile.secondarySkills?.map((skill) => skill.id) || [],
         experienceLevel: candidateProfile.experienceLevel,
-        preferredRoles: candidateProfile.preferredRoles,
+        preferredRoles: candidateProfile.preferredRoles?.map((role) => role.id) || [],
         githubUrl: candidateProfile.githubUrl,
         portfolioUrl: candidateProfile.portfolioUrl,
         linkedinUrl: candidateProfile.linkedinUrl,
@@ -140,6 +144,15 @@ export default function CandidateProfileClientPage() {
         isVerified: candidateProfile.isVerified,
         availability: candidateProfile.availability,
       })
+
+      // Convert string arrays to objects for MultiSelect display
+      const primarySkillsObjects = (candidateProfile.primarySkills || []).map((skill) => ({ value: skill.id, label: skill.name }))
+      const secondarySkillsObjects = (candidateProfile.secondarySkills || []).map((skill) => ({ value: skill.id, label: skill.name }))
+      const preferredRolesObjects = (candidateProfile.preferredRoles || []).map((role) => ({ value: role.id, label: role.name }))
+
+      setSelectedSkills(primarySkillsObjects)
+      setSelectedSecondarySkills(secondarySkillsObjects)
+      setSelectedRoles(preferredRolesObjects)
     }
   }, [candidateProfile])
 
@@ -189,12 +202,11 @@ export default function CandidateProfileClientPage() {
 
 
     const payload = {
+      ...formData,
       id: candidateProfile.userId,
       name: formData.fullName,
-      primarySkills: JSON.stringify(formData.primarySkills),
-      secondarySkills: JSON.stringify(formData.secondarySkills),
-      preferredRoles: JSON.stringify(formData.preferredRoles),
-      ...formData
+
+
     }
     console.log(payload)
     try {
@@ -426,8 +438,14 @@ export default function CandidateProfileClientPage() {
               label="Primary Skills"
               name="primarySkills"
               options={skills}
-              selected={formData.primarySkills || []}
-              onChange={(selected) => handleChange("primarySkills", selected)}
+              selected={selectedSkills}
+              onChange={(selected) => {
+                setSelectedSkills(selected)
+                setFormData((prev) => ({
+                  ...prev,
+                  primarySkills: selected.map(s => s.value)
+                }))
+              }}
               placeholder="Select your primary skills"
               required
               loading={searchLoading}
@@ -439,8 +457,14 @@ export default function CandidateProfileClientPage() {
               label="Secondary Skills"
               name="secondarySkills"
               options={skills}
-              selected={formData.secondarySkills || []}
-              onChange={(selected) => handleChange("secondarySkills", selected)}
+              selected={selectedSecondarySkills}
+              onChange={(selected) => {
+                setSelectedSecondarySkills(selected)
+                setFormData((prev) => ({
+                  ...prev,
+                  secondarySkills: selected.map(s => s.value)
+                }))
+              }}
               placeholder="Select additional skills"
               loading={searchLoading}
               query={searchQuery}
@@ -470,8 +494,14 @@ export default function CandidateProfileClientPage() {
               label="Preferred Roles"
               name="preferredRoles"
               options={roles}
-              selected={formData.preferredRoles || []}
-              onChange={(selected) => handleChange("preferredRoles", selected)}
+              selected={selectedRoles}
+              onChange={(selected) => {
+                setSelectedRoles(selected)
+                setFormData((prev) => ({
+                  ...prev,
+                  preferredRoles: selected.map(r => r.value)
+                }))
+              }}
               placeholder="Select roles you're interested in"
               required
               loading={searchLoading}

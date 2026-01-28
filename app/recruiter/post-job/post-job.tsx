@@ -58,8 +58,10 @@ export default function PostJob() {
     const [loading, setLoading] = useState(false);
     const { RecuiterProfile } = useRecruiterStore()
     const [searchQuery, setSearchQuery] = useState("")
-    const [skills, setSkills] = useState([])
-    const [roles, setRoles] = useState([])
+    const [skills, setSkills] = useState<{ value: string; label: string }[]>([])
+    const [roles, setRoles] = useState<{ value: string; label: string }[]>([])
+    const [selectedRequirements, setSelectedRequirements] = useState<{ value: string; label: string }[]>([])
+    const [selectedOptional, setSelectedOptional] = useState<{ value: string; label: string }[]>([])
     const [searchLoading, setSearchLoading] = useState(false)
     const [form, setForm] = useState<formType>({
         id: "",
@@ -408,11 +410,15 @@ export default function PostJob() {
                                 label="Primary Skills"
                                 name="primarySkills"
                                 options={skills}
-                                selected={form.requirements || []}
-                                onChange={(selected) => setForm({ ...form, requirements: selected })}
+                                selected={selectedRequirements}
+                                onChange={(selected) => {
+                                    setSelectedRequirements(selected)
+                                    setForm({ ...form, requirements: selected.map(s => s.value) })
+                                }}
                                 placeholder="Select your primary skills"
                                 query={searchQuery}
                                 setQuery={setSearchQuery}
+                                loading={searchLoading}
                                 required
                             />
 
@@ -420,11 +426,15 @@ export default function PostJob() {
                                 label="Nice to Have"
                                 name="niceToHave"
                                 options={skills}
-                                selected={form.optional || []}
-                                onChange={(selected) => setForm({ ...form, optional: selected })}
+                                selected={selectedOptional}
+                                onChange={(selected) => {
+                                    setSelectedOptional(selected)
+                                    setForm({ ...form, optional: selected.map(s => s.value) })
+                                }}
                                 placeholder="Select your nice to have skills"
                                 query={searchQuery}
                                 setQuery={setSearchQuery}
+                                loading={searchLoading}
                             />
 
 

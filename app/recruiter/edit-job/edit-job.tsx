@@ -71,8 +71,10 @@ export default function EditJob({ job }: { job: string }) {
     const { RecuiterProfile } = useRecruiterStore()
     const [open, setOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState("")
-    const [skills, setSkills] = useState([])
-    const [roles, setRoles] = useState([])
+    const [skills, setSkills] = useState<{ value: string; label: string }[]>([])
+    const [roles, setRoles] = useState<{ value: string; label: string }[]>([])
+    const [selectedRequirements, setSelectedRequirements] = useState<{ value: string; label: string }[]>([])
+    const [selectedOptional, setSelectedOptional] = useState<{ value: string; label: string }[]>([])
     const [searchLoading, setSearchLoading] = useState(false)
     const [initialLoad, setInitialLoad] = useState(true);
     const [jobToDelete, setJobToDelete] = useState<string | null>(null)
@@ -141,9 +143,9 @@ export default function EditJob({ job }: { job: string }) {
             const response = await fetch(`/api/getjob/${job}`);
             const data = await response.json();
             const jobData = data.job;
-            console.log(jobData);
-            setForm(prev => ({
-                ...prev,
+
+            // Set form state from API response
+            setForm({
                 id: jobData.id ?? "",
                 title: jobData.title ?? "",
                 description: jobData.description ?? "",
@@ -157,42 +159,20 @@ export default function EditJob({ job }: { job: string }) {
                 status: (jobData.status as "ACTIVE" | "CLOSED" | "NONE") ?? "NONE",
                 minSalary: jobData.minSalary ?? 0,
                 maxSalary: Number(jobData.maxSalary ?? 0),
-            }));
+            });
+
+            // Convert string arrays to objects for MultiSelect display
+            const requirementsObjects = (jobData.requirements || []).map((skill: { id: string; name: string }) => ({ value: skill.id, label: skill.name }))
+            const optionalObjects = (jobData.optional || []).map((skill: { id: string; name: string }) => ({ value: skill.id, label: skill.name }))
+
+            setSelectedRequirements(requirementsObjects)
+            setSelectedOptional(optionalObjects)
         }
         fetchJob();
     }, []);
 
-    useEffect(() => {
-
-        const fetch = () => {
-            const data = jobs.find(j => j.id === job);
-            if (!data) return;
-
-            console.log(data);
-            setForm(prev => ({
-                ...prev,
-                id: data.id ?? "",
-                title: data.title ?? "",
-                description: data.description ?? "",
-                location: data.location ?? "",
-                jobType: data.jobType ?? "NONE",
-                experienceRequired: data.experienceRequired ?? "NONE",
-                department: data.department ?? "NONE",
-                requirements: data.requirements ?? [],
-                optional: data.optional ?? [],
-                benifits: data.benifits ?? [],
-                status: (data.status as "ACTIVE" | "CLOSED" | "NONE") ?? "NONE",
-                minSalary: data.minSalary ?? 0,
-                maxSalary: Number(data.maxSalary ?? 0),
-            }));
-        }
-
-        console.log("running");
-        fetch();
 
 
-
-    }, [job]);
 
     useEffect(() => {
         if (form.id.trim() !== "") {
@@ -531,11 +511,15 @@ export default function EditJob({ job }: { job: string }) {
                                 label="Primary Skills"
                                 name="primarySkills"
                                 options={skills}
-                                selected={form.requirements || []}
-                                onChange={(selected) => setForm((prev) => ({ ...prev, requirements: selected }))}
+                                selected={selectedRequirements}
+                                onChange={(selected) => {
+                                    setSelectedRequirements(selected)
+                                    setForm((prev) => ({ ...prev, requirements: selected.map(s => s.value) }))
+                                }}
                                 placeholder="Select your primary skills"
                                 query={searchQuery}
                                 setQuery={setSearchQuery}
+                                loading={searchLoading}
                                 required
                             />
 
@@ -543,11 +527,15 @@ export default function EditJob({ job }: { job: string }) {
                                 label="Nice to Have"
                                 name="niceToHave"
                                 options={skills}
-                                selected={form.optional || []}
-                                onChange={(selected) => setForm((prev) => ({ ...prev, optional: selected }))}
+                                selected={selectedOptional}
+                                onChange={(selected) => {
+                                    setSelectedOptional(selected)
+                                    setForm((prev) => ({ ...prev, optional: selected.map(s => s.value) }))
+                                }}
                                 placeholder="Select your nice to have skills"
                                 query={searchQuery}
                                 setQuery={setSearchQuery}
+                                loading={searchLoading}
                             />
 
 

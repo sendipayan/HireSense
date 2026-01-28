@@ -45,16 +45,145 @@ async function handler(req: NextRequest, authUser: UserPayload) {
 
   let isVerified = false;
 
+  console.log("institution", institution);
+  console.log("degree", degree);
+  console.log("graduationYear", graduationYear);
+  console.log("primarySkills", primarySkills);
+  console.log("experienceLevel", experienceLevel);
+  console.log("preferredRoles", preferredRoles);
+
+  // Check all required fields are present and not empty
+  // Using truthy checks to properly handle null/undefined values
   if (
+    institution &&
     institution.trim() !== "" &&
+    degree &&
     degree.trim() !== "" &&
+    graduationYear &&
     graduationYear.trim() !== "" &&
+    primarySkills &&
     primarySkills.length > 0 &&
+    experienceLevel &&
     experienceLevel.trim() !== "" &&
+    preferredRoles &&
     preferredRoles.length > 0
   ) {
     isVerified = true;
   }
+
+  if (!primarySkills || primarySkills.length === 0) {
+    await prisma.skill.updateMany({
+      where: {
+        primaryForCandidateId: user.id,
+      },
+      data: {
+        primaryForCandidateId: null,
+        popularity: { decrement: 1 },
+      },
+    });
+  } else {
+    await prisma.$transaction([
+      prisma.skill.updateMany({
+        where: {
+          primaryForCandidateId: user.id,
+          id: {
+            notIn: primarySkills,
+          },
+        },
+        data: {
+          primaryForCandidateId: null,
+          popularity: { decrement: 1 },
+        },
+      }),
+      prisma.skill.updateMany({
+        where: {
+          id: {
+            in: primarySkills,
+          },
+        },
+        data: {
+          primaryForCandidateId: user.id,
+          popularity: { increment: 1 },
+        },
+      }),
+    ]);
+  }
+
+  if (!secondarySkills || secondarySkills.length === 0) {
+    await prisma.skill.updateMany({
+      where: {
+        secondaryForCandidateId: user.id,
+      },
+      data: {
+        secondaryForCandidateId: null,
+        popularity: { decrement: 1 },
+      },
+    });
+  } else {
+    await prisma.$transaction([
+      prisma.skill.updateMany({
+        where: {
+          secondaryForCandidateId: user.id,
+          id: {
+            notIn: secondarySkills,
+          },
+        },
+        data: {
+          secondaryForCandidateId: null,
+          popularity: { decrement: 1 },
+        },
+      }),
+      prisma.skill.updateMany({
+        where: {
+          id: {
+            in: secondarySkills,
+          },
+        },
+        data: {
+          secondaryForCandidateId: user.id,
+          popularity: { increment: 1 },
+        },
+      }),
+    ]);
+  }
+
+  if (!preferredRoles || preferredRoles.length === 0) {
+    // Remove all preferred roles for this candidate
+    await prisma.role.updateMany({
+      where: {
+        preferredByCandidateId: user.id,
+      },
+      data: {
+        preferredByCandidateId: null,
+        popularity: { decrement: 1 },
+      },
+    });
+  } else {
+    await prisma.$transaction([
+      prisma.role.updateMany({
+        where: {
+          preferredByCandidateId: user.id,
+        },
+        data: {
+          preferredByCandidateId: null,
+          popularity: { decrement: 1 },
+        },
+      }),
+      prisma.role.updateMany({
+        where: {
+          id: {
+            in: preferredRoles,
+          },
+        },
+        data: {
+          preferredByCandidateId: user.id,
+          popularity: { increment: 1 },
+        },
+      }),
+    ]);
+  }
+
+  console.log("isVerified", isVerified);
 
   // Use a transaction to keep data consistent
   await prisma.$transaction([
@@ -70,10 +199,7 @@ async function handler(req: NextRequest, authUser: UserPayload) {
         institution,
         degree,
         graduationYear,
-        primarySkills,
-        secondarySkills,
         experienceLevel,
-        preferredRoles,
         githubUrl,
         portfolioUrl,
         linkedinUrl,

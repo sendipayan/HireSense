@@ -63,8 +63,18 @@ async function handler(req: NextRequest, user: UserPayload) {
           institution: true,
           experienceLevel: true,
           degree: true,
-          primarySkills: true,
-          secondarySkills: true,
+          primarySkills: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+          secondarySkills: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
           user: {
             select: {
               name: true,

@@ -4,7 +4,7 @@ import { verifyJwt } from "@/lib/jwt";
 
 export async function GET(
   req: NextRequest,
-  context: { params: Promise<{ id: string }> }
+  context: { params: Promise<{ id: string }> },
 ) {
   try {
     const token = req.cookies.get("auth_token")?.value;
@@ -26,6 +26,20 @@ export async function GET(
       where: {
         id,
       },
+      include: {
+        requirements: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+        optional: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
     });
 
     if (!job) {
@@ -33,13 +47,13 @@ export async function GET(
     }
     return NextResponse.json(
       { message: "Job fetched successfully", job },
-      { status: 200 }
+      { status: 200 },
     );
   } catch (err) {
     console.error("job fetching error: ", err);
     return NextResponse.json(
       { error: "Something went wrong" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
