@@ -10,6 +10,7 @@ import { Progress } from "@/components/ui/progress"
 import { Upload, FileText, CheckCircle2, Sparkles, ArrowRight, X, File } from "lucide-react"
 import axios from "axios"
 import { useRouter } from "next/navigation"
+import toast from "react-hot-toast"
 
 interface Resume {
   id: string;
@@ -40,10 +41,15 @@ export default function ResumeUploadPage() {
   useEffect(() => {
     console.log("running")
     const getResumes = async () => {
-      const res = await axios.get("/api/candidate/get_resumes", { withCredentials: true })
-      const data = res.data
-      if (res.status === 200) {
-        setResumes(data.resumes)
+      try {
+        const res = await axios.get("/api/candidate/get_resumes", { withCredentials: true })
+        const data = res.data
+        if (res.status === 200) {
+          setResumes(data.resumes)
+        }
+      } catch (error) {
+        console.error("Error fetching resumes:", error)
+        toast.error("Failed to load resumes")
       }
     }
     getResumes()
@@ -88,10 +94,13 @@ export default function ResumeUploadPage() {
   }, [isComplete])
 
   const handleFileUpload = async (file: File) => {
-    if (!file) return
+    if (!file) {
+      toast.error("Please select a file")
+      return
+    }
     // Upgraded limit to 5MB to match backend capability and standard practices
     if (file.size > 5 * 1024 * 1024) {
-      console.error("File size exceeds 5MB limit");
+      toast.error("File size exceeds 5MB limit.");
       return
     }
     setUploadedFile(file)
@@ -122,10 +131,12 @@ export default function ResumeUploadPage() {
         setTrigger(!trigger);
         setIsComplete(true);
         setIsUploading(false);
+        toast.success("Resume uploaded successfully!");
       }
 
     } catch (err) {
       console.error("Upload failed:", err);
+      toast.error("Failed to upload resume.");
       setUploadProgress(0);
       setIsUploading(false);
     }

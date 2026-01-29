@@ -14,6 +14,7 @@ import axios from "axios"
 import { Spinner } from "../ui/spinner"
 import { useCursorStore, type Cursor } from "@/store/nextCursorStore"
 import { useRecruiterApplicationsStore, type ApplicationJob } from "@/store/recruiterApplication"
+import toast from "react-hot-toast"
 
 
 interface ApplicationList {
@@ -218,9 +219,16 @@ export function WaitingList({ onScheduleBatch, response, setApplicationsList, se
                 setSelectedIds([])
                 setSelectApplications([])
                 setApplicationList([])
+                toast.success(response.data?.message || "Applications removed from waiting list successfully")
             }
-        } catch (error) {
-            console.log(error)
+        } catch (err) {
+            if (axios.isAxiosError(err)) {
+                console.error("Form submission error:", err.response?.data?.error);
+                toast.error(err.response?.data?.error || "Failed to remove applications from waiting list");
+            } else {
+                console.error("Unexpected error:", err);
+                toast.error("An unexpected error occurred");
+            }
         }
     }
 

@@ -27,8 +27,9 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Spinner } from "./ui/spinner"
 import { useJobStore } from "@/store/jobStore"
-import axios from "axios"
+import axios, { AxiosError } from "axios"
 import { useCursorStore } from "@/store/nextCursorStore"
+import toast from "react-hot-toast"
 
 
 
@@ -187,10 +188,17 @@ export function RecruiterJobsClient() {
             if (res.status === 200) {
                 console.log("Form submitted: ", res.data);
                 removeJob(jobToDelete || "")
+                toast.success("Job deleted successfully");
             }
 
         } catch (err) {
-            console.error("Form submission error: ", err);
+            if (axios.isAxiosError(err)) {
+                console.error("Form submission error:", err.response?.data?.error);
+                toast.error(err.response?.data?.error || "Failed to delete job");
+            } else {
+                console.error("Unexpected error:", err);
+                toast.error("An unexpected error occurred");
+            }
 
         } finally {
             setLoading(false);
@@ -254,7 +262,7 @@ export function RecruiterJobsClient() {
                                     <DropdownMenuContent align="end">
                                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
                                         <DropdownMenuItem asChild>
-                                            <Link href={`/recruiter/edit-job?job=${job.id}`}>
+                                            <Link href={`/recruiter/jobs/edit-job?job=${job.id}`}>
                                                 <Pencil className="mr-2 h-4 w-4" /> Edit Job
                                             </Link>
                                         </DropdownMenuItem>

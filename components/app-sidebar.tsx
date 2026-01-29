@@ -15,10 +15,10 @@ import {
     User,
     Camera,
 } from "lucide-react"
-import { usePathname } from "next/navigation"
+import { usePathname, useSearchParams } from "next/navigation"
 import Link from "next/link"
-import { useState } from "react"
-
+import { useState, useEffect } from "react"
+import toast from "react-hot-toast"
 import {
     Sidebar,
     SidebarContent,
@@ -121,6 +121,7 @@ interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
 
 export function AppSidebar({ type, ...props }: AppSidebarProps) {
     const pathname = usePathname()
+    const searchParams = useSearchParams()
     const router = useRouter()
     const clearAuth = useAuthStore((s) => s.logout)
     const clearRecruiter = useRecruiterStore((s) => s.clearRecuiterProfile)
@@ -130,8 +131,9 @@ export function AppSidebar({ type, ...props }: AppSidebarProps) {
     const clearCandidateApplications = useApplicationsStore((s) => s.clear)
     const { user, setUser } = useAuthStore()
     const [loading, setLoading] = useState(false)
+    const fullPath = `${pathname}${searchParams.size > 0 ? `?${searchParams}` : ''}`
 
-    // Close sidebar on route change
+
 
 
     const navItems = type === "candidate" ? candidateNav : recruiterNav
@@ -139,8 +141,12 @@ export function AppSidebar({ type, ...props }: AppSidebarProps) {
 
     const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0]
-        if (!file) return
+        if (!file) {
+            toast.error("Please select a file")
+            return
+        }
         if (file.size > 5 * 1024 * 1024) {
+            toast.error("File size must be less than 5MB")
             return
         }
 
@@ -175,9 +181,11 @@ export function AppSidebar({ type, ...props }: AppSidebarProps) {
             }, { withCredentials: true });
             console.log(res.data)
             setUser(res.data.user)
+            toast.success("Profile picture updated successfully")
 
         } catch (error) {
             console.error("Error uploading image:", error)
+            toast.error("Error uploading profile picture")
         } finally {
             setLoading(false)
         }
@@ -262,8 +270,8 @@ export function AppSidebar({ type, ...props }: AppSidebarProps) {
             <SidebarContent>
                 <SidebarMenu className="py-4 gap-1 px-2">
                     {navItems.map((item) => {
-                        const isActive = pathname.includes(item.url)
-                        const url = isActive ? pathname : item.url
+                        const isActive = fullPath.includes(item.url)
+                        const url = isActive ? fullPath : item.url
                         return (
                             <SidebarMenuItem key={item.title}>
                                 <SidebarMenuButton

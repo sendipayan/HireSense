@@ -19,7 +19,7 @@ type RecruiterProfile = {
   companyLinkedIn?: string | null;
   industry?: string | null;
   companySize?: string | null;
-  hiringForRoles?: any;
+  hiringForRoles?: { id: string; name: string }[];
   isVerified: verificationStatus;
   failedReasons?: any;
 };

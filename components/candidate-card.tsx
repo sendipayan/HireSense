@@ -71,7 +71,7 @@ export function CandidateCard({
           <div className="flex items-start justify-between gap-4">
             <div>
               <h3 className="font-semibold text-lg group-hover:text-primary transition-colors">
-                <Link href={`/recruiter/match-results?candidate=${Cid}&job=${Jid}`} className="hover:underline">
+                <Link href={`/recruiter/top-matches/match-results?candidate=${Cid}&job=${Jid}`} className="hover:underline">
                   {name}
                 </Link>
               </h3>
@@ -112,7 +112,7 @@ export function CandidateCard({
 
           <div className="mt-4 flex flex-col lg:flex-row gap-2">
             <Button size="sm" asChild>
-              <Link href={`/recruiter/match-results?candidate=${Cid}&job=${Jid}`}>View Profile</Link>
+              <Link href={`/recruiter/top-matches/match-results?candidate=${Cid}&job=${Jid}`}>View Profile</Link>
             </Button>
             {resumeMimeType === "application/pdf" &&
               <Button size="sm" variant="outline"

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import { useAuthStore } from "@/store/authStore"
 import { useRecruiterStore } from "@/store/RecuiterStore"
 import { useCandidateStore } from "@/store/candidateStore"
-
+import toast from "react-hot-toast"
 
 export default function TriggerGoogleJwt() {
     const { setIsLoggedIn, setUser } = useAuthStore()
@@ -30,6 +30,7 @@ export default function TriggerGoogleJwt() {
                     setCandidateProfile(data2?.user)
                 }
                 setIsLoggedIn(true)
+                toast.success("Welcome back!")
                 router.replace(`${data.role}/dashboard`)
             }
         }

@@ -5,6 +5,7 @@ import { useSession } from "next-auth/react"
 import { useAuthStore } from "@/store/authStore"
 import { useRecruiterStore } from "@/store/RecuiterStore"
 import { useCandidateStore } from "@/store/candidateStore"
+import toast from "react-hot-toast"
 
 export default function RolePage() {
     const { setIsLoggedIn, setUser } = useAuthStore()
@@ -30,6 +31,7 @@ export default function RolePage() {
                 setCandidateProfile(data2.user)
             }
             setIsLoggedIn(true)
+            toast.success("Welcome to HireSense!")
             router.replace(`/${role.toLowerCase()}/dashboard`)
         }
 

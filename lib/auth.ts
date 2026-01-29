@@ -18,6 +18,12 @@ export async function getAuthUser() {
           user: {
             select: { name: true, email: true, role: true, profilePic: true },
           },
+          hiringForRoles: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
         },
       });
     } else {

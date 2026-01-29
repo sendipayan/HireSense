@@ -12,6 +12,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"
+import toast from "react-hot-toast"
 
 interface Resume {
     id: string;
@@ -38,6 +39,7 @@ export default function AIFeedbackClientPage() {
                 }
             } catch (err) {
                 console.log(err)
+                toast.error("Failed to load resumes.")
             }
         }
         getAllResumes()

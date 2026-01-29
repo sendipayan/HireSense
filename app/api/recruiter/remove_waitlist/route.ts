@@ -56,7 +56,7 @@ async function handler(req: NextRequest, user: UserPayload) {
 
   return NextResponse.json(
     {
-      message: "Applications moved to PENDING",
+      message: "Applications removed from WAITLIST",
       updated: result.count,
     },
     { status: 200 },

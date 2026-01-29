@@ -17,6 +17,7 @@ import { useRecruiterStore } from "@/store/RecuiterStore"
 import { useAuthStore } from "@/store/authStore"
 import axios from "axios"
 import { Spinner } from "@/components/ui/spinner"
+import toast from "react-hot-toast"
 
 type verificationStatus = "PENDING" | "APPROVED" | "REJECTED";
 
@@ -32,7 +33,7 @@ interface RecruiterFormData {
   companyLinkedIn?: string | null;
   industry?: string | null;
   companySize?: string | null;
-  hiringForRoles?: any;
+  hiringForRoles?: string[];
   isVerified?: verificationStatus | null;
 }
 
@@ -104,7 +105,7 @@ export function RecruiterProfileClientPage() {
         companyLinkedIn: RecuiterProfile?.companyLinkedIn,
         industry: RecuiterProfile?.industry,
         companySize: RecuiterProfile?.companySize,
-        hiringForRoles: RecuiterProfile?.hiringForRoles,
+        hiringForRoles: RecuiterProfile?.hiringForRoles?.map((role: { id: string; name: string }) => role.id) || [],
         isVerified: RecuiterProfile?.isVerified,
       })
       if (RecuiterProfile.isVerified === "APPROVED") {
@@ -118,7 +119,7 @@ export function RecruiterProfileClientPage() {
       }
 
       // Convert string arrays to objects for MultiSelect display
-      const hiringRolesObjects = (RecuiterProfile?.hiringForRoles || []).map((role: string) => ({ value: role, label: role }))
+      const hiringRolesObjects = (RecuiterProfile?.hiringForRoles || []).map((role: { id: string; name: string }) => ({ value: role.id, label: role.name }))
       setSelectedRoles(hiringRolesObjects)
     }
   }, [RecuiterProfile])
@@ -179,19 +180,13 @@ export function RecruiterProfileClientPage() {
       if (res.status === 200) {
         const res2 = await fetch("/api/auth/me")
         const data2 = await res2.json()
+        console.log(data2)
         setRecuiterProfile(data2.user)
-        setIsSaved(true)
-        setTimeout(() => {
-          setIsSaved(false)
-        }, 3000)
+        toast.success("Profile updated successfully!")
       }
     } catch (err) {
       console.log(err)
-      setIsError(true)
-      setTimeout(() => {
-        setIsError(false)
-      }, 3000)
-
+      toast.error("Failed to update profile. Please try again.")
     }
 
     try {
@@ -201,17 +196,9 @@ export function RecruiterProfileClientPage() {
         const res2 = await fetch("/api/auth/me")
         const data2 = await res2.json()
         setRecuiterProfile(data2.user)
-        setIsSaved(true)
-        setTimeout(() => {
-          setIsSaved(false)
-        }, 3000)
       }
     } catch (error) {
       console.log(error)
-      setIsError(true)
-      setTimeout(() => {
-        setIsError(false)
-      }, 3000)
     } finally {
       setLoading(false)
     }

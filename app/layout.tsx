@@ -4,6 +4,7 @@ import { Geist, Geist_Mono } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
 import "./globals.css"
 import { Navbar } from "@/components/navbar"
+import { Toaster } from "react-hot-toast"
 import { Footer } from "@/components/footer"
 import { ThemeProvider } from "@/components/theme-provider"
 import { AuthProvider } from "@/components/authProvider"
@@ -106,6 +107,7 @@ export default function RootLayout({
             <Navbar />
             <div className="flex-1">{children}</div>
             <Footer />
+            <Toaster />
           </ThemeProvider>
         </AuthProvider>
         <Analytics />

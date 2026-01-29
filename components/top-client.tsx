@@ -16,6 +16,7 @@ import { Spinner } from "./ui/spinner"
 import { useCursorStore } from "@/store/nextCursorStore"
 import { Checkbox } from "@/components/ui/checkbox"
 import { ScheduleInterviewModal } from "./interview/schedule-interview-modal"
+import toast from "react-hot-toast"
 
 interface ApplicationList {
     CId: string;
@@ -284,9 +285,17 @@ export function TopMatchesClient() {
             console.log("Response:", response.data)
             if (response.status === 200) {
                 setTrigger(!trigger)
+                toast.success(response.data?.message || "Applications added to waitlist successfully")
             }
         } catch (err) {
-            console.log("Error adding candidates to waitlist:", err)
+
+            if (axios.isAxiosError(err)) {
+                console.error("Form submission error:", err.response?.data?.error);
+                toast.error(err.response?.data?.error || "Failed to add applications to waitlist");
+            } else {
+                console.error("Unexpected error:", err);
+                toast.error("An unexpected error occurred");
+            }
         }
         setApplicationList([])
         setSelectedIds([])

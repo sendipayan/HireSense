@@ -23,6 +23,7 @@ import {
 import { useRouter } from "next/navigation"
 import axios from "axios"
 import { useEffect, useState } from "react"
+import toast from "react-hot-toast"
 
 interface Resume {
     id: string;
@@ -64,12 +65,13 @@ export default function AIFeedbackClientPage({ resumeId }: { resumeId: string })
                 }
             } catch (err) {
                 console.log(err)
+                toast.error("Failed to load resume")
             } finally {
                 setLoading(false)
             }
         }
         getResume()
-    }, [trigger])
+    }, [resumeId, trigger])
 
     useEffect(() => {
         if (resume?.resumeUrl) {
@@ -106,9 +108,11 @@ export default function AIFeedbackClientPage({ resumeId }: { resumeId: string })
             console.log(response.data)
             if (response.status === 200) {
                 setTrigger(!trigger)
+                toast.success("Resume set as primary successfully")
             }
         } catch (err) {
             console.log(err)
+            toast.error("Failed to set resume as primary")
         } finally {
             setLoading(false)
         }
@@ -122,9 +126,11 @@ export default function AIFeedbackClientPage({ resumeId }: { resumeId: string })
             console.log(response.data)
             if (response.status === 200) {
                 router.back()
+                toast.success("Resume deleted successfully")
             }
         } catch (err) {
             console.log(err)
+            toast.error("Failed to delete resume")
         } finally {
             setLoading(false)
         }

@@ -20,6 +20,7 @@ import { useJobStore } from "@/store/jobStore"
 import { useCursorStore, type Cursor } from "@/store/nextCursorStore"
 import axios from "axios"
 import { Spinner } from "@/components/ui/spinner"
+import toast from "react-hot-toast"
 
 
 interface Job {
@@ -206,11 +207,19 @@ export default function RecruiterInterviewsPage() {
             }, { withCredentials: true });
             console.log(response.data);
             if (response.status === 200) {
+                toast.success(response.data?.message || "Interview completed successfully");
                 setTrigger(!trigger);
             }
 
-        } catch (error) {
-            console.error("Error completing interview:", error);
+        } catch (err) {
+            if (axios.isAxiosError(err)) {
+                console.error("Form submission error:", err.response?.data?.error);
+                toast.error(err.response?.data?.error || "Failed to complete interview");
+            } else {
+                console.error("Unexpected error:", err);
+                toast.error("An unexpected error occurred");
+            }
+
         } finally {
             setLoading(false);
         }
@@ -222,11 +231,19 @@ export default function RecruiterInterviewsPage() {
             const response = await axios.delete(`/api/recruiter/cancel_interview/${id}`, { withCredentials: true });
             console.log(response.data);
             if (response.status === 200) {
+                toast.success(response.data?.message || "Interview cancelled successfully");
                 setTrigger(!trigger);
             }
 
-        } catch (error) {
-            console.error("Error completing interview:", error);
+        } catch (err) {
+            if (axios.isAxiosError(err)) {
+                console.error("Form submission error:", err.response?.data?.error);
+                toast.error(err.response?.data?.error || "Failed to cancel interview");
+            } else {
+                console.error("Unexpected error:", err);
+                toast.error("An unexpected error occurred");
+            }
+
         } finally {
             setLoading(false);
         }
@@ -241,11 +258,19 @@ export default function RecruiterInterviewsPage() {
             }, { withCredentials: true });
             console.log(response.data);
             if (response.status === 200) {
+                toast.success(response.data?.message || "Interview hired successfully");
                 setTrigger(!trigger);
             }
 
-        } catch (error) {
-            console.error("Error completing interview:", error);
+        } catch (err) {
+            if (axios.isAxiosError(err)) {
+                console.error("Form submission error:", err.response?.data?.error);
+                toast.error(err.response?.data?.error || "Failed to hire candidate");
+            } else {
+                console.error("Unexpected error:", err);
+                toast.error("An unexpected error occurred");
+            }
+
         } finally {
             setLoading(false);
         }

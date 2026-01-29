@@ -14,7 +14,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
-import { useToast } from "@/hooks/use-toast"
+import toast from "react-hot-toast"
 import { CheckCircle2, Upload, FileText, XCircle } from "lucide-react"
 import axios, { AxiosError } from "axios"
 
@@ -47,7 +47,6 @@ export function ApplyJobModal({ job, user, open, trigger, setTrigger, onOpenChan
     const [isSuccess, setIsSuccess] = useState(false)
     const [isError, setIsError] = useState(false)
     const [errormessg, setErrormessg] = useState("")
-    const { toast } = useToast()
     const [viewurl, setViewurl] = useState("")
 
     useEffect(() => {

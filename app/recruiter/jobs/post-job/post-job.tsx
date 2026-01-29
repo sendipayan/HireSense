@@ -14,24 +14,15 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
 import { Checkbox } from "@/components/ui/checkbox";
-import { Sparkles, Eye, Save, ArrowLeft, Trash2 } from "lucide-react";
+import { Sparkles, Eye, Save, ArrowLeft } from "lucide-react";
 import { useRouter } from "next/navigation";
 import axios from "axios";
 import { useState, useEffect, useRef } from "react";
 import { useRecruiterStore } from "@/store/RecuiterStore";
-import { useJobStore } from "@/store/jobStore";
 import { Spinner } from "@/components/ui/spinner";
+import toast from "react-hot-toast";
+
 type Department =
     | "ENGINEERING"
     | "DESIGN"
@@ -62,22 +53,17 @@ type formType = {
     requirements: string[];
     optional?: string[];
     benifits: string[];
-    status: "ACTIVE" | "CLOSED" | "NONE";
 };
 
-export default function EditJob({ job }: { job: string }) {
-    const { jobs, setJobs, updateJob } = useJobStore()
+export default function PostJob() {
     const [loading, setLoading] = useState(false);
     const { RecuiterProfile } = useRecruiterStore()
-    const [open, setOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState("")
     const [skills, setSkills] = useState<{ value: string; label: string }[]>([])
     const [roles, setRoles] = useState<{ value: string; label: string }[]>([])
     const [selectedRequirements, setSelectedRequirements] = useState<{ value: string; label: string }[]>([])
     const [selectedOptional, setSelectedOptional] = useState<{ value: string; label: string }[]>([])
     const [searchLoading, setSearchLoading] = useState(false)
-    const [initialLoad, setInitialLoad] = useState(true);
-    const [jobToDelete, setJobToDelete] = useState<string | null>(null)
     const [form, setForm] = useState<formType>({
         id: "",
         title: "",
@@ -89,7 +75,6 @@ export default function EditJob({ job }: { job: string }) {
         requirements: [],
         optional: [],
         benifits: [],
-        status: "NONE",
         minSalary: 0,
         maxSalary: 0,
     });
@@ -139,47 +124,11 @@ export default function EditJob({ job }: { job: string }) {
     ];
 
     useEffect(() => {
-        const fetchJob = async () => {
-            const response = await fetch(`/api/getjob/${job}`);
-            const data = await response.json();
-            const jobData = data.job;
 
-            // Set form state from API response
-            setForm({
-                id: jobData.id ?? "",
-                title: jobData.title ?? "",
-                description: jobData.description ?? "",
-                location: jobData.location ?? "",
-                jobType: jobData.jobType ?? "NONE",
-                experienceRequired: jobData.experienceRequired ?? "NONE",
-                department: jobData.department ?? "NONE",
-                requirements: jobData.requirements ?? [],
-                optional: jobData.optional ?? [],
-                benifits: jobData.benifits ?? [],
-                status: (jobData.status as "ACTIVE" | "CLOSED" | "NONE") ?? "NONE",
-                minSalary: jobData.minSalary ?? 0,
-                maxSalary: Number(jobData.maxSalary ?? 0),
-            });
-
-            // Convert string arrays to objects for MultiSelect display
-            const requirementsObjects = (jobData.requirements || []).map((skill: { id: string; name: string }) => ({ value: skill.id, label: skill.name }))
-            const optionalObjects = (jobData.optional || []).map((skill: { id: string; name: string }) => ({ value: skill.id, label: skill.name }))
-
-            setSelectedRequirements(requirementsObjects)
-            setSelectedOptional(optionalObjects)
+        if (RecuiterProfile) {
+            setForm({ ...form, id: RecuiterProfile.id })
         }
-        fetchJob();
-    }, []);
-
-
-
-
-    useEffect(() => {
-        if (form.id.trim() !== "") {
-            setInitialLoad(false);
-        }
-    }, [form]);
-
+    }, [RecuiterProfile])
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
@@ -195,47 +144,27 @@ export default function EditJob({ job }: { job: string }) {
             form.location.trim() === "" ||
             form.minSalary < 0 ||
             form.requirements.length <= 0 ||
-            form.experienceRequired.trim() === "" ||
             form.maxSalary <= 0) {
-            alert("Please fill all the fields");
+            toast.error("Please fill all the required fields");
             return;
         }
 
         try {
-            setLoading(true);
-            const res = await axios.patch("/api/recruiter/update_job", form, { withCredentials: true });
-            if (res.status === 200) {
+            setLoading(true)
+            const res = await axios.post("/api/recruiter/post_job", form, { withCredentials: true });
+            if (res.status === 201) {
                 console.log("Form submitted: ", res.data);
-                updateJob(res.data.job)
-
+                toast.success("Job posted successfully!");
+                router.back()
             }
 
         } catch (err) {
             console.error("Form submission error: ", err);
+            toast.error("Failed to post job.");
         } finally {
-            setLoading(false);
+            setLoading(false)
         }
     };
-
-    const deleteJob = async () => {
-        if (form.id.trim() === "") {
-            return
-        }
-        try {
-            setLoading(true);
-            const res = await axios.delete(`/api/recruiter/delete_job/${form.id}`, { withCredentials: true });
-            if (res.status === 200) {
-                console.log("Form submitted: ", res.data);
-                router.push("/recruiter/dashboard");
-
-            }
-
-        } catch (err) {
-            console.error("Form submission error: ", err);
-        } finally {
-            setLoading(false);
-        }
-    }
 
 
     const prevSearchQueryRef = useRef("")
@@ -275,29 +204,26 @@ export default function EditJob({ job }: { job: string }) {
         return () => clearTimeout(timeoutId);
     }, [searchQuery]);
 
-
     return (
         <main className="py-8 sm:py-12">
-
             <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
                 {/* Breadcrumbs */}
-
                 <Breadcrumbs
                     items={[
                         { label: "Recruiter", href: "/recruiter/dashboard" },
-                        { label: "Edit Job" },
+                        { label: "Manage Jobs", href: "/recruiter/jobs" },
+                        { label: "Post a Job" },
                     ]}
                 />
 
                 {/* Page Header */}
                 <PageHeader
-                    title="Edit Job"
-                    description="Edit a job posting and let our AI match you with the best candidates. Fill out the job details and requirements."
+                    title="Post a New Job"
+                    description="Create a compelling job posting to attract top talent. Our AI will help match you with the best candidates."
                 />
 
                 {/* Job Posting Form */}
-                {!initialLoad ? <form className="mt-8 space-y-8" onSubmit={handleSubmit}>
-
+                <form className="mt-8 space-y-8" onSubmit={handleSubmit}>
                     {/* Basic Information */}
                     <section aria-labelledby="basic-info-heading">
                         <h2 id="basic-info-heading" className="text-lg font-semibold mb-4">
@@ -311,7 +237,7 @@ export default function EditJob({ job }: { job: string }) {
                                 required
                                 description="Be specific to attract the right candidates"
                                 value={form.title}
-                                onChange={(e) => setForm((prev) => ({ ...prev, title: e.target.value }))}
+                                onChange={(e) => setForm({ ...form, title: e.target.value })}
                             />
 
                             <div className="grid gap-6 sm:grid-cols-2">
@@ -319,10 +245,9 @@ export default function EditJob({ job }: { job: string }) {
                                     <Label htmlFor="department">Department</Label>
                                     <Select
                                         name="department"
-                                        value={form.department === "" ? "NONE" : form.department}
-
+                                        value={form.department || "NONE"}
                                         onValueChange={(value) => {
-                                            setForm((prev) => ({ ...prev, department: value }));
+                                            setForm({ ...form, department: value });
                                         }}
                                         required
                                     >
@@ -346,10 +271,9 @@ export default function EditJob({ job }: { job: string }) {
                                     <Label htmlFor="job-type">Job Type</Label>
                                     <Select
                                         name="jobType"
-                                        value={form.jobType === "" ? "NONE" : form.jobType}
-
+                                        value={form.jobType || "NONE"}
                                         onValueChange={(value) => {
-                                            setForm((prev) => ({ ...prev, jobType: value }));
+                                            setForm({ ...form, jobType: value });
                                         }}
                                         required
                                     >
@@ -366,26 +290,6 @@ export default function EditJob({ job }: { job: string }) {
                                     </Select>
                                 </div>
                             </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="status">Job Status</Label>
-                                <Select
-                                    name="status"
-                                    value={form.status}
-
-                                    onValueChange={(value) => {
-                                        setForm((prev) => ({ ...prev, status: value as "ACTIVE" | "CLOSED" }));
-                                    }}
-                                    required
-                                >
-                                    <SelectTrigger id="status" aria-label="Select status">
-                                        <SelectValue placeholder="Select status" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="ACTIVE">ACTIVE</SelectItem>
-                                        <SelectItem value="CLOSED">CLOSED</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
 
                             <div className="grid gap-6 sm:grid-cols-2">
                                 <FormField
@@ -395,7 +299,7 @@ export default function EditJob({ job }: { job: string }) {
                                     required
                                     value={form.location}
                                     onChange={(e) =>
-                                        setForm((prev) => ({ ...prev, location: e.target.value }))
+                                        setForm({ ...form, location: e.target.value })
                                     }
                                 />
 
@@ -403,10 +307,9 @@ export default function EditJob({ job }: { job: string }) {
                                     <Label htmlFor="experience">Experience Level</Label>
                                     <Select
                                         name="experience"
-                                        value={form.experienceRequired === "" ? "NONE" : form.experienceRequired}
-
+                                        value={form.experienceRequired || "NONE"}
                                         onValueChange={(value) => {
-                                            setForm((prev) => ({ ...prev, experienceRequired: value }));
+                                            setForm({ ...form, experienceRequired: value });
                                         }}
                                         required
                                     >
@@ -454,7 +357,7 @@ export default function EditJob({ job }: { job: string }) {
                                             aria-describedby="salary-hint"
                                             value={form.minSalary}
                                             onChange={(e) =>
-                                                setForm((prev) => ({ ...prev, minSalary: Number(e.target.value) }))
+                                                setForm({ ...form, minSalary: Number(e.target.value) })
                                             }
                                             required
                                         />
@@ -474,7 +377,7 @@ export default function EditJob({ job }: { job: string }) {
                                             className="pl-7"
                                             value={form.maxSalary}
                                             onChange={(e) =>
-                                                setForm((prev) => ({ ...prev, maxSalary: Number(e.target.value) }))
+                                                setForm({ ...form, maxSalary: Number(e.target.value) })
                                             }
                                             required
                                         />
@@ -503,7 +406,7 @@ export default function EditJob({ job }: { job: string }) {
                                 description="Be detailed - this helps our AI find better matches"
                                 value={form.description}
                                 onChange={(e) =>
-                                    setForm((prev) => ({ ...prev, description: e.target.value }))
+                                    setForm({ ...form, description: e.target.value })
                                 }
                             />
 
@@ -514,7 +417,7 @@ export default function EditJob({ job }: { job: string }) {
                                 selected={selectedRequirements}
                                 onChange={(selected) => {
                                     setSelectedRequirements(selected)
-                                    setForm((prev) => ({ ...prev, requirements: selected.map(s => s.value) }))
+                                    setForm({ ...form, requirements: selected.map(s => s.value) })
                                 }}
                                 placeholder="Select your primary skills"
                                 query={searchQuery}
@@ -530,7 +433,7 @@ export default function EditJob({ job }: { job: string }) {
                                 selected={selectedOptional}
                                 onChange={(selected) => {
                                     setSelectedOptional(selected)
-                                    setForm((prev) => ({ ...prev, optional: selected.map(s => s.value) }))
+                                    setForm({ ...form, optional: selected.map(s => s.value) })
                                 }}
                                 placeholder="Select your nice to have skills"
                                 query={searchQuery}
@@ -562,17 +465,17 @@ export default function EditJob({ job }: { job: string }) {
                                                 checked={form.benifits.includes(benefit)}
                                                 onCheckedChange={(checked) => {
                                                     if (checked) {
-                                                        setForm((prev) => ({
-                                                            ...prev,
-                                                            benifits: [...prev.benifits, benefit],
-                                                        }));
+                                                        setForm({
+                                                            ...form,
+                                                            benifits: [...form.benifits, benefit],
+                                                        });
                                                     } else {
-                                                        setForm((prev) => ({
-                                                            ...prev,
-                                                            benifits: prev.benifits.filter(
+                                                        setForm({
+                                                            ...form,
+                                                            benifits: form.benifits.filter(
                                                                 (b) => b !== benefit
                                                             ),
-                                                        }));
+                                                        });
                                                     }
                                                 }}
                                             />
@@ -618,44 +521,16 @@ export default function EditJob({ job }: { job: string }) {
                             onClick={() => router.back()}
                         >
                             <ArrowLeft className="mr-2 h-4 w-4" aria-hidden="true" />
-                            Back
+                            Back to Dashboard
                         </Button>
                         <div className="flex flex-col gap-3 sm:flex-row">
-                            <Button type="button" className="cursor-pointer" size="lg" variant="destructive" onClick={() => setJobToDelete(form.id)} disabled={loading}>
-                                {!loading && <Trash2 className="mr-2 h-4 w-4" aria-hidden="true" />}
-                                {loading ? <Spinner className="mr-2 h-4 w-4" aria-hidden="true" /> : "Delete Job"}
-                            </Button>
-                            <Button type="submit" className="cursor-pointer" size="lg" disabled={loading}>
-                                {!loading && <Save className="mr-2 h-4 w-4" aria-hidden="true" />}
-                                {loading ? <Spinner className="mr-2 h-4 w-4" aria-hidden="true" /> : "Save Changes"}
+                            <Button type="submit" size="lg">
+                                {loading ? <Spinner className="w-4 h-4" /> : "Publish Job"}
                             </Button>
                         </div>
                     </div>
-                </form> : <div className="bg-muted-foreground/50 border border-border rounded-lg p-6 mb-8 animate-pulse h-[70vh]">
-
-                </div>}
+                </form>
             </div>
-            {/* Delete Confirmation */}
-            <AlertDialog open={!!jobToDelete} onOpenChange={(open) => !open && setJobToDelete(null)}>
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                            This action cannot be undone. This will permanently delete the job posting and remove all associated
-                            application data.
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel className="bg-transparent">Cancel</AlertDialogCancel>
-                        <AlertDialogAction
-                            onClick={deleteJob}
-                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                        >
-                            Delete Job
-                        </AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
         </main>
     );
 }

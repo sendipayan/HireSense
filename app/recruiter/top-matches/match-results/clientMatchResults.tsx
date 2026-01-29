@@ -30,6 +30,7 @@ import axios from "axios"
 import type { Job } from "@/store/jobStore"
 import { ScheduleInterviewModal } from "@/components/interview/schedule-interview-modal"
 import { useRouter } from "next/navigation"
+import toast from "react-hot-toast"
 type ApplicationJob = {
     title: string;
     id: string;
@@ -75,6 +76,7 @@ export default function MatchResultsClientPage({ candidateId, jobId }: { candida
     const [initialLoad, setInitialLoad] = useState(true)
     const [trigger, setTrigger] = useState(false)
     const router = useRouter()
+    const [link, setLink] = useState<string>("")
     const [uniqueJob, setUniqueJob] = useState<Job>({
         id: "",
         recruiterId: "",
@@ -139,6 +141,13 @@ export default function MatchResultsClientPage({ candidateId, jobId }: { candida
         fetch()
     }, [])
 
+    useEffect(() => {
+
+        if (uniqueApplication.resume.id?.trim() !== "") {
+
+        }
+    }, [uniqueApplication])
+
 
     const handleAddToWaitlist = async () => {
         if (uniqueApplication.id.trim() === "") return
@@ -147,9 +156,17 @@ export default function MatchResultsClientPage({ candidateId, jobId }: { candida
             const res = await axios.post(`/api/recruiter/toogle_waitlist`, { id: uniqueApplication.id }, { withCredentials: true })
             const data = await res.data
             setUniqueApplication((prev) => ({ ...prev, status: data.status }))
+            toast.success(data?.message || "Toggled waitlist")
 
-        } catch (error) {
-            console.error("toggle waitlist error: ", error)
+        } catch (err) {
+            if (axios.isAxiosError(err)) {
+                console.error("Form submission error:", err.response?.data?.error);
+                toast.error(err.response?.data?.error || "Failed to toggle waitlist");
+            } else {
+                console.error("Unexpected error:", err);
+                toast.error("An unexpected error occurred");
+            }
+
         }
 
     }
@@ -158,7 +175,7 @@ export default function MatchResultsClientPage({ candidateId, jobId }: { candida
         <main className="py-8 sm:py-12">
             <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
                 {/* Breadcrumbs */}
-                <Breadcrumbs items={[{ href: "/recruiter/dashboard", label: "Recruiter" }, { label: "Match Results" }]} />
+                <Breadcrumbs items={[{ href: "/recruiter/dashboard", label: "Recruiter" }, { href: "/recruiter/top-matches", label: "Top Matches" }, { label: "Match Results" }]} />
 
                 {/* Page Header */}
                 <PageHeader
@@ -243,11 +260,34 @@ export default function MatchResultsClientPage({ candidateId, jobId }: { candida
                                 <p className="text-sm font-medium mb-2">Top Skills</p>
                                 <div className="flex flex-wrap gap-2">
                                     {uniqueApplication?.candidate.primarySkills.map((skill) => (
+                                        <Badge key={skill.id} variant="default">
+                                            {skill.name}
+                                        </Badge>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div className="mt-6">
+                                <p className="text-sm font-medium mb-2">Secondary Skills</p>
+                                <div className="flex flex-wrap gap-2">
+                                    {uniqueApplication?.candidate.secondarySkills.map((skill) => (
                                         <Badge key={skill.id} variant="secondary">
                                             {skill.name}
                                         </Badge>
                                     ))}
                                 </div>
+                            </div>
+                            <div className="flex flex-col md:flex-row gap-4 justify-start items-center mt-6">
+                                {uniqueApplication?.resume?.resumeMimeType === "application/pdf" && <Button size="sm" onClick={() => {
+                                    window.open(`https://docs.google.com/gview?url=${encodeURIComponent(uniqueApplication?.resume?.resumeUrl)}&embedded=true`, "_blank", "noopener,noreferrer")
+                                }} variant="default" className="cursor-pointer">
+                                    View Resume
+                                </Button>}
+                                <Button size="sm" onClick={() => {
+                                    window.open(uniqueApplication?.resume?.resumeUrl, "_blank", "noopener,noreferrer")
+                                }} variant="secondary" className="cursor-pointer">
+                                    Download Resume
+                                </Button>
                             </div>
                         </div>
                     </section>

@@ -23,6 +23,7 @@ import { cn } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
 import { useEffect, useState } from "react"
 import axios from "axios"
+import toast from "react-hot-toast"
 
 const formSchema = z.object({
 
@@ -115,10 +116,18 @@ export function ScheduleInterviewModal({
                 onSchedule(res.data)
                 setTrigger(!trigger)
                 onOpenChange(false)
+                toast.success(res.data?.message || "Interview scheduled successfully")
                 form.reset()
             }
+
         } catch (err) {
-            console.log(err)
+            if (axios.isAxiosError(err)) {
+                console.error("Form submission error:", err.response?.data?.error);
+                toast.error(err.response?.data?.error || "Failed to schedule interview");
+            } else {
+                console.error("Unexpected error:", err);
+                toast.error("An unexpected error occurred");
+            }
         }
     }
     const remainingCandidates = Math.max(0, applications.length - 3)

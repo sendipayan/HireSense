@@ -34,6 +34,7 @@ import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
 import { useCandidateStore } from "@/store/candidateStore";
 import { useRecruiterStore } from "@/store/RecuiterStore";
+import toast from "react-hot-toast";
 
 
 /**
@@ -65,76 +66,99 @@ export default function LoginPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Frontend-only: form submission would be handled by backend
+
     if (isSignUp) {
-      setLoading(true)
-      await sendOtp(formData.email)
-      setIsNext(true);
-      setTimer(true)
-      setLoading(false)
-    } else {
-      setLoading(true)
-      const res = await axios.post("/api/auth/login", {
-        email: formData.email,
-        password: formData.password,
-      }, { withCredentials: true })
-      console.log(res)
-      if (res.status === 200) {
-        const res2 = await fetch("/api/auth/me")
-        const data2 = await res2.json()
-        if (data2.user.user.role === "RECRUITER") {
-          setRecuiterProfile(data2.user)
-        } else {
-          setCandidateProfile(data2.user)
-        }
-        setUser(data2.user.user)
-        setIsLoggedIn(true)
-        const path = data2.user.user.role.toLowerCase()
-        console.log(path)
-        window.location.href = `/${path}/dashboard`
-
-      }
-      setLoading(false)
-    }
-    console.log("Form submitted:", formData);
-  };
-
-  const handleNext = async (e: React.FormEvent) => {
-    e.preventDefault();
-    // Frontend-only: form submission would be handled by backend
-    if (Otp.length === 6) {
+      // Signup flow - send OTP
       setLoading(true)
       try {
-        const res = await axios.post("/api/auth/signup", {
+        await sendOtp(formData.email)
+        setIsNext(true);
+        setTimer(true)
+        toast.success("Check your email for OTP.")
+      } catch (error: any) {
+        console.error(error)
+        toast.error(error.response?.data?.message || "Unable to send OTP. Please try again.")
+      } finally {
+        setLoading(false)
+      }
+    } else {
+      // Login flow
+      setLoading(true)
+      try {
+        const res = await axios.post("/api/auth/login", {
           email: formData.email,
-          name: formData.name,
           password: formData.password,
-          role: formData.role,
-          otp: Otp,
         }, { withCredentials: true })
-        console.log(res)
-        if (res.status === 201) {
+
+        if (res.status === 200) {
           const res2 = await fetch("/api/auth/me")
           const data2 = await res2.json()
+
           if (data2.user.user.role === "RECRUITER") {
             setRecuiterProfile(data2.user)
           } else {
             setCandidateProfile(data2.user)
           }
+
           setUser(data2.user.user)
           setIsLoggedIn(true)
+
+          toast.success("Welcome back!")
+
           const path = data2.user.user.role.toLowerCase()
           window.location.href = `/${path}/dashboard`
-
         }
       } catch (error: any) {
-        console.log(error)
-        alert(error)
+        console.error(error)
+        toast.error(error.response?.data?.message || "Invalid email or password.")
       } finally {
         setLoading(false)
       }
     }
+  };
 
+  const handleNext = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (Otp.length !== 6) {
+      toast.error("Please enter a valid 6-digit OTP.")
+      return
+    }
+
+    setLoading(true)
+    try {
+      const res = await axios.post("/api/auth/signup", {
+        email: formData.email,
+        name: formData.name,
+        password: formData.password,
+        role: formData.role,
+        otp: Otp,
+      }, { withCredentials: true })
+
+      if (res.status === 201) {
+        const res2 = await fetch("/api/auth/me")
+        const data2 = await res2.json()
+
+        if (data2.user.user.role === "RECRUITER") {
+          setRecuiterProfile(data2.user)
+        } else {
+          setCandidateProfile(data2.user)
+        }
+
+        setUser(data2.user.user)
+        setIsLoggedIn(true)
+
+        toast.success("Welcome to HireSense!")
+
+        const path = data2.user.user.role.toLowerCase()
+        window.location.href = `/${path}/dashboard`
+      }
+    } catch (error: any) {
+      console.error(error)
+      toast.error(error.response?.data?.message || "Invalid OTP or signup failed. Please try again.")
+    } finally {
+      setLoading(false)
+    }
   };
 
   useEffect(() => {

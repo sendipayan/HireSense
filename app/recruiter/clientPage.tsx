@@ -19,6 +19,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { useAuthStore } from "@/store/authStore"
 import { InterviewStatusBadge } from "@/components/interview/interview-status-badge"
 import { useInterviewStore } from "@/store/useInterviewStore"
+import toast from "react-hot-toast"
 
 interface stats {
     jobs: number;
@@ -74,6 +75,7 @@ export default function RecruiterDashboardPage() {
                 setJobs(data.job || [])
             } catch (error) {
                 console.error("Error fetching jobs:", error)
+                toast.error("Failed to load jobs")
                 setJobs([]) // Set empty array on error
             }
 
@@ -84,6 +86,7 @@ export default function RecruiterDashboardPage() {
                 setApplications(data1.applications || [])
             } catch (error) {
                 console.error("Error fetching applications:", error)
+                toast.error("Failed to load applications")
                 setApplications([]) // Set empty array on error
             }
 
@@ -94,6 +97,7 @@ export default function RecruiterDashboardPage() {
                 setInterviews(data2.interviews || [])
             } catch (error) {
                 console.error("Error fetching interviews:", error)
+                toast.error("Failed to load interviews")
                 setInterviews([]) // Set empty array on error
             }
 
@@ -155,7 +159,7 @@ export default function RecruiterDashboardPage() {
                         title={`${user?.name + "'s"} Dashboard`}
                         description="Manage your hiring pipeline and discover top talent with AI."
                     >
-                        <Button disabled={!verfiy} onClick={() => router.push("/recruiter/post-job")}>
+                        <Button disabled={!verfiy} onClick={() => router.push("/recruiter/jobs/post-job")}>
 
                             <Plus className="mr-2 h-4 w-4" aria-hidden="true" />
                             Post New Job
@@ -201,7 +205,7 @@ export default function RecruiterDashboardPage() {
                                     key={job.id}
                                     className="rounded-xl border border-border bg-card p-4 transition-colors hover:border-primary/50"
                                 >
-                                    <Link href={`/recruiter/edit-job?job=${job.id}`} className="hover:text-primary transition-colors">
+                                    <Link href={`/recruiter/jobs/edit-job?job=${job.id}`} className="hover:text-primary transition-colors">
                                         <div className="flex items-start justify-between gap-3">
                                             <div className="min-w-0">
                                                 <h3 className="font-medium truncate">
@@ -246,7 +250,7 @@ export default function RecruiterDashboardPage() {
                             </div>}
 
                         <Button variant="outline" className="w-full mt-4 bg-transparent" asChild>
-                            <Link href="/recruiter/post-job">
+                            <Link href="/recruiter/jobs/post-job">
                                 <Plus className="mr-2 h-4 w-4" aria-hidden="true" />
                                 Post New Job
                             </Link>

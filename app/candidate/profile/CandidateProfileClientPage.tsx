@@ -16,6 +16,7 @@ import { useAuthStore } from "@/store/authStore"
 import axios from "axios"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Spinner } from "@/components/ui/spinner"
+import toast from "react-hot-toast"
 
 interface CandidateFormData {
   fullName?: string | null;
@@ -216,17 +217,11 @@ export default function CandidateProfileClientPage() {
         const res2 = await fetch("/api/auth/me")
         const data2 = await res2.json()
         setCandidateProfile(data2.user)
-        setIsSaved(true)
-        setTimeout(() => {
-          setIsSaved(false)
-        }, 3000)
+        toast.success("Profile saved successfully!")
       }
     } catch (error) {
       console.log(error)
-      setIsError(true)
-      setTimeout(() => {
-        setIsError(false)
-      }, 3000)
+      toast.error("Failed to save profile. Please try again.")
     } finally {
       setLoading(false)
     }
@@ -319,7 +314,7 @@ export default function CandidateProfileClientPage() {
         <PageHeader title="Candidate Profile" description="Showcase your skills and unlock matching opportunities" />
 
         {/* Profile Completion Card */}
-        {!initialLoad ? <div className="bg-card border border-border rounded-lg p-6 mb-8">
+        {!initialLoad ? <div className="bg-card border border-border rounded-lg p-6 mb-8 mt-8">
           <ProfileCompletionIndicator completedFields={completedFields} totalFields={totalFields} />
         </div> :
           <div className="bg-muted-foreground/50 border border-border rounded-lg p-6 mb-8 animate-pulse h-20">
