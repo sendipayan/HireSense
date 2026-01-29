@@ -25,6 +25,7 @@ import { AnimatedCounter } from "@/components/ui/animated-counter"
 import { GradientBorder } from "@/components/ui/gradient-border"
 import { MagneticButton } from "@/components/ui/magnetic-button"
 import { GlowEffect } from "@/components/ui/glow-effect"
+import ScrollVelocity from "@/components/scrollVelocity"
 
 /**
  * SEO: Landing page metadata
@@ -263,13 +264,14 @@ export default function HomePage() {
             </p>
           </BlurFade>
           <div className="flex flex-wrap items-center justify-center gap-x-12 gap-y-6">
-            {companyLogos.map((company, index) => (
+            <ScrollVelocity texts={companyLogos} velocity={30} className="custom-scroll-text" />
+            {/* {companyLogos.map((company, index) => (
               <BlurFade key={company} delay={600 + index * 100}>
                 <span className="text-xl font-bold text-muted-foreground/60 hover:text-foreground transition-colors duration-300">
                   {company}
                 </span>
               </BlurFade>
-            ))}
+            ))}*/}
           </div>
         </div>
       </section>
@@ -317,7 +319,7 @@ export default function HomePage() {
           <div className="mt-16 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {features.map((feature, index) => (
               <BlurFade key={feature.title} delay={200 + index * 100}>
-                <SpotlightCard className="h-full" spotlightColor="rgba(var(--chart-1), 0.1)">
+                <SpotlightCard className="h-full" spotlightColor="rgba(16, 185, 129, 0.2)">
                   <div className="p-6 lg:p-8">
                     <div className="mb-4 inline-flex rounded-lg bg-primary/10 p-3">
                       <feature.icon className="h-6 w-6 text-primary" aria-hidden="true" />
@@ -459,7 +461,7 @@ export default function HomePage() {
             ].map((item, index) => (
               <BlurFade key={item.step} delay={200 + index * 150}>
                 <article className="relative group">
-                  <div className="mb-4 text-6xl font-bold bg-gradient-to-b from-muted-foreground/30 to-transparent bg-clip-text text-transparent">
+                  <div className="inline-flex animate-gradient mb-4 text-6xl bg-gradient-to-r from-chart-1 via-chart-2 to-chart-1 bg-[length:200%_auto] bg-clip-text text-transparent">
                     {item.step}
                   </div>
                   <GlowEffect intensity="low">
