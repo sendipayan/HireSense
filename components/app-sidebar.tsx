@@ -320,9 +320,7 @@ export function AppSidebar({ type, ...props }: AppSidebarProps) {
                         </SidebarMenuButton>
                     </SidebarMenuItem>
                 </SidebarMenu>
-                <div className="group-data-[collapsible=icon]:hidden text-xs text-center text-muted-foreground mt-2">
-                    © 2024 HireSense
-                </div>
+
             </SidebarFooter>
             <SidebarRail />
         </Sidebar>

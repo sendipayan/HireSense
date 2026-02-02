@@ -70,6 +70,24 @@ export default function AIFeedbackClientPage({ resumeId }: { resumeId: string })
                 setLoading(false)
             }
         }
+
+        const getText = async () => {
+            try {
+                setLoading(true)
+                const response = await axios.post(`/api/candidate/extract_text`, { resumeId })
+                console.log(response.data)
+                if (response.status === 200) {
+                    console.log(response.data.text)
+                }
+            } catch (err) {
+                console.log(err)
+                toast.error("Failed to extract text")
+            } finally {
+                setLoading(false)
+            }
+        }
+
+        getText()
         getResume()
     }, [resumeId, trigger])
 

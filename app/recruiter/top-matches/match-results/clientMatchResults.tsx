@@ -233,7 +233,7 @@ export default function MatchResultsClientPage({ candidateId, jobId }: { candida
                                 </Avatar>
                                 <div>
                                     <h3 className="text-xl font-semibold">{uniqueApplication?.candidate.user.name}</h3>
-                                    <p className="text-muted-foreground"><strong>For Role: </strong>{uniqueApplication?.job.title}</p>
+
                                 </div>
                             </div>
 

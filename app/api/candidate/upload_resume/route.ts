@@ -21,6 +21,12 @@ async function handler(
     if (!file) {
       return NextResponse.json({ error: "No file provided" }, { status: 400 });
     }
+    if (file.type !== "application/pdf" || file.size > 5 * 1024 * 1024) {
+      return NextResponse.json(
+        { error: "File must be a PDF and less than 5MB" },
+        { status: 400 },
+      );
+    }
 
     const candidate = await prisma.candidate.findUnique({
       where: { userId: user.userId },
@@ -37,6 +43,12 @@ async function handler(
     }
 
     const buffer = Buffer.from(await file.arrayBuffer());
+    if (!buffer.subarray(0, 5).toString().startsWith("%PDF")) {
+      return NextResponse.json(
+        { error: "Invalid or corrupted PDF file" },
+        { status: 400 },
+      );
+    }
 
     const uploadResult = await new Promise<any>((resolve, reject) => {
       cloudinary.uploader
