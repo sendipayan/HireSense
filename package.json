@@ -8,7 +8,10 @@
     "lint": "eslint .",
     "start": "next start",
     "seed:skills": "tsx scripts/seed-skills.ts",
-    "seed:roles": "tsx scripts/seed-role.ts"
+    "seed:roles": "tsx scripts/seed-role.ts",
+    "embeddings:skills": "tsx scripts/skill_embedings.ts",
+    "embeddings:roles": "tsx scripts/role_embeddings.ts",
+    "test:skill": "tsx scripts/test.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
@@ -93,6 +96,7 @@
     "postcss": "^8.5",
     "prisma": "^7.2.0",
     "tailwindcss": "^4.1.9",
+    "ts-node": "^10.9.2",
     "tsx": "^4.21.0",
     "tw-animate-css": "1.3.3",
     "typescript": "^5"

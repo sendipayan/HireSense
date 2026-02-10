@@ -103,6 +103,11 @@ export default function ResumeUploadPage() {
       toast.error("File size exceeds 5MB limit.");
       return
     }
+
+    if (file.type !== "application/pdf") {
+      toast.error("Only PDF files are allowed.");
+      return
+    }
     setUploadedFile(file)
     setIsUploading(true)
     setUploadProgress(0)
@@ -189,18 +194,18 @@ export default function ResumeUploadPage() {
                   </div>
                   <p className="text-lg font-medium">Drag and drop your resume here</p>
                   <p className="mt-1 text-muted-foreground">or click to browse files</p>
-                  <p className="mt-4 text-sm text-muted-foreground">Supports PDF, DOC, DOCX (max 1MB)</p>
+                  <p className="mt-4 text-sm text-muted-foreground">Supports PDF (max 5MB)</p>
                   <input
                     id="resume-upload"
                     type="file"
-                    accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                    accept=".pdf"
                     className="sr-only"
                     onChange={handleFileSelect}
                     aria-describedby="file-requirements"
                   />
                 </label>
                 <p id="file-requirements" className="sr-only">
-                  Accepted file types: PDF, DOC, DOCX. Maximum file size: 1 megabytes.
+                  Accepted file types: PDF. Maximum file size: 5 megabytes.
                 </p>
               </div>
             ) : (

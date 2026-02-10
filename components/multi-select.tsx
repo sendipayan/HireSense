@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { X, Search, Loader2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -45,6 +45,15 @@ export function MultiSelect({
   const [isOpen, setIsOpen] = useState(false)
   const [internalSearchQuery, setInternalSearchQuery] = useState("")
   const inputId = `field-${name}`
+
+  useEffect(() => {
+    if (isOpen) {
+      setInternalSearchQuery("")
+      if (setQuery) {
+        setQuery("")
+      }
+    }
+  }, [isOpen])
 
   // Use controlled query if provided, otherwise use internal state
   const searchQuery = query !== undefined ? query : internalSearchQuery

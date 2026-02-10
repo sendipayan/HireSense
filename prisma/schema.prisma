@@ -125,6 +125,7 @@ model Skill {
   requiredForJobId        String?
   optionalForJobId        String?
   primaryForCandidateId   String?
+  embedding               Float[]
   secondaryForCandidateId String?
   requiredForJob          PostJob?   @relation("JobRequiredSkills", fields: [requiredForJobId], references: [id])
   optionalForJob          PostJob?   @relation("JobOptionalSkills", fields: [optionalForJobId], references: [id])
@@ -140,6 +141,7 @@ model Role {
   popularity             Int        @default(0)
   createdAt              DateTime   @default(now())
   updatedAt              DateTime   @updatedAt
+  embedding              Float[]
   jobId                  String?
   recruiterId            String?
   preferredByCandidateId String?
