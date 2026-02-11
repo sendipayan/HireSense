@@ -39,7 +39,6 @@ async function handler(req: NextRequest, user: UserPayload) {
     try {
       const res = await fetch(`https://api.github.com/users/${username}/repos`);
       const data = await res.json();
-      console.log(data);
       for (const repo of data) {
         result.push({
           title: repo?.name,

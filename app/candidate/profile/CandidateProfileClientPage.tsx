@@ -3,7 +3,7 @@
 import type React from "react"
 
 import { useEffect, useState, useRef } from "react"
-import { Save, AlertCircle, Upload, CheckCircle } from "lucide-react"
+import { Save, AlertCircle, CheckCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { FormField } from "@/components/form-field"
 import { FormSection } from "@/components/form-section"
@@ -186,22 +186,6 @@ export default function CandidateProfileClientPage() {
   }, [candidateProfile])
 
 
-  //phoneNumber,
-  //status,
-  //institution,
-  //degree,
-  //graduationYear,
-  //primarySkills,
-  //secondarySkills,
-  //experienceLevel,
-  //preferredRoles,
-  //githubUrl,
-  //portfolioUrl,
-  //linkedinUrl,
-  //jobTypePreference,
-  //openToWork,
-  //availability,
-
   const [isSaved, setIsSaved] = useState(false)
   const [isError, setIsError] = useState(false)
 
@@ -212,7 +196,7 @@ export default function CandidateProfileClientPage() {
   }, [formData])
 
   // Calculate profile completion
-  const totalFields = 16
+  const totalFields = 19
   const completedFields = Object.values(formData).filter((v) => {
     if (Array.isArray(v)) return v.length > 0
     if (typeof v === "string") return v.trim() !== ""
@@ -745,12 +729,13 @@ export default function CandidateProfileClientPage() {
               </Select>
             </div>
 
-            <div className="flex items-center justify-between p-4 border border-border rounded-lg bg-accent/30">
-              <div>
+            <div className="flex flex-col md:flex-row items-center justify-between p-4 border border-border rounded-lg bg-accent/30">
+              <div className="mb-2 md:mb-0">
                 <p className="text-sm font-medium text-foreground">Open to Remote Work</p>
                 <p className="text-xs text-muted-foreground">Toggle to show remote job preferences</p>
               </div>
               <button
+                type="button"
                 onClick={() => handleChange("openToWork", !formData.openToWork)}
                 className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${formData.openToWork ? "bg-primary" : "bg-muted"
                   }`}
@@ -782,7 +767,7 @@ export default function CandidateProfileClientPage() {
           </FormSection>
 
           {/* Submit Button */}
-          <div className="flex justify-end gap-3 pt-4  border-border">
+          <div className="flex justify-center md:justify-end gap-3 pt-4  border-border">
             <Button variant="outline">Cancel</Button>
             <Button className="gap-2" >
               {!loading && <Save className="w-4 h-4" />}
