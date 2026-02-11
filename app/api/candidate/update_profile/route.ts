@@ -28,6 +28,7 @@ async function handler(req: NextRequest, authUser: UserPayload) {
     jobTypePreference,
     openToWork,
     availability,
+    projects,
   } = body;
 
   // Enforce ownership: the id in body must match the token user id
@@ -44,13 +45,6 @@ async function handler(req: NextRequest, authUser: UserPayload) {
   }
 
   let isVerified = false;
-
-  console.log("institution", institution);
-  console.log("degree", degree);
-  console.log("graduationYear", graduationYear);
-  console.log("primarySkills", primarySkills);
-  console.log("experienceLevel", experienceLevel);
-  console.log("preferredRoles", preferredRoles);
 
   // Check all required fields are present and not empty
   // Using truthy checks to properly handle null/undefined values
@@ -185,8 +179,8 @@ async function handler(req: NextRequest, authUser: UserPayload) {
 
   console.log("isVerified", isVerified);
 
-  // Use a transaction to keep data consistent
-  await prisma.$transaction([
+  // Prepare transaction with basic updates
+  const transactionOps: any[] = [
     prisma.user.update({
       where: { id },
       data: { name },
@@ -209,7 +203,63 @@ async function handler(req: NextRequest, authUser: UserPayload) {
         availability,
       },
     }),
-  ]);
+  ];
+
+  // Handle Projects
+  if (projects) {
+    const projectIds = projects.filter((p: any) => p.id).map((p: any) => p.id);
+
+    // Delete removed projects
+    transactionOps.push(
+      prisma.project.deleteMany({
+        where: {
+          candidateId: user.id,
+          id: { notIn: projectIds },
+        },
+      }),
+    );
+
+    // Upsert projects
+    for (const p of projects) {
+      if (p.id) {
+        transactionOps.push(
+          prisma.project.update({
+            where: { id: p.id },
+            data: {
+              title: p.title,
+              description: p.description,
+              repoUrl: p.repoUrl,
+              liveLink: p.liveLink,
+              language: p.language,
+              stars: p.stars,
+              forks: p.forks,
+              githubRepoId: p.githubRepoId,
+              githubUpdatedAt: p.githubUpdatedAt,
+            },
+          }),
+        );
+      } else {
+        transactionOps.push(
+          prisma.project.create({
+            data: {
+              candidateId: user.id,
+              title: p.title,
+              description: p.description,
+              repoUrl: p.repoUrl,
+              liveLink: p.liveLink,
+              language: p.language,
+              stars: p.stars,
+              forks: p.forks,
+              githubRepoId: p.githubRepoId,
+              githubUpdatedAt: p.githubUpdatedAt,
+            },
+          }),
+        );
+      }
+    }
+  }
+
+  await prisma.$transaction(transactionOps);
 
   return NextResponse.json(
     { message: "Profile updated successfully" },

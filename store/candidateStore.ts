@@ -12,11 +12,29 @@ type Resume = {
   resumeUrl: string;
   createdAt: Date;
 };
+
+type Project = {
+  id: string;
+  candidateId: string;
+  title: string;
+  description?: string | null;
+  repoUrl?: string | null;
+  liveLink?: string | null;
+  githubRepoId?: number | null;
+  language?: string | null;
+  stars?: number | null;
+  forks?: number | null;
+  createdAt: Date;
+  updatedAt: Date;
+  githubUpdatedAt?: Date | null;
+};
+
 type CandidateProfile = {
   id: string;
   userId: string;
   user: BaseUser;
   resumes: Resume[];
+  projects: Project[];
   phoneNumber?: string | null;
   status?: string | null;
   institution?: string | null;

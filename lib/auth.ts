@@ -44,6 +44,7 @@ export async function getAuthUser() {
           user: {
             select: { name: true, email: true, role: true, profilePic: true },
           },
+          projects: true,
         },
       });
       const primarySkills = await prisma.skill.findMany({

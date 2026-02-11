@@ -37,6 +37,18 @@ interface CandidateFormData {
   isVerified: boolean;
   openToWork: boolean;
   availability?: string | null;
+  projects: {
+    id?: string;
+    title: string;
+    description: string;
+    repoUrl: string;
+    liveLink: string;
+    language: string;
+    stars: number;
+    forks: number;
+    githubRepoId: number;
+    githubUpdatedAt: string;
+  }[];
 };
 
 const CURRENT_STATUS_OPTIONS = [
@@ -120,6 +132,7 @@ export default function CandidateProfileClientPage() {
     isVerified: false,
     openToWork: true,
     availability: "",
+    projects: [],
   })
 
   useEffect(() => {
@@ -144,6 +157,21 @@ export default function CandidateProfileClientPage() {
         openToWork: candidateProfile.openToWork,
         isVerified: candidateProfile.isVerified,
         availability: candidateProfile.availability,
+        projects: candidateProfile.projects?.map(p => ({
+          id: p.id,
+          title: p.title,
+          description: p.description || "",
+          repoUrl: p.repoUrl || "",
+          liveLink: p.liveLink || "",
+          language: p.language || "",
+          stars: p.stars || 0,
+          forks: p.forks || 0,
+          githubRepoId: p.githubRepoId || 0,
+          githubUpdatedAt: p.githubUpdatedAt
+            ? new Date(p.githubUpdatedAt).toISOString()
+            : "",
+
+        })) || [],
       })
 
       // Convert string arrays to objects for MultiSelect display
@@ -191,9 +219,31 @@ export default function CandidateProfileClientPage() {
     return v !== null && v !== undefined
   }).length
 
-  const handleChange = (field: keyof CandidateFormData, value: string | string[] | boolean) => {
+  const handleChange = (field: keyof CandidateFormData, value: any) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
     setIsSaved(false)
+  }
+
+  const handleAddProject = () => {
+    setFormData(prev => ({
+      ...prev,
+      projects: [...prev.projects, { title: "", description: "", repoUrl: "", liveLink: "", language: "", stars: 0, forks: 0, githubRepoId: 0, githubUpdatedAt: "" }]
+    }))
+  }
+
+  const handleProjectChange = (index: number, field: string, value: string) => {
+    setFormData(prev => {
+      const newProjects = [...prev.projects]
+      newProjects[index] = { ...newProjects[index], [field]: value }
+      return { ...prev, projects: newProjects }
+    })
+  }
+
+  const handleRemoveProject = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      projects: prev.projects.filter((_, i) => i !== index)
+    }))
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -201,19 +251,25 @@ export default function CandidateProfileClientPage() {
 
     if (!candidateProfile) return
 
+    let finalProjects = [...formData.projects];
 
-    const payload = {
-      ...formData,
-      id: candidateProfile.userId,
-      name: formData.fullName,
-
-
-    }
-    console.log(payload)
     try {
       setLoading(true)
+
+      // Auto-fetch logic removed to respect user intent.
+      // Users should explicitly click "Import Projects" if they want to fetch.
+
+      const payload = {
+        ...formData,
+        id: candidateProfile.userId,
+        name: formData.fullName,
+        projects: finalProjects, // Use the potentially updated projects list
+      }
+
+      console.log(payload)
       const res = await axios.patch("/api/candidate/update_profile", payload, { withCredentials: true })
       if (res.status === 200) {
+        console.log(res.data)
         const res2 = await fetch("/api/auth/me")
         const data2 = await res2.json()
         setCandidateProfile(data2.user)
@@ -300,6 +356,23 @@ export default function CandidateProfileClientPage() {
 
     return () => clearTimeout(timeoutId);
   }, [rolesearch]);
+
+  const handleFetchProjects = async () => {
+    if (!formData.githubUrl) return
+    try {
+      setLoading(true)
+      const res = await axios.get(`/api/candidate/fetch_projects?githubUrl=${formData.githubUrl}`, { withCredentials: true })
+      if (res.status === 200) {
+        setFormData(prev => ({ ...prev, projects: res.data.result }))
+        toast.success("Projects fetched successfully!")
+      }
+    } catch (error) {
+      console.log(error)
+      toast.error("Failed to fetch projects. Please try again.")
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const breadcrumbs = [
     { label: "Dashboard", href: "/candidate/dashboard" },
@@ -512,10 +585,18 @@ export default function CandidateProfileClientPage() {
               name="github"
               type="url"
               placeholder="https://github.com/yourname"
-              description="Link to your GitHub profile"
+              description="Link to your GitHub profile only public repositories will be fetched"
               value={formData.githubUrl || ""}
               onChange={(e) => handleChange("githubUrl", e.target.value)}
             />
+            <Button
+              variant="default"
+              size="sm"
+              onClick={() => handleFetchProjects()}
+              disabled={!formData.githubUrl || loading}
+            >
+              Import Projects
+            </Button>
             <FormField
               label="Portfolio URL"
               name="portfolio"
@@ -546,6 +627,101 @@ export default function CandidateProfileClientPage() {
               </div>
               {formData.resumeFile && <p className="text-xs text-success">✓ Resume uploaded: {formData.resumeFile}</p>}
             </div>*/}
+          </FormSection>
+
+          {/* Projects Section */}
+          <FormSection title="Projects" description="Showcase your best work">
+            <div className="space-y-4">
+              {formData?.projects?.map((project, index) => (
+                <div key={index} className="p-4 border border-border rounded-lg space-y-4 relative">
+
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField
+                      label="Project Title"
+                      name={`projects[${index}].title`}
+                      placeholder="e.g. E-commerce Platform"
+                      value={project.title}
+                      onChange={(e) => handleProjectChange(index, "title", e.target.value)}
+                      required
+                    />
+                    <FormField
+                      label="Main Language/Tech Stack"
+                      name={`projects[${index}].language`}
+                      placeholder="e.g. React, Node.js"
+                      value={project.language}
+                      onChange={(e) => handleProjectChange(index, "language", e.target.value)}
+                    />
+                  </div>
+
+                  <FormField
+                    label="Description"
+                    name={`projects[${index}].description`}
+                    placeholder="Brief description of the project..."
+                    value={project.description}
+                    onChange={(e) => handleProjectChange(index, "description", e.target.value)}
+                    as="textarea"
+                  />
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField
+                      label="Repository URL"
+                      name={`projects[${index}].repoUrl`}
+                      placeholder="https://github.com/..."
+                      value={project.repoUrl}
+                      onChange={(e) => handleProjectChange(index, "repoUrl", e.target.value)}
+                    />
+                    <FormField
+                      label="Live Demo URL"
+                      name={`projects[${index}].liveLink`}
+                      placeholder="https://..."
+                      value={project.liveLink}
+                      onChange={(e) => handleProjectChange(index, "liveLink", e.target.value)}
+                    />
+                  </div>
+                  {project.githubRepoId !== 0 && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <FormField
+                        label="Stars"
+                        name={`projects[${index}].stars`}
+                        placeholder="0"
+                        value={project.stars}
+                        onChange={(e) => handleProjectChange(index, "stars", e.target.value)}
+                        disabled={true}
+                      />
+                      <FormField
+                        label="Forks"
+                        name={`projects[${index}].forks`}
+                        placeholder="0"
+                        value={project.forks}
+                        onChange={(e) => handleProjectChange(index, "forks", e.target.value)}
+                        disabled={true}
+                      />
+                    </div>
+                  )}
+                  <div className="w-full flex justify-center">
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => handleRemoveProject(index)}
+                      className="w-full"
+                    >
+                      Remove
+                    </Button>
+                  </div>
+                </div>
+              ))}
+
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleAddProject}
+                className="w-full border-dashed"
+              >
+                + Add Project
+              </Button>
+            </div>
           </FormSection>
 
           {/* Preferences Section */}
@@ -608,7 +784,7 @@ export default function CandidateProfileClientPage() {
           {/* Submit Button */}
           <div className="flex justify-end gap-3 pt-4  border-border">
             <Button variant="outline">Cancel</Button>
-            <Button className="gap-2">
+            <Button className="gap-2" >
               {!loading && <Save className="w-4 h-4" />}
               {loading ? <Spinner className="w-4 h-4" /> : "Save Changes"}
             </Button>
