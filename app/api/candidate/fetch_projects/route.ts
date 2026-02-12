@@ -10,57 +10,52 @@ type UserPayload = {
 
 async function handler(req: NextRequest, user: UserPayload) {
   try {
-    const searchParams = req.nextUrl.searchParams;
-    const query = searchParams.get("githubUrl");
-
-    if (!query || query.trim() === "") {
+    const candidate = await prisma.candidate.findUnique({
+      where: {
+        userId: user.userId,
+      },
+      select: {
+        id: true,
+      },
+    });
+    if (!candidate)
       return NextResponse.json(
-        { error: "Query is required", result: [] },
-        { status: 400 },
+        { error: "Candidate not found" },
+        { status: 404 },
       );
-    }
-
-    let searchTerm = query.toLowerCase().trim();
-
-    while (searchTerm.endsWith("/")) {
-      searchTerm = searchTerm.slice(0, -1);
-    }
-
-    const username = searchTerm.split("/").at(-1)?.trim();
-
-    if (!username) {
+    const access_token = await prisma.github.findUnique({
+      where: {
+        candidateId: candidate.id,
+      },
+      select: {
+        accessToken: true,
+      },
+    });
+    if (!access_token)
       return NextResponse.json(
-        { error: "User is required", result: [] },
-        { status: 400 },
+        { error: "Access token not found" },
+        { status: 404 },
       );
-    }
+    const projects = await fetch("https://api.github.com/user/repos", {
+      headers: {
+        Authorization: `Bearer ${access_token.accessToken}`,
+      },
+    });
+    const projectsData = await projects.json();
+    const project = projectsData.map((project: any) => ({
+      githubRepoId: project.id,
+      title: project.name,
+      description: project?.description,
+      repoUrl: project?.html_url,
+      liveLink: project?.homepage,
+      language: project?.language,
+      stars: project?.stargazers_count,
+      forks: project?.forks_count,
+      githubUpdatedAt: project?.pushed_at,
+    }));
+    console.log(project);
 
-    const result = [];
-    try {
-      const res = await fetch(`https://api.github.com/users/${username}/repos`);
-      const data = await res.json();
-      for (const repo of data) {
-        result.push({
-          title: repo?.name,
-          description: repo?.description || "No description",
-          repoUrl: repo?.html_url || "No repo url",
-          liveLink: repo?.homepage || "No live link",
-          language: repo?.language || "No language",
-          stars: repo?.stargazers_count || 0,
-          forks: repo?.forks_count || 0,
-          githubRepoId: repo?.id, //flag
-          githubUpdatedAt: repo?.updated_at,
-        });
-      }
-    } catch (err) {
-      return NextResponse.json(
-        { error: "Failed to fetch projects", result: [] },
-        { status: 500 },
-      );
-    }
-
-    console.log(result.length);
-    return NextResponse.json({ result }, { status: 200 });
+    return NextResponse.json({ project }, { status: 200 });
   } catch (error) {
     console.error("Error fetching projects:", error);
     return NextResponse.json(

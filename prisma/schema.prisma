@@ -68,6 +68,7 @@ model Candidate {
   isVerified        Boolean          @default(false)
   applications      Application[]
   user              User             @relation(fields: [userId], references: [id])
+  Github            Github?
   projects          Project[]
   resumes           Resume[]
   preferredRoles    Role[]           @relation("CandidatePreferredRoles")
@@ -204,6 +205,17 @@ model Interview {
   recruiter     Recruiter       @relation(fields: [recruiterId], references: [id])
 
   @@index([createdAt, id])
+}
+
+model Github {
+  id          String    @id
+  username    String
+  avatarUrl   String?
+  profileUrl  String?
+  accessToken String
+  connectedAt DateTime
+  candidateId String    @unique
+  Candidate   Candidate @relation(fields: [candidateId], references: [id])
 }
 
 enum UserRole {

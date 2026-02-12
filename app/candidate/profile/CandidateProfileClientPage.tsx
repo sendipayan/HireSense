@@ -3,6 +3,7 @@
 import type React from "react"
 
 import { useEffect, useState, useRef } from "react"
+import Link from "next/link"
 import { Save, AlertCircle, CheckCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { FormField } from "@/components/form-field"
@@ -13,10 +14,12 @@ import { PageHeader } from "@/components/page-header"
 import { Breadcrumbs } from "@/components/breadcrumbs"
 import { useCandidateStore } from "@/store/candidateStore"
 import { useAuthStore } from "@/store/authStore"
+import { useProjectStore } from "@/store/projectStore"
 import axios from "axios"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Spinner } from "@/components/ui/spinner"
 import toast from "react-hot-toast"
+import { useRouter } from "next/navigation"
 
 interface CandidateFormData {
   fullName?: string | null;
@@ -102,6 +105,8 @@ const AVAILABILITY_OPTIONS = [
 
 export default function CandidateProfileClientPage() {
   const { candidateProfile, setCandidateProfile } = useCandidateStore()
+  const { projects, clearProjects, setProjects } = useProjectStore()
+  const router = useRouter()
   const { user } = useAuthStore()
   const [searchQuery, setSearchQuery] = useState("")
   const [rolesearch, setRoleSearch] = useState("")
@@ -174,6 +179,7 @@ export default function CandidateProfileClientPage() {
         })) || [],
       })
 
+
       // Convert string arrays to objects for MultiSelect display
       const primarySkillsObjects = (candidateProfile.primarySkills || []).map((skill) => ({ value: skill.id, label: skill.name }))
       const secondarySkillsObjects = (candidateProfile.secondarySkills || []).map((skill) => ({ value: skill.id, label: skill.name }))
@@ -222,6 +228,38 @@ export default function CandidateProfileClientPage() {
       return { ...prev, projects: newProjects }
     })
   }
+
+  useEffect(() => {
+    if (projects.length > 0) {
+      console.log(projects)
+      setFormData(prev => {
+        const existingRepoIds = new Set(prev.projects.map(p => p.githubRepoId));
+        console.log("existingRepoIds: ", existingRepoIds)
+        const newProjectsToAdd = projects
+          .filter(p => !existingRepoIds.has(p.githubRepoId))
+          .map(p => ({
+            title: p.title,
+            description: p.description || "",
+            repoUrl: p.repoUrl || "",
+            liveLink: p.liveLink || "",
+            language: p.language || "",
+            stars: p.stars || 0,
+            forks: p.forks || 0,
+            githubRepoId: p.githubRepoId,
+            githubUpdatedAt: p.githubUpdatedAt ? new Date(p.githubUpdatedAt).toISOString() : ""
+          }));
+
+        console.log("prev: ", prev)
+
+        if (newProjectsToAdd.length === 0) return prev;
+
+        return {
+          ...prev,
+          projects: [...prev.projects, ...newProjectsToAdd]
+        };
+      });
+    }
+  }, [projects]);
 
   const handleRemoveProject = (index: number) => {
     setFormData(prev => ({
@@ -381,7 +419,7 @@ export default function CandidateProfileClientPage() {
         {/* Missing Fields Alert */}
         {!formData.isVerified && !initialLoad && (
           <div className="bg-warning/10 border border-warning/30 rounded-lg p-4 mb-6 flex gap-3">
-            <AlertCircle className="w-5 h-5 text-warning flex-shrink-0 mt-0.5" />
+            <AlertCircle className="w-5 h-5 text-warning shrink-0 mt-0.5" />
             <div>
               <p className="text-sm font-medium text-foreground">Complete your profile</p>
               <p className="text-sm text-muted-foreground">
@@ -564,23 +602,18 @@ export default function CandidateProfileClientPage() {
 
           {/* Work Links Section */}
           <FormSection title="Work Links" description="Links to your work and professional profiles">
+
             <FormField
               label="GitHub URL"
               name="github"
               type="url"
-              placeholder="https://github.com/yourname"
-              description="Link to your GitHub profile only public repositories will be fetched"
+              placeholder="click on import projects from github"
+              description="Link to your GitHub profile to fetch your projects"
               value={formData.githubUrl || ""}
+              disabled={true}
               onChange={(e) => handleChange("githubUrl", e.target.value)}
             />
-            <Button
-              variant="default"
-              size="sm"
-              onClick={() => handleFetchProjects()}
-              disabled={!formData.githubUrl || loading}
-            >
-              Import Projects
-            </Button>
+
             <FormField
               label="Portfolio URL"
               name="portfolio"
@@ -696,7 +729,18 @@ export default function CandidateProfileClientPage() {
                   </div>
                 </div>
               ))}
+              <Button
+                asChild
+                variant="default"
+                size="sm"
+                className="w-full"
+                disabled={loading}
+              >
+                <Link href={`https://github.com/login/oauth/authorize?client_id=${process.env.NEXT_PUBLIC_GITHUB_CLIENT_ID}&scope=repo`}>
+                  Import Projects from GitHub
+                </Link>
 
+              </Button>
               <Button
                 type="button"
                 variant="outline"
