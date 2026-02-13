@@ -21,7 +21,7 @@ async function handler(req: NextRequest, user: UserPayload) {
     if (!candidate)
       return NextResponse.json(
         { error: "Candidate not found" },
-        { status: 404 },
+        { status: 401 },
       );
     const access_token = await prisma.github.findUnique({
       where: {
@@ -31,9 +31,9 @@ async function handler(req: NextRequest, user: UserPayload) {
         accessToken: true,
       },
     });
-    if (!access_token)
+    if (!access_token || access_token.accessToken.trim() === "")
       return NextResponse.json(
-        { error: "Access token not found" },
+        { error: "Access token not found", reauth: true },
         { status: 404 },
       );
     const projects = await fetch("https://api.github.com/user/repos", {
@@ -41,6 +41,20 @@ async function handler(req: NextRequest, user: UserPayload) {
         Authorization: `Bearer ${access_token.accessToken}`,
       },
     });
+    if (projects.status === 401) {
+      await prisma.github.update({
+        where: { candidateId: candidate.id },
+        data: {
+          accessToken: "",
+        },
+      });
+
+      return NextResponse.json(
+        { error: "Access token not found", reauth: true },
+        { status: 404 },
+      );
+    }
+
     const projectsData = await projects.json();
     const project = projectsData.map((project: any) => ({
       githubRepoId: project.id,
@@ -53,7 +67,6 @@ async function handler(req: NextRequest, user: UserPayload) {
       forks: project?.forks_count,
       githubUpdatedAt: project?.pushed_at,
     }));
-    console.log(project);
 
     return NextResponse.json({ project }, { status: 200 });
   } catch (error) {

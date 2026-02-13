@@ -11,6 +11,14 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const error = req.nextUrl.searchParams.get("error");
+
+  if (error === "access_denied") {
+    return NextResponse.redirect(
+      new URL("/candidate/projects?github=cancelled", req.url),
+    );
+  }
+
   const code = req.nextUrl.searchParams.get("code");
 
   if (!code) {
@@ -90,8 +98,6 @@ export async function GET(req: NextRequest) {
       githubUrl: githubUser.html_url,
     },
   });
-
-  console.log(githubUser);
 
   return NextResponse.redirect(new URL("/candidate/projects", req.url));
 }

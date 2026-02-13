@@ -607,12 +607,22 @@ export default function CandidateProfileClientPage() {
               label="GitHub URL"
               name="github"
               type="url"
-              placeholder="click on import projects from github"
+              placeholder="click below to import projects from github"
               description="Link to your GitHub profile to fetch your projects"
               value={formData.githubUrl || ""}
               disabled={true}
               onChange={(e) => handleChange("githubUrl", e.target.value)}
             />
+            {formData.githubUrl?.trim() === "" && <Button
+              asChild
+              variant="default"
+              size="sm"
+              disabled={loading}
+            >
+              <Link href={`https://github.com/login/oauth/authorize?client_id=${process.env.NEXT_PUBLIC_GITHUB_CLIENT_ID}&scope=repo`}>
+                Connect GitHub
+              </Link>
+            </Button>}
 
             <FormField
               label="Portfolio URL"
@@ -729,7 +739,7 @@ export default function CandidateProfileClientPage() {
                   </div>
                 </div>
               ))}
-              <Button
+              {formData.githubUrl?.trim() !== "" && <Button
                 asChild
                 variant="default"
                 size="sm"
@@ -740,7 +750,7 @@ export default function CandidateProfileClientPage() {
                   Import Projects from GitHub
                 </Link>
 
-              </Button>
+              </Button>}
               <Button
                 type="button"
                 variant="outline"
