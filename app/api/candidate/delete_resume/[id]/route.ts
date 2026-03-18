@@ -47,6 +47,8 @@ async function handler(
     return NextResponse.json({ error: "Resume not found" }, { status: 404 });
   }
 
+  
+
   const inUse = await prisma.application.findFirst({
     where: {
       resumeId: id,
@@ -57,37 +59,26 @@ async function handler(
     return NextResponse.json({ error: "Resume is in use" }, { status: 400 });
   }
 
-  const resume = await prisma.resume.delete({
-    where: {
-      id,
-    },
-  });
-
-  if (resumeStatus.isActive) {
-    const active = await prisma.resume.findFirst({
+  await prisma.$transaction(async (tx) => {
+    await tx.resume_recommendations.deleteMany({
       where: {
-        candidateId: user.id,
-        isActive: false,
-      },
-      select: {
-        id: true,
-      },
-      orderBy: {
-        createdAt: "desc",
+        resume_id: id,
       },
     });
 
-    if (active) {
-      await prisma.resume.update({
-        where: {
-          id: active.id,
-        },
-        data: {
-          isActive: true,
-        },
-      });
-    }
-  }
+    await tx.resume_ats.delete({
+      where: {
+        resume_id: id,
+      },
+    });
+
+    await tx.resume.delete({
+      where: {
+        id,
+      },
+    });
+  });
+
   return NextResponse.json(
     { message: "Resume deleted successfully" },
     { status: 200 },

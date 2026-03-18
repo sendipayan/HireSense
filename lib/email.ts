@@ -1,4 +1,21 @@
+// lib/email.ts
 import nodemailer from "nodemailer";
+
+if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+  throw new Error("Missing EMAIL_USER or EMAIL_PASS environment variables");
+}
+
+const transporter = nodemailer.createTransport({
+  host: "smtp.gmail.com",   // explicit instead of service:"gmail"
+  port: 465,
+  secure: true,
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
+  },
+  connectionTimeout: 10_000,  // 10s timeout
+  greetingTimeout: 10_000,
+});
 
 type SendEmailParams = {
   to: string;
@@ -6,14 +23,6 @@ type SendEmailParams = {
   text: string;
   html?: string;
 };
-
-const transporter = nodemailer.createTransport({
-  service: "gmail",
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-});
 
 export async function sendEmail({ to, subject, text, html }: SendEmailParams) {
   try {

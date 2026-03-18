@@ -31,7 +31,7 @@ export async function GET(
 
     const { id } = await context.params;
 
-    const resumes = await prisma.resume.findUnique({
+    const resume = await prisma.resume.findUnique({
       where: {
         id,
       },
@@ -42,10 +42,15 @@ export async function GET(
         isActive: true,
         resumeUrl: true,
         resumeMimeType: true,
+        resumeSize: true,
+        resumeScore: true,
+        resume_ats: true,
+        resume_recommendations: true 
       },
+      
     });
 
-    return NextResponse.json({ resumes }, { status: 200 });
+    return NextResponse.json({ resume }, { status: 200 });
   } catch (err) {
     console.error("Error fetching applications:", err);
     return NextResponse.json(
