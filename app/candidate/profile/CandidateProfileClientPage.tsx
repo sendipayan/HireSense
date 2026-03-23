@@ -157,7 +157,7 @@ export default function CandidateProfileClientPage() {
         preferredRoles: candidateProfile.preferredRoles?.map((role) => role.id) || [],
         githubUrl: candidateProfile.githubUrl,
         portfolioUrl: candidateProfile.portfolioUrl,
-        linkedinUrl: candidateProfile.linkedinUrl,
+        linkedinUrl: candidateProfile.linkedinName,
         jobTypePreference: candidateProfile.jobTypePreference,
         openToWork: candidateProfile.openToWork,
         isVerified: candidateProfile.isVerified,
@@ -613,14 +613,14 @@ export default function CandidateProfileClientPage() {
               disabled={true}
               onChange={(e) => handleChange("githubUrl", e.target.value)}
             />
-            {formData.githubUrl?.trim() === "" && <Button
+            {!formData.githubUrl &&<Button
               asChild
               variant="default"
               size="sm"
               disabled={loading}
             >
               <Link href={`https://github.com/login/oauth/authorize?client_id=${process.env.NEXT_PUBLIC_GITHUB_CLIENT_ID}&scope=repo`}>
-                Connect GitHub
+                Connect account
               </Link>
             </Button>}
 
@@ -634,14 +634,26 @@ export default function CandidateProfileClientPage() {
               onChange={(e) => handleChange("portfolioUrl", e.target.value)}
             />
             <FormField
-              label="LinkedIn URL"
+              label="LinkedIn Name"
               name="linkedin"
               type="url"
-              placeholder="https://linkedin.com/in/yourname"
-              description="Link to your LinkedIn profile"
+              placeholder="Click below to verify Linkedin"
+              description="Verify your LinkedIn profile"
+              disabled={true}
               value={formData.linkedinUrl || ""}
               onChange={(e) => handleChange("linkedinUrl", e.target.value)}
             />
+            {!formData.linkedinUrl && (
+              <Button
+                asChild
+                variant="default"
+                size="sm"
+              >
+                <a href="/api/auth/linkedin">
+                  Connect Linkedin
+                </a>
+              </Button>
+            )}
 
             {/*<div className="space-y-2">
               <label htmlFor="resume" className="text-sm font-medium text-foreground">

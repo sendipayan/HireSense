@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import { Suspense } from "react"
 import AIFeedbackClientPage from "./clientPage"
 
 /**
@@ -17,6 +18,8 @@ export const metadata: Metadata = {
 export default async function AIFeedbackPage() {
 
     return (
-        <AIFeedbackClientPage />
+        <Suspense fallback={null}>
+            <AIFeedbackClientPage />
+        </Suspense>
     )
 }

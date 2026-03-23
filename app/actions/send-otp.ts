@@ -17,13 +17,15 @@ export async function sendOtp(email: string) {
   });
 
   // 3. Store hashed OTP
-  await prisma.emailOtp.create({
+  const newotp =await prisma.emailOtp.create({
     data: {
       email,
       otpHash,
       expiresAt: new Date(Date.now() + 5 * 60 * 1000), // 5 mins
     },
   });
+
+  console.log(newotp)
 
   // 4. Send email
   await sendEmail({

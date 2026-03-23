@@ -45,7 +45,7 @@ type CandidateProfile = {
   experienceLevel?: string | null;
   preferredRoles?: { id: string; name: string }[];
   githubUrl?: string | null;
-  linkedinUrl?: string | null;
+  linkedinName?: string | null;
   portfolioUrl?: string | null;
   jobTypePreference?: string | null;
   openToWork: boolean;

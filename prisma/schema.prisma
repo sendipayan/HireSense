@@ -42,6 +42,7 @@ model Recruiter {
   updatedAt       DateTime           @updatedAt
   failedReasons   Json?
   isVerified      verificationStatus @default(PENDING)
+  linkedinName    String?
   interviews      Interview[]
   postJob         PostJob[]
   user            User               @relation(fields: [userId], references: [id])
@@ -58,7 +59,7 @@ model Candidate {
   degree            String?
   experienceLevel   ExperienceLevel?
   githubUrl         String?
-  linkedinUrl       String?
+  linkedinName      String?
   portfolioUrl      String?
   jobTypePreference JobType?
   openToWork        Boolean          @default(true)
