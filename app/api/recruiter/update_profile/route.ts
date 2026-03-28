@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { qstash } from "@/lib/qstash";
+
 import { withAuth } from "@/lib/api-middleware";
+
 
 type UserPayload = {
   userId: string;
@@ -11,7 +12,7 @@ type UserPayload = {
 async function handler(req: NextRequest, user: UserPayload) {
   const body = await req.json();
 
-  const {
+  let {
     id,
     name,
     email,
@@ -36,7 +37,32 @@ async function handler(req: NextRequest, user: UserPayload) {
   });
 
   if (!recruiter) {
-    return NextResponse.json({ error: "Candidate not found" }, { status: 404 });
+    return NextResponse.json({ error: "Recruiter not found" }, { status: 404 });
+  }
+
+  if (id && email && companyWebsite && companyName && (companyName!==recruiter.companyName || companyWebsite!==recruiter.companyWebsite)) {
+
+    const res = await fetch(
+      "https://wxerjdklv745wy4c2r2jirfkvu0jgofs.lambda-url.us-east-1.on.aws/validate",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email,
+          company_name: companyName, 
+          company_website: companyWebsite,
+        }),
+      },
+    );
+    if (!res.ok)
+      return NextResponse.json({error:"Verification server not working"},{status: 503})
+    const data = await res.json();
+    if (data.valid_recruiter)
+      isVerified="APPROVED";
+    else
+      isVerified="REJECTED"
   }
 
   if (!hiringForRoles || hiringForRoles.length === 0) {
@@ -98,25 +124,7 @@ async function handler(req: NextRequest, user: UserPayload) {
     }),
   ]);
 
-  if (isVerified === "PENDING") {
-    if (id && email && companyWebsite && companyLinkedIn && companyName) {
-      const payload = {
-        id,
-        email,
-        companyWebsite,
-        companyLinkedIn,
-        companyName,
-      };
-      if (process.env.NODE_ENV === "production") {
-        await qstash.publishJSON({
-          url: `${process.env.NEXTAUTH_URL}/api/recruiter/verify`,
-          body: {
-            payload,
-          },
-        });
-      }
-    }
-  }
+  
 
   return NextResponse.json(
     { message: "Profile updated successfully" },

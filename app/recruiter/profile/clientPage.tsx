@@ -189,17 +189,7 @@ export function RecruiterProfileClientPage() {
       toast.error("Failed to update profile. Please try again.")
     }
 
-    try {
-      const res1 = await axios.post("/api/recruiter/verify", payload1, { withCredentials: true })
-      console.log(res1)
-      if (res1.status === 200) {
-        const res2 = await fetch("/api/auth/me")
-        const data2 = await res2.json()
-        setRecuiterProfile(data2.user)
-      }
-    } catch (error) {
-      console.log(error)
-    } finally {
+    finally { 
       setLoading(false)
     }
   }
