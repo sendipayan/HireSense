@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { withAuth } from "@/lib/api-middleware";
+import { inngest } from "@/inngest/client";
 
 type UserPayload = {
   userId: string;
@@ -83,6 +84,18 @@ async function handler(req: NextRequest, user: UserPayload) {
       resumeId,
     },
   });
+
+  await inngest.send({
+    name: "app/jdmatch",
+    data:{
+      resume_url:resume.resumeUrl,
+      tittle:job.title,
+      primary_skills:job.primary_skills,
+      secondry_skill:job.secondry_skill,
+      description:job.description,
+      applicationId: application.id
+    }
+  })
 
   return NextResponse.json(
     { message: "Application submitted successfully", application },

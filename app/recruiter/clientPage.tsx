@@ -92,9 +92,13 @@ export default function RecruiterDashboardPage() {
 
             // Fetch interviews
             try {
-                const res2 = await axios.get("/api/recruiter/get_interview/scheduled", { withCredentials: true })
+                const res2 = await axios.post(
+                    "/api/recruiter/get_interview",
+                    { status: "SCHEDULED", cursor: null },
+                    { withCredentials: true },
+                )
                 const data2 = await res2.data
-                setInterviews(data2.interviews || [])
+                setInterviews((data2.interviews || []).slice(0, 2))
             } catch (error) {
                 console.error("Error fetching interviews:", error)
                 toast.error("Failed to load interviews")
