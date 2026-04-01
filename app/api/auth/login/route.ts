@@ -11,7 +11,7 @@ export async function POST(req: Request) {
     if (!email || !password) {
       return NextResponse.json(
         { message: "All fields are required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
     let user = await prisma.user.findUnique({
@@ -23,21 +23,33 @@ export async function POST(req: Request) {
       if (!verified) {
         return NextResponse.json(
           { message: "Invalid credentials" },
-          { status: 401 }
+          { status: 401 },
         );
       }
-      const verifier = await prisma.recruiter.findUnique({
-        select: {
-          isVerified: true,
-        },
-        where: {
-          userId: user.id,
-        },
-      });
+      let verifier;
+      if (user.role === "RECRUITER") {
+        verifier = await prisma.recruiter.findUnique({
+          select: {
+            isVerified: true,
+          },
+          where: {
+            userId: user.id,
+          },
+        });
+      } else {
+        verifier = await prisma.candidate.findUnique({
+          where: {
+            userId: user.id,
+          },
+          select: {
+            isVerified: true,
+          },
+        });
+      }
       const token = signJwt({
         userId: user.id,
         role: user.role,
-        isVerified: verifier?.isVerified ?? "PENDING",
+        isVerified: verifier?.isVerified,
       });
       const cookieStore = await cookies();
       cookieStore.set("auth_token", token, {
@@ -48,7 +60,7 @@ export async function POST(req: Request) {
       });
       return NextResponse.json(
         { message: "Login successful" },
-        { status: 200 }
+        { status: 200 },
       );
     }
   } catch (err: any) {

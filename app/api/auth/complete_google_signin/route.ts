@@ -20,20 +20,31 @@ export async function POST(req: NextRequest) {
   if (!user) {
     return NextResponse.json({ error: "User not onboarded" }, { status: 403 });
   }
-
-  const verifier = await prisma.recruiter.findUnique({
-    select: {
-      isVerified: true,
-    },
-    where: {
-      userId: user.id,
-    },
-  });
+  let verifier;
+  if (user.role === "RECRUITER") {
+    verifier = await prisma.recruiter.findUnique({
+      select: {
+        isVerified: true,
+      },
+      where: {
+        userId: user.id,
+      },
+    });
+  } else {
+    verifier = await prisma.candidate.findUnique({
+      where: {
+        userId: user.id,
+      },
+      select: {
+        isVerified: true,
+      },
+    });
+  }
 
   const jwt = signJwt({
     userId: user.id,
     role: user.role,
-    isVerified: verifier?.isVerified ?? "PENDING",
+    isVerified: verifier?.isVerified,
   });
 
   const res = NextResponse.json({

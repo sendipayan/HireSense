@@ -5,7 +5,7 @@ import { withAuth } from "@/lib/api-middleware";
 type UserPayload = {
   userId: string;
   role: string;
-  isVerified?: string;
+  isVerified?: "APPROVED" | "PENDING" | "REJECTED" | true | false;
 };
 
 async function handler(

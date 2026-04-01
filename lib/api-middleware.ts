@@ -5,7 +5,7 @@ import { verifyJwt } from "@/lib/jwt";
 export type UserPayload = {
   userId: string;
   role: string;
-  isVerified?: "APPROVED" | "PENDING" | "REJECTED";
+  isVerified?: "APPROVED" | "PENDING" | "REJECTED" | true | false;
 };
 
 type AuthOptions = {

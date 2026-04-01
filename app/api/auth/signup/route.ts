@@ -61,20 +61,12 @@ export async function POST(req: Request) {
       }
     }
 
-    const verifier = await prisma.recruiter.findUnique({
-      select: {
-        isVerified: true,
-      },
-      where: {
-        userId: user.id,
-      },
-    });
-
+    
     // Create JWT
     const token = signJwt({
       userId: user.id,
       role: user.role,
-      isVerified: verifier?.isVerified ?? "PENDING",
+      isVerified: role==="RECRUITER" ? "PENDING" : false,
     });
 
     const cookieStore = await cookies();

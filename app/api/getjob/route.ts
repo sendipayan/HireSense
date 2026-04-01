@@ -5,13 +5,11 @@ import { withAuth } from "@/lib/api-middleware";
 type UserPayload = {
   userId: string;
   role: string;
-  isVerified?: string;
+  isVerified?: "APPROVED" | "PENDING" | "REJECTED" | true | false;
 };
 
 async function handler(req: NextRequest, user: UserPayload) {
-  if (!user.isVerified) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+ 
 
   if (user.role === "RECRUITER") {
     const job = await prisma.postJob.findMany({

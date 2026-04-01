@@ -9,7 +9,7 @@ import { cookies } from "next/headers";
 type UserPayload = {
   userId: string;
   role: string;
-  isVerified?: "APPROVED" | "PENDING" | "REJECTED";
+  isVerified?: "APPROVED" | "PENDING" | "REJECTED" | true | false;
 };
 
 
