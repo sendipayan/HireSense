@@ -26,20 +26,7 @@ export async function GET(
       where: {
         id,
       },
-      include: {
-        requirements: {
-          select: {
-            id: true,
-            name: true,
-          },
-        },
-        optional: {
-          select: {
-            id: true,
-            name: true,
-          },
-        },
-      },
+      
     });
 
     if (!job) {

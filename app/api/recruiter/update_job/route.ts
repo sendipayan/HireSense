@@ -48,76 +48,22 @@ async function handler(request: NextRequest, user: UserPayload) {
     );
   }
 
-  if (requirements.length === 0) {
+  const minSalaryValue = Number(minSalary);
+  const maxSalaryValue = Number(maxSalary);
+  if (Number.isNaN(minSalaryValue) || Number.isNaN(maxSalaryValue)) {
     return NextResponse.json(
-      { error: "Requirements are required" },
+      { error: "Salary must be a number" },
       { status: 400 },
     );
   }
 
-  await prisma.$transaction([
-    prisma.skill.updateMany({
-      where: {
-        id: {
-          in: requirements,
-        },
-      },
-      data: {
-        requiredForJobId: null,
-        popularity: { decrement: 1 },
-      },
-    }),
-    prisma.skill.updateMany({
-      where: {
-        id: {
-          in: requirements,
-        },
-      },
-      data: {
-        requiredForJobId: id,
-        popularity: { increment: 1 },
-      },
-    }),
-  ]);
+  
 
-  if (optional.length === 0) {
-    await prisma.skill.updateMany({
-      where: {
-        id: {
-          in: optional,
-        },
-      },
-      data: {
-        optionalForJobId: null,
-        popularity: { decrement: 1 },
-      },
-    });
-  } else {
-    await prisma.$transaction([
-      prisma.skill.updateMany({
-        where: {
-          id: {
-            in: optional,
-          },
-        },
-        data: {
-          optionalForJobId: null,
-          popularity: { decrement: 1 },
-        },
-      }),
-      prisma.skill.updateMany({
-        where: {
-          id: {
-            in: optional,
-          },
-        },
-        data: {
-          optionalForJobId: id,
-          popularity: { increment: 1 },
-        },
-      }),
-    ]);
-  }
+  
+
+
+  const normalizedStatus =
+    status === "ACTIVE" || status === "CLOSED" ? status : undefined;
 
   let job = await prisma.postJob.update({
     where: {
@@ -127,14 +73,15 @@ async function handler(request: NextRequest, user: UserPayload) {
       title,
       description,
       location,
-      minSalary,
-      maxSalary,
+      minSalary: minSalaryValue,
+      maxSalary: maxSalaryValue,
       jobType,
-      status,
+      primary_skills:requirements,
+      secondry_skill:optional,
       experienceRequired,
       department,
       benifits,
-    },
+    }
   });
 
   job = JSON.parse(

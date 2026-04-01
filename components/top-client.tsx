@@ -447,7 +447,7 @@ export function TopMatchesClient() {
                                             resumeUrl={candidate.resume.resumeUrl}
                                             education={candidate.candidate.degree}
                                             status={candidate.status}
-                                            skills={[...candidate.candidate.primarySkills.map((skill) => skill.name), ...candidate.candidate.secondarySkills.map((skill) => skill.name)]}
+                                            
                                             matchScore={candidate.score}
                                             avatar={candidate.candidate.user.profilePic ? candidate.candidate.user.profilePic : ""}
                                         />

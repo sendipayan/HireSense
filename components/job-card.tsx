@@ -32,7 +32,7 @@ export function JobCard({ id, title, company, location, salary, type, posted, ta
             </div>
             <div>
               <h3 className="font-semibold text-lg group-hover:text-primary transition-colors">
-                <Link href={`/match-results?job=${id}`} className="hover:underline">
+                <Link href={`/candidate/browse-jobs/${id}`} className="hover:underline">
                   {title}
                 </Link>
               </h3>

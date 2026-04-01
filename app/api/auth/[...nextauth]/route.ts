@@ -37,9 +37,15 @@ export const authOptions = {
     async jwt({ token }: { token: JWT }) {
       if (!token.email) return token;
 
-      const dbUser = await prisma.user.findUnique({
-        where: { email: token.email },
-      });
+      let dbUser = null;
+      try {
+        dbUser = await prisma.user.findUnique({
+          where: { email: token.email },
+        });
+      } catch (error) {
+        console.error("JWT callback: failed to load user from DB", error);
+        return token;
+      }
 
       if (dbUser) {
         token.name = dbUser.name;

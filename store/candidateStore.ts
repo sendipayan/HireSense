@@ -6,11 +6,28 @@ type BaseUser = {
   role: "CANDIDATE" | "RECRUITER";
 };
 
+type CandidateStatus =
+  | "STUDENT"
+  | "GRADUATE"
+  | "WORKING_PROFESSIONAL"
+  | "NONE";
+
+type ExperienceLevel = "BEGINNER" | "INTERMEDIATE" | "ADVANCED" | "NONE";
+
+type JobType = "INTERNSHIP" | "BOTH" | "FULL_TIME" | "NONE";
+
+type Availability =
+  | "IMMEDIATE"
+  | "ONE_TO_THREE_MONTHS"
+  | "THREE_TO_SIX_MONTHS"
+  | "LATER"
+  | "NONE";
+
 type Resume = {
   id: string;
   resumeName: string;
   resumeUrl: string;
-  createdAt: Date;
+  createdAt: string;
 };
 
 type Project = {
@@ -24,9 +41,9 @@ type Project = {
   language?: string | null;
   stars?: number | null;
   forks?: number | null;
-  createdAt: Date;
-  updatedAt: Date;
-  githubUpdatedAt?: Date | null;
+  createdAt: string;
+  updatedAt: string;
+  githubUpdatedAt?: string | null;
 };
 
 type CandidateProfile = {
@@ -36,21 +53,20 @@ type CandidateProfile = {
   resumes: Resume[];
   projects: Project[];
   phoneNumber?: string | null;
-  status?: string | null;
+  status?: CandidateStatus | null;
   institution?: string | null;
   graduationYear?: string | null;
   degree?: string | null;
-  primarySkills?: { id: string; name: string }[];
-  secondarySkills?: { id: string; name: string }[];
-  experienceLevel?: string | null;
-  preferredRoles?: { id: string; name: string }[];
+  experienceLevel?: ExperienceLevel | null;
+  
+  preferredRoles?: string[];
   githubUrl?: string | null;
   linkedinName?: string | null;
   portfolioUrl?: string | null;
-  jobTypePreference?: string | null;
+  jobTypePreference?: JobType | null;
   openToWork: boolean;
   isVerified: boolean;
-  availability?: string | null;
+  availability?: Availability | null;
 };
 
 type CandidateStore = {

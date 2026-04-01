@@ -30,7 +30,7 @@ interface User {
     resumeId: string
     resumeName: string
     resumeUrl: string
-    createdAt: Date
+    createdAt: string | Date
 }
 
 interface ApplyJobModalProps {

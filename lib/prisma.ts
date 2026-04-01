@@ -6,8 +6,15 @@ const globalForPrisma = global as unknown as {
   prisma: PrismaClient;
 };
 
+const connectionString = process.env.DIRECT_URL ?? process.env.DATABASE_URL;
+
+if (!connectionString) {
+  throw new Error("Missing DATABASE_URL or DIRECT_URL for Prisma connection.");
+}
+
 const adapter = new PrismaPg({
-  connectionString: process.env.DIRECT_URL,
+  // Prefer pooled connection for runtime; fall back to DIRECT_URL if needed.
+  connectionString,
 });
 
 const prisma =

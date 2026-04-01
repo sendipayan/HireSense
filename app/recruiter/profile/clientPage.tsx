@@ -20,25 +20,25 @@ import { Spinner } from "@/components/ui/spinner"
 import toast from "react-hot-toast"
 
 type verificationStatus = "PENDING" | "APPROVED" | "REJECTED";
+type CompanySize = "SMALL" | "MEDIUM" | "LARGE" | "ENTERPRISE";
 
 type approve = "verified" | "pending" | "rejected"
 
 interface RecruiterFormData {
-  fullName?: string | null;
-  email?: string | null;
-  jobTitle?: string | null;
-  phoneNumber?: string | null;
-  companyName?: string | null;
-  companyWebsite?: string | null;
-  companyLinkedIn?: string | null;
-  industry?: string | null;
-  companySize?: string | null;
-  hiringForRoles?: string[];
+  fullName: string;
+  email: string;
+  jobTitle: string;
+  phoneNumber: string;
+  companyName: string;
+  companyWebsite: string;
+  companyLinkedIn: string;
+  industry: string;
+  companySize: CompanySize | "";
   isVerified?: verificationStatus | null;
 }
 
 const INDUSTRY_OPTIONS = [
-  { value: "NONE", label: "Select Industry" },
+  
   { value: "technology", label: "Technology" },
   { value: "finance", label: "Finance" },
   { value: "healthcare", label: "Healthcare" },
@@ -49,7 +49,7 @@ const INDUSTRY_OPTIONS = [
 ]
 
 const COMPANY_SIZE_OPTIONS = [
-  { value: "NONE", label: "Select Company Size" },
+  
   { value: "SMALL", label: "Small" },
   { value: "MEDIUM", label: "Medium" },
   { value: "LARGE", label: "Large" },
@@ -87,25 +87,28 @@ export function RecruiterProfileClientPage() {
     companyLinkedIn: "",
     industry: "",
     companySize: "",
-    hiringForRoles: [],
     isVerified: "PENDING",
   })
   const [approve, setApprove] = useState<approve>("pending")
+
+  const normalizeOptional = (value: string) => {
+    const trimmed = value.trim()
+    return trimmed === "" ? null : trimmed
+  }
 
 
   useEffect(() => {
     if (RecuiterProfile) {
       setFormData({
-        fullName: user?.name,
-        email: user?.email,
-        jobTitle: RecuiterProfile?.jobTitle,
-        phoneNumber: RecuiterProfile?.phoneNumber,
-        companyName: RecuiterProfile?.companyName,
-        companyWebsite: RecuiterProfile?.companyWebsite,
-        companyLinkedIn: RecuiterProfile?.companyLinkedIn,
-        industry: RecuiterProfile?.industry,
-        companySize: RecuiterProfile?.companySize,
-        hiringForRoles: RecuiterProfile?.hiringForRoles?.map((role: { id: string; name: string }) => role.id) || [],
+        fullName: user?.name || "",
+        email: user?.email || "",
+        jobTitle: RecuiterProfile?.jobTitle || "",
+        phoneNumber: RecuiterProfile?.phoneNumber || "",
+        companyName: RecuiterProfile?.companyName || "",
+        companyWebsite: RecuiterProfile?.companyWebsite || "",
+        companyLinkedIn: RecuiterProfile?.companyLinkedIn || "",
+        industry: RecuiterProfile?.industry || "",
+        companySize: RecuiterProfile?.companySize || "",
         isVerified: RecuiterProfile?.isVerified,
       })
       if (RecuiterProfile.isVerified === "APPROVED") {
@@ -119,8 +122,7 @@ export function RecruiterProfileClientPage() {
       }
 
       // Convert string arrays to objects for MultiSelect display
-      const hiringRolesObjects = (RecuiterProfile?.hiringForRoles || []).map((role: { id: string; name: string }) => ({ value: role.id, label: role.name }))
-      setSelectedRoles(hiringRolesObjects)
+      
     }
   }, [RecuiterProfile])
 
@@ -137,12 +139,18 @@ export function RecruiterProfileClientPage() {
   const [isError, setIsError] = useState(false)
 
   // Calculate profile completion
-  const totalFields = 11
-  const completedFields = Object.values(formData).filter((v) => {
-    if (Array.isArray(v)) return v.length > 0
-    if (typeof v === "string") return v.trim() !== ""
-    return v !== null && v !== undefined
-  }).length
+  const totalFields = 9
+  const completedFields = [
+    formData.fullName,
+    formData.email,
+    formData.jobTitle,
+    formData.phoneNumber,
+    formData.companyName,
+    formData.companyWebsite,
+    formData.companyLinkedIn,
+    formData.industry,
+    formData.companySize,
+  ].filter((value) => value.trim() !== "").length
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -151,29 +159,21 @@ export function RecruiterProfileClientPage() {
     if (!RecuiterProfile) {
       return
     }
+    const emailValue = user?.email || formData.email
     const payload = {
       id: RecuiterProfile.userId,
-      name: formData.fullName,
-      email: user?.email,
-      phoneNumber: formData.phoneNumber,
-      jobTitle: formData.jobTitle,
-      companyName: formData.companyName,
-      companyWebsite: formData.companyWebsite,
-      companyLinkedIn: formData.companyLinkedIn,
-      industry: formData.industry,
-      companySize: formData.companySize,
-      hiringForRoles: formData.hiringForRoles,
-      isVerified: formData.isVerified,
+      name: formData.fullName.trim(),
+      email: emailValue,
+      phoneNumber: normalizeOptional(formData.phoneNumber),
+      jobTitle: normalizeOptional(formData.jobTitle),
+      companyName: normalizeOptional(formData.companyName),
+      companyWebsite: normalizeOptional(formData.companyWebsite),
+      companyLinkedIn: normalizeOptional(formData.companyLinkedIn),
+      industry: normalizeOptional(formData.industry),
+      companySize: formData.companySize === "" ? null : formData.companySize,
     }
     console.log(payload)
 
-    const payload1 = {
-      id: RecuiterProfile.userId,
-      email: user?.email,
-      companyWebsite: formData.companyWebsite,
-      companyLinkedIn: formData.companyLinkedIn,
-      companyName: formData.companyName,
-    };
     try {
       setLoading(true)
       const res = await axios.patch("/api/recruiter/update_profile", payload, { withCredentials: true })
@@ -351,7 +351,7 @@ export function RecruiterProfileClientPage() {
 
             <div className="space-y-2">
               <label className="text-sm font-medium text-foreground">Industry</label>
-              <Select value={formData?.industry || "NONE"} onValueChange={(value) => setFormData({ ...formData, industry: value })}>
+              <Select value={formData.industry} onValueChange={(value) => setFormData({ ...formData, industry: value })}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -367,7 +367,7 @@ export function RecruiterProfileClientPage() {
 
             <div className="space-y-2">
               <label className="text-sm font-medium text-foreground">Company Size</label>
-              <Select value={formData?.companySize || "NONE"} onValueChange={(value) => setFormData({ ...formData, companySize: value })} >
+              <Select value={formData.companySize} onValueChange={(value) => setFormData({ ...formData, companySize: value as CompanySize | "" })} >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -383,7 +383,7 @@ export function RecruiterProfileClientPage() {
           </FormSection>
 
           {/* Hiring Context Section */}
-          <FormSection title="Hiring Context" description="Information about your current hiring needs">
+          {/*<FormSection title="Hiring Context" description="Information about your current hiring needs">
             <MultiSelect
               label="Hiring For Roles"
               name="hiringRoles"
@@ -400,7 +400,7 @@ export function RecruiterProfileClientPage() {
               required
             />
 
-            {/*<div className="space-y-2">
+            <div className="space-y-2">
               <label className="text-sm font-medium text-foreground">Hiring Type</label>
               <Select value={formData?.hiringType || ""} onValueChange={(value) => setFormData({ ...formData, hiringType: value })}>
                 <SelectTrigger>
@@ -414,8 +414,8 @@ export function RecruiterProfileClientPage() {
                   ))}
                 </SelectContent>
               </Select>
-            </div>*/}
-          </FormSection>
+            </div>
+          </FormSection>*/}
 
           {/* Verification Status Section */}
           <FormSection title="Verification Status" description="Current verification state of your profile">

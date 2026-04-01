@@ -47,18 +47,8 @@ export async function GET(req: NextRequest) {
             institution: true,
             experienceLevel: true,
             degree: true,
-            primarySkills: {
-              select: {
-                id: true,
-                name: true,
-              },
-            },
-            secondarySkills: {
-              select: {
-                id: true,
-                name: true,
-              },
-            },
+            
+            
             user: {
               select: {
                 name: true,

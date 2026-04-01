@@ -1,5 +1,28 @@
 import { create } from "zustand";
 
+type Department =
+  | "ENGINEERING"
+  | "DESIGN"
+  | "MARKETING"
+  | "SALES"
+  | "SUPPORT"
+  | "HR"
+  | "FINANCE"
+  | "OPERATIONS"
+  | "NONE";
+
+type JobType = "FULL_TIME" | "INTERNSHIP" | "BOTH" | "NONE";
+
+type ExperienceRequired =
+  | "ENTRY_LEVEL"
+  | "MID_LEVEL"
+  | "SENIOR_LEVEL"
+  | "LEAD"
+  | "EXECUTIVE"
+  | "NONE";
+
+type JobStatus = "ACTIVE" | "CLOSED";
+
 export interface Job {
   id: string;
   recruiterId: string;
@@ -7,18 +30,18 @@ export interface Job {
   description: string;
   location: string;
   minSalary: number;
-  maxSalary: string; // your sample shows this as a string
-  department: string;
-  jobType: string;
-  experienceRequired: string;
-  requirements: { id: string; name: string }[];
-  optional: { id: string; name: string }[];
+  maxSalary: number;
+  department: Department;
+  jobType: JobType;
+  experienceRequired: ExperienceRequired;
+  primary_skills: string[],
+  secondry_skill: string[],
   benifits: string[];
   createdAt: string;
   updatedAt: string;
   recruiter?: string;
   applied?: boolean;
-  status: string;
+  status: JobStatus;
 }
 
 interface JobStore {

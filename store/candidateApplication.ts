@@ -8,6 +8,13 @@ type ApplicationJob = {
   };
 };
 
+type ApplicationStatus =
+  | "PENDING"
+  | "ACCEPTED"
+  | "REJECTED"
+  | "WAITLIST"
+  | "SCHEDULED";
+
 type Resume = {
   resumeName: string;
   resumeUrl: string;
@@ -18,7 +25,7 @@ type Resume = {
 
 type Application = {
   id: string;
-  status: string;
+  status: ApplicationStatus;
   score: number;
   createdAt: string;
   job: ApplicationJob;

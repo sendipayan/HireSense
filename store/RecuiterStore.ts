@@ -7,6 +7,7 @@ type BaseUser = {
 };
 
 type verificationStatus = "PENDING" | "APPROVED" | "REJECTED";
+type CompanySize = "SMALL" | "MEDIUM" | "LARGE" | "ENTERPRISE";
 
 type RecruiterProfile = {
   id: string;
@@ -18,10 +19,11 @@ type RecruiterProfile = {
   companyWebsite?: string | null;
   companyLinkedIn?: string | null;
   industry?: string | null;
-  companySize?: string | null;
-  hiringForRoles?: { id: string; name: string }[];
+  companySize?: CompanySize | null;
   isVerified: verificationStatus;
   failedReasons?: any;
+  linkedinName?: string | null;
+  hiringForRoles?: { id: string; name: string }[];
 };
 
 type RecruiterStore = {

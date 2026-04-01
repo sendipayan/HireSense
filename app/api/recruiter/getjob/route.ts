@@ -65,19 +65,7 @@ async function handler(req: NextRequest, user: UserPayload) {
         select: {
           companyName: true,
         },
-      },
-      requirements: {
-        select: {
-          id: true,
-          name: true,
-        },
-      },
-      optional: {
-        select: {
-          id: true,
-          name: true,
-        },
-      },
+      }
     },
     take: limit + 1,
   });

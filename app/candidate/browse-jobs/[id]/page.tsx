@@ -56,13 +56,7 @@ export default function JobDetailsPage() {
                     { label: jobs?.title || "Job Details" }
                 ]} />
 
-                <Button
-                    onClick={() => router.back()}
-                    className="inline-flex items-center gap-2 text-sm text-muted-foreground bg-transparent hover:bg-transparent hover:text-primary transition-colors cursor-pointer mb-8"
-                >
-                    <ArrowLeft className="h-4 w-4" />
-                    Back
-                </Button>
+                
 
                 {error ? <div className="rounded-xl flex items-center justify-center border border-border bg-destructive-foreground p-6 sm:p-8 shadow-sm h-[60vh]">
                     <h1 className="text-2xl sm:text-3xl font-bold text-destructive">Job Not Found</h1>
@@ -125,13 +119,13 @@ export default function JobDetailsPage() {
                         <section>
                             <h2 className="text-xl font-semibold mb-4">Required Skills</h2>
                             <div className="flex flex-wrap gap-2">
-                                {jobs?.requirements.map((tag) => (
-                                    <Badge key={tag.id} variant="default" className="px-3 py-1 text-sm">
-                                        {tag.name}
+                                {jobs?.primary_skills.map((tag) => (
+                                    <Badge key={tag} variant="default" className="px-3 py-1 text-sm">
+                                        {tag}
                                     </Badge>
                                 ))}
-                                {jobs?.optional.map((tag) => (<Badge key={tag.id} variant="outline" className="px-3 py-1 text-sm">
-                                    {tag.name}
+                                {jobs?.secondry_skill.map((tag) => (<Badge key={tag} variant="outline" className="px-3 py-1 text-sm">
+                                    {tag}
                                 </Badge>))}
                             </div>
                         </section>

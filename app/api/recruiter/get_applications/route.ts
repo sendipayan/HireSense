@@ -41,18 +41,8 @@ async function handler(req: NextRequest, user: UserPayload) {
               profilePic: true,
             },
           },
-          primarySkills: {
-            select: {
-              id: true,
-              name: true,
-            },
-          },
-          secondarySkills: {
-            select: {
-              id: true,
-              name: true,
-            },
-          },
+          
+          
         },
       },
       job: {

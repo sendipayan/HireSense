@@ -2,12 +2,16 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 
 import { withAuth } from "@/lib/api-middleware";
+import { signJwt } from "@/lib/jwt";
+import { cookies } from "next/headers";
 
 
 type UserPayload = {
   userId: string;
   role: string;
+  isVerified?: "APPROVED" | "PENDING" | "REJECTED";
 };
+
 
 async function handler(req: NextRequest, user: UserPayload) {
   const body = await req.json();
@@ -23,8 +27,6 @@ async function handler(req: NextRequest, user: UserPayload) {
     companyLinkedIn,
     industry,
     companySize,
-    hiringForRoles,
-    isVerified,
   } = body;
 
   // Enforce ownership: the id in body must match the token user id
@@ -40,7 +42,39 @@ async function handler(req: NextRequest, user: UserPayload) {
     return NextResponse.json({ error: "Recruiter not found" }, { status: 404 });
   }
 
-  if (id && email && companyWebsite && companyName && (companyName!==recruiter.companyName || companyWebsite!==recruiter.companyWebsite)) {
+  const normalizeOptional = (value: unknown) => {
+    if (typeof value !== "string") return null;
+    const trimmed = value.trim();
+    return trimmed === "" ? null : trimmed;
+  };
+
+  const normalizedName = typeof name === "string" ? name.trim() : null;
+  const normalizedEmail = typeof email === "string" ? email.trim() : null;
+  const normalizedPhone = normalizeOptional(phoneNumber);
+  const normalizedJobTitle = normalizeOptional(jobTitle);
+  const normalizedCompanyName = normalizeOptional(companyName);
+  const normalizedCompanyWebsite = normalizeOptional(companyWebsite);
+  const normalizedCompanyLinkedIn = normalizeOptional(companyLinkedIn);
+  const normalizedIndustry = normalizeOptional(industry);
+  const companySizeValue = typeof companySize === "string" ? companySize.trim() : "";
+  const normalizedCompanySize =
+    companySizeValue === "SMALL" ||
+    companySizeValue === "MEDIUM" ||
+    companySizeValue === "LARGE" ||
+    companySizeValue === "ENTERPRISE"
+      ? companySizeValue
+      : null;
+
+  let nextVerificationStatus = recruiter.isVerified;
+
+  if (
+    id &&
+    normalizedEmail &&
+    normalizedCompanyWebsite &&
+    normalizedCompanyName &&
+    (normalizedCompanyName !== recruiter.companyName ||
+      normalizedCompanyWebsite !== recruiter.companyWebsite)
+  ) {
 
     const res = await fetch(
       "https://wxerjdklv745wy4c2r2jirfkvu0jgofs.lambda-url.us-east-1.on.aws/validate",
@@ -59,70 +93,52 @@ async function handler(req: NextRequest, user: UserPayload) {
     if (!res.ok)
       return NextResponse.json({error:"Verification server not working"},{status: 503})
     const data = await res.json();
-    if (data.valid_recruiter)
-      isVerified="APPROVED";
-    else
-      isVerified="REJECTED"
+    if (data.valid_recruiter) nextVerificationStatus = "APPROVED";
+    else nextVerificationStatus = "REJECTED";
   }
 
-  if (!hiringForRoles || hiringForRoles.length === 0) {
-    await prisma.role.updateMany({
-      where: {
-        recruiterId: recruiter.id,
-      },
-      data: {
-        recruiterId: null,
-        popularity: { decrement: 1 },
-      },
-    });
-  } else {
-    await prisma.$transaction([
-      prisma.role.updateMany({
-        where: {
-          recruiterId: recruiter.id,
-          id: {
-            notIn: hiringForRoles,
-          },
-        },
-        data: {
-          recruiterId: null,
-          popularity: { decrement: 1 },
-        },
-      }),
-      prisma.role.updateMany({
-        where: {
-          id: {
-            in: hiringForRoles,
-          },
-        },
-        data: {
-          recruiterId: recruiter.id,
-          popularity: { increment: 1 },
-        },
-      }),
-    ]);
-  }
+  const token =signJwt({
+    userId:user.userId,
+    role:user.role,
+    isVerified:nextVerificationStatus
+  })
+  const cookieStore= await cookies();
+
+  cookieStore.set("auth_token",token,{
+    httpOnly:true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+  })
+  
 
   // Use a transaction to keep data consistent
-  await prisma.$transaction([
-    prisma.user.update({
-      where: { id },
-      data: { name },
-    }),
+  const transactionCalls = [];
+  if (normalizedName) {
+    transactionCalls.push(
+      prisma.user.update({
+        where: { id },
+        data: { name: normalizedName },
+      }),
+    );
+  }
+  transactionCalls.push(
     prisma.recruiter.update({
       where: { userId: id },
       data: {
-        phoneNumber,
-        jobTitle,
-        companyName,
-        companyWebsite,
-        companyLinkedIn,
-        industry,
-        companySize,
-        isVerified,
+        phoneNumber: normalizedPhone,
+        jobTitle: normalizedJobTitle,
+        companyName: normalizedCompanyName,
+        companyWebsite: normalizedCompanyWebsite,
+        companyLinkedIn: normalizedCompanyLinkedIn,
+        industry: normalizedIndustry,
+        companySize: normalizedCompanySize,
+        isVerified: nextVerificationStatus,
       },
     }),
-  ]);
+  );
+
+  await prisma.$transaction(transactionCalls);
 
   
 

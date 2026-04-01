@@ -22,24 +22,22 @@ import toast from "react-hot-toast"
 import { useRouter } from "next/navigation"
 
 interface CandidateFormData {
-  fullName?: string | null;
-  email?: string | null;
-  phoneNumber?: string | null;
-  status?: string | null;
-  institution?: string | null;
-  graduationYear?: string | null;
-  degree?: string | null;
-  primarySkills: string[];
-  secondarySkills?: string[];
-  experienceLevel?: string | null;
+  fullName: string;
+  email: string;
+  phoneNumber: string;
+  status: "STUDENT" | "GRADUATE" | "WORKING_PROFESSIONAL" | "NONE" | "";
+  institution: string;
+  graduationYear: string;
+  degree: string;
+  experienceLevel: "BEGINNER" | "INTERMEDIATE" | "ADVANCED" | "NONE" | "";
+  githubUrl: string;
   preferredRoles?: string[];
-  githubUrl?: string | null;
-  linkedinUrl?: string | null;
-  portfolioUrl?: string | null;
-  jobTypePreference?: string | null;
+  linkedinName: string;
+  portfolioUrl: string;
+  jobTypePreference: "FULL_TIME" | "INTERNSHIP" | "BOTH" | "NONE" | "";
   isVerified: boolean;
   openToWork: boolean;
-  availability?: string | null;
+  availability: "IMMEDIATE" | "ONE_TO_THREE_MONTHS" | "THREE_TO_SIX_MONTHS" | "LATER" | "NONE" | "";
   projects: {
     id?: string;
     title: string;
@@ -55,7 +53,6 @@ interface CandidateFormData {
 };
 
 const CURRENT_STATUS_OPTIONS = [
-  { value: "NONE", label: "Select a Status" },
   { label: "student", value: "STUDENT" },
   { label: "graduate", value: "GRADUATE" },
   { label: "working", value: "WORKING_PROFESSIONAL" },
@@ -74,7 +71,6 @@ const SKILLS_OPTIONS = [
 ]
 
 const EXPERIENCE_LEVEL_OPTIONS = [
-  { value: "NONE", label: "Select an Experience Level" },
   { label: "beginner", value: "BEGINNER" },
   { label: "intermediate", value: "INTERMEDIATE" },
   { label: "advanced", value: "ADVANCED" },
@@ -90,14 +86,12 @@ const PREFERRED_ROLES_OPTIONS = [
 ]
 
 const JOB_TYPE_OPTIONS = [
-  { value: "NONE", label: "Select a Job Type" },
   { label: "fulltime", value: "FULL_TIME" },
   { label: "internship", value: "INTERNSHIP" },
   { label: "both", value: "BOTH" },
 ]
 
 const AVAILABILITY_OPTIONS = [
-  { value: "NONE", label: "Select Availability" },
   { label: "immediate", value: "IMMEDIATE" },
   { label: "1-3months", value: "ONE_TO_THREE_MONTHS" },
   { label: "3-6months", value: "THREE_TO_SIX_MONTHS" },
@@ -126,13 +120,11 @@ export default function CandidateProfileClientPage() {
     institution: "",
     degree: "",
     graduationYear: "",
-    primarySkills: [],
-    secondarySkills: [],
     experienceLevel: "",
-    preferredRoles: [],
     githubUrl: "",
+    preferredRoles: [],
     portfolioUrl: "",
-    linkedinUrl: "",
+    linkedinName: "",
     jobTypePreference: "",
     isVerified: false,
     openToWork: true,
@@ -144,24 +136,22 @@ export default function CandidateProfileClientPage() {
     if (candidateProfile) {
       console.log(candidateProfile)
       setFormData({
-        fullName: user?.name,
-        email: user?.email,
-        phoneNumber: candidateProfile.phoneNumber,
-        status: candidateProfile.status,
-        institution: candidateProfile.institution,
-        degree: candidateProfile.degree,
-        graduationYear: candidateProfile.graduationYear,
-        primarySkills: candidateProfile.primarySkills?.map((skill) => skill.id) || [],
-        secondarySkills: candidateProfile.secondarySkills?.map((skill) => skill.id) || [],
-        experienceLevel: candidateProfile.experienceLevel,
-        preferredRoles: candidateProfile.preferredRoles?.map((role) => role.id) || [],
-        githubUrl: candidateProfile.githubUrl,
-        portfolioUrl: candidateProfile.portfolioUrl,
-        linkedinUrl: candidateProfile.linkedinName,
-        jobTypePreference: candidateProfile.jobTypePreference,
+        fullName: user?.name || "",
+        email: user?.email || "",
+        phoneNumber: candidateProfile.phoneNumber || "",
+        status: candidateProfile.status || "",
+        institution: candidateProfile.institution || "",
+        degree: candidateProfile.degree || "",
+        graduationYear: candidateProfile.graduationYear || "",
+        experienceLevel: candidateProfile.experienceLevel || "",
+        preferredRoles: candidateProfile.preferredRoles,
+        githubUrl: candidateProfile.githubUrl || "",
+        portfolioUrl: candidateProfile.portfolioUrl || "",
+        linkedinName: candidateProfile.linkedinName || "",
+        jobTypePreference: candidateProfile.jobTypePreference || "",
         openToWork: candidateProfile.openToWork,
         isVerified: candidateProfile.isVerified,
-        availability: candidateProfile.availability,
+        availability: candidateProfile.availability || "",
         projects: candidateProfile.projects?.map(p => ({
           id: p.id,
           title: p.title,
@@ -181,13 +171,8 @@ export default function CandidateProfileClientPage() {
 
 
       // Convert string arrays to objects for MultiSelect display
-      const primarySkillsObjects = (candidateProfile.primarySkills || []).map((skill) => ({ value: skill.id, label: skill.name }))
-      const secondarySkillsObjects = (candidateProfile.secondarySkills || []).map((skill) => ({ value: skill.id, label: skill.name }))
-      const preferredRolesObjects = (candidateProfile.preferredRoles || []).map((role) => ({ value: role.id, label: role.name }))
-
-      setSelectedSkills(primarySkillsObjects)
-      setSelectedSecondarySkills(secondarySkillsObjects)
-      setSelectedRoles(preferredRolesObjects)
+      
+      
     }
   }, [candidateProfile])
 
@@ -202,12 +187,20 @@ export default function CandidateProfileClientPage() {
   }, [formData])
 
   // Calculate profile completion
-  const totalFields = 19
-  const completedFields = Object.values(formData).filter((v) => {
-    if (Array.isArray(v)) return v.length > 0
-    if (typeof v === "string") return v.trim() !== ""
-    return v !== null && v !== undefined
-  }).length
+  const totalFields = 12
+  const completedFields = [
+    formData.fullName,
+    formData.email,
+    formData.phoneNumber,
+    formData.status,
+    formData.institution,
+    formData.degree,
+    formData.graduationYear,
+    formData.experienceLevel,
+    formData.jobTypePreference,
+    formData.availability,
+    formData.preferredRoles,
+  ].filter((value) => (Array.isArray(value) ? value.length > 0 : value?.trim() !== "")).length
 
   const handleChange = (field: keyof CandidateFormData, value: any) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
@@ -223,8 +216,10 @@ export default function CandidateProfileClientPage() {
 
   const handleProjectChange = (index: number, field: string, value: string) => {
     setFormData(prev => {
+      const numericFields = new Set(["stars", "forks", "githubRepoId"])
+      const nextValue = numericFields.has(field) ? Number(value) : value
       const newProjects = [...prev.projects]
-      newProjects[index] = { ...newProjects[index], [field]: value }
+      newProjects[index] = { ...newProjects[index], [field]: nextValue }
       return { ...prev, projects: newProjects }
     })
   }
@@ -284,8 +279,19 @@ export default function CandidateProfileClientPage() {
       const payload = {
         ...formData,
         id: candidateProfile.userId,
-        name: formData.fullName,
-        projects: finalProjects, // Use the potentially updated projects list
+        name: formData.fullName.trim(),
+        phoneNumber: formData.phoneNumber.trim() || null,
+        status: formData.status || null,
+        institution: formData.institution.trim() || null,
+        degree: formData.degree.trim() || null,
+        graduationYear: formData.graduationYear.trim() || null,
+        experienceLevel: formData.experienceLevel || null,
+        githubUrl: formData.githubUrl.trim() || null,
+        portfolioUrl: formData.portfolioUrl.trim() || null,
+        linkedinName: formData.linkedinName.trim() || null,
+        jobTypePreference: formData.jobTypePreference || null,
+        availability: formData.availability || null,
+        projects: finalProjects,
       }
 
       console.log(payload)
@@ -481,7 +487,7 @@ export default function CandidateProfileClientPage() {
           <FormSection title="Education" description="Your educational background">
             <div className="space-y-2">
               <label className="text-sm font-medium text-foreground" aria-required={true}>Current Status</label>
-              <Select value={formData.status || "NONE"} onValueChange={(value) => handleChange("status", value)} required={true}>
+              <Select value={formData.status} onValueChange={(value) => handleChange("status", value)} required={true}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select current status" />
                 </SelectTrigger>
@@ -524,47 +530,12 @@ export default function CandidateProfileClientPage() {
 
           {/* Skills & Experience Section */}
           <FormSection title="Skills & Experience" description="Your technical skills and experience level">
-            <MultiSelect
-              label="Primary Skills"
-              name="primarySkills"
-              options={skills}
-              selected={selectedSkills}
-              onChange={(selected) => {
-                setSelectedSkills(selected)
-                setFormData((prev) => ({
-                  ...prev,
-                  primarySkills: selected.map(s => s.value)
-                }))
-              }}
-              placeholder="Select your primary skills"
-              required
-              loading={searchLoading}
-              query={searchQuery}
-              setQuery={setSearchQuery}
-            />
-
-            <MultiSelect
-              label="Secondary Skills"
-              name="secondarySkills"
-              options={skills}
-              selected={selectedSecondarySkills}
-              onChange={(selected) => {
-                setSelectedSecondarySkills(selected)
-                setFormData((prev) => ({
-                  ...prev,
-                  secondarySkills: selected.map(s => s.value)
-                }))
-              }}
-              placeholder="Select additional skills"
-              loading={searchLoading}
-              query={searchQuery}
-              setQuery={setSearchQuery}
-            />
+            
 
             <div className="space-y-2">
               <label className="text-sm font-medium text-foreground">Experience Level</label>
               <Select
-                value={formData.experienceLevel || "NONE"}
+                value={formData.experienceLevel}
                 onValueChange={(value) => handleChange("experienceLevel", value)}
               >
                 <SelectTrigger>
@@ -580,24 +551,25 @@ export default function CandidateProfileClientPage() {
               </Select>
             </div>
 
-            <MultiSelect
-              label="Preferred Roles"
-              name="preferredRoles"
-              options={roles}
-              selected={selectedRoles}
-              onChange={(selected) => {
-                setSelectedRoles(selected)
-                setFormData((prev) => ({
-                  ...prev,
-                  preferredRoles: selected.map(r => r.value)
-                }))
-              }}
-              placeholder="Select roles you're interested in"
-              required
-              loading={searchLoading}
-              query={rolesearch}
-              setQuery={setRoleSearch}
-            />
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground">Preferred Roles</label>
+              <div className="min-h-11 rounded-md border border-border bg-muted/30 px-3 py-2 text-sm">
+                {selectedRoles.length > 0 ? (
+                  <div className="flex flex-wrap gap-2">
+                    {selectedRoles.map((role) => (
+                      <span
+                        key={role.value}
+                        className="inline-flex items-center rounded-full bg-accent/60 px-2.5 py-1 text-xs font-medium text-foreground"
+                      >
+                        {role.label}
+                      </span>
+                    ))}
+                  </div>
+                ) : (
+                  <span className="text-muted-foreground">submit resume to get roles</span>
+                )}
+              </div>
+            </div>
           </FormSection>
 
           {/* Work Links Section */}
@@ -620,7 +592,7 @@ export default function CandidateProfileClientPage() {
               disabled={loading}
             >
               <Link href={`https://github.com/login/oauth/authorize?client_id=${process.env.NEXT_PUBLIC_GITHUB_CLIENT_ID}&scope=repo`}>
-                Connect account
+                Connect github
               </Link>
             </Button>}
 
@@ -640,10 +612,10 @@ export default function CandidateProfileClientPage() {
               placeholder="Click below to verify Linkedin"
               description="Verify your LinkedIn profile"
               disabled={true}
-              value={formData.linkedinUrl || ""}
-              onChange={(e) => handleChange("linkedinUrl", e.target.value)}
+              value={formData.linkedinName || ""}
+              onChange={(e) => handleChange("linkedinName", e.target.value)}
             />
-            {!formData.linkedinUrl && (
+            {!formData.linkedinName && (
               <Button
                 asChild
                 variant="default"
@@ -779,7 +751,7 @@ export default function CandidateProfileClientPage() {
             <div className="space-y-2">
               <label className="text-sm font-medium text-foreground">Job Type Preference</label>
               <Select
-                value={formData.jobTypePreference || "NONE"}
+                value={formData.jobTypePreference}
                 onValueChange={(value) => handleChange("jobTypePreference", value)}
               >
                 <SelectTrigger>
@@ -817,7 +789,7 @@ export default function CandidateProfileClientPage() {
 
             <div className="space-y-2">
               <label className="text-sm font-medium text-foreground">Availability</label>
-              <Select value={formData.availability || "NONE"} onValueChange={(value) => handleChange("availability", value)}>
+              <Select value={formData.availability} onValueChange={(value) => handleChange("availability", value)}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select availability" />
                 </SelectTrigger>

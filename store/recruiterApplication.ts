@@ -5,13 +5,20 @@ export type ApplicationJob = {
   id: string;
 };
 
+type ExperienceLevel = "BEGINNER" | "INTERMEDIATE" | "ADVANCED" | "NONE";
+
+type ApplicationStatus =
+  | "PENDING"
+  | "ACCEPTED"
+  | "REJECTED"
+  | "WAITLIST"
+  | "SCHEDULED";
+
 type Candidate = {
   id: string;
   institution: string;
-  experienceLevel: string;
+  experienceLevel: ExperienceLevel;
   degree: string;
-  primarySkills: { id: string; name: string }[];
-  secondarySkills: { id: string; name: string }[];
   user: {
     name: string;
     profilePic?: string;
@@ -31,7 +38,7 @@ type Application = {
   createdAt: string;
   id: string;
   score: number;
-  status: string;
+  status: ApplicationStatus;
   job: ApplicationJob;
   resume: Resume;
 };

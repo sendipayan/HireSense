@@ -18,7 +18,6 @@ interface CandidateCardProps {
   experience: string
   education: string
   status: string
-  skills: string[]
   resumeUrl: string
   resumeId: string
   resumeMimeType: string
@@ -45,7 +44,7 @@ export function CandidateCard({
   resumeMimeType,
   experience,
   education,
-  skills,
+  
   matchScore,
   avatar,
 }: CandidateCardProps) {
@@ -101,14 +100,14 @@ export function CandidateCard({
             </span>
           </div>
 
-          <div className="mt-3 flex flex-wrap gap-2">
+          {/*<div className="mt-3 flex flex-wrap gap-2">
             {skills.slice(0, 4).map((skill) => (
               <Badge key={skill} variant="secondary">
                 {skill}
               </Badge>
             ))}
             {skills.length > 4 && <Badge variant="outline">+{skills.length - 4} more</Badge>}
-          </div>
+          </div>*/}
 
           <div className="mt-4 flex flex-col lg:flex-row gap-2">
             <Button size="sm" asChild>

@@ -41,26 +41,7 @@ async function handler(
     },
   });
 
-  await prisma.$transaction([
-    prisma.skill.updateMany({
-      where: {
-        requiredForJobId: id,
-      },
-      data: {
-        requiredForJobId: null,
-        popularity: { decrement: 1 },
-      },
-    }),
-    prisma.skill.updateMany({
-      where: {
-        optionalForJobId: id,
-      },
-      data: {
-        optionalForJobId: null,
-        popularity: { decrement: 1 },
-      },
-    }),
-  ]);
+ 
 
   return NextResponse.json(
     { message: "Job deleted successfully", job },

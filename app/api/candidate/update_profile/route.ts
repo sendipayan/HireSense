@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { withAuth } from "@/lib/api-middleware";
+import { signJwt } from "@/lib/jwt";
+import { cookies } from "next/headers";
 
 type UserPayload = {
   userId: string;
@@ -18,13 +20,10 @@ async function handler(req: NextRequest, authUser: UserPayload) {
     institution,
     degree,
     graduationYear,
-    primarySkills,
-    secondarySkills,
     experienceLevel,
-    preferredRoles,
     githubUrl,
     portfolioUrl,
-    linkedinUrl,
+    linkedinName,
     jobTypePreference,
     openToWork,
     availability,
@@ -44,166 +43,122 @@ async function handler(req: NextRequest, authUser: UserPayload) {
     return NextResponse.json({ error: "Candidate not found" }, { status: 404 });
   }
 
+  const normalizeOptional = (value: unknown) => {
+    if (typeof value !== "string") return null;
+    const trimmed = value.trim();
+    return trimmed === "" ? null : trimmed;
+  };
+
+  const normalizedName = typeof name === "string" ? name.trim() : null;
+  const normalizedPhone = normalizeOptional(phoneNumber);
+  const normalizedInstitution = normalizeOptional(institution);
+  const normalizedDegree = normalizeOptional(degree);
+  const normalizedGraduationYear = normalizeOptional(graduationYear);
+  const normalizedGithubUrl = normalizeOptional(githubUrl);
+  const normalizedPortfolioUrl = normalizeOptional(portfolioUrl);
+  const normalizedLinkedinName = normalizeOptional(linkedinName);
+
+  const normalizedStatus =
+    status === "STUDENT" ||
+    status === "GRADUATE" ||
+    status === "WORKING_PROFESSIONAL" ||
+    status === "NONE"
+      ? status
+      : null;
+
+  const normalizedExperienceLevel =
+    experienceLevel === "BEGINNER" ||
+    experienceLevel === "INTERMEDIATE" ||
+    experienceLevel === "ADVANCED" ||
+    experienceLevel === "NONE"
+      ? experienceLevel
+      : null;
+
+  const normalizedJobType =
+    jobTypePreference === "FULL_TIME" ||
+    jobTypePreference === "INTERNSHIP" ||
+    jobTypePreference === "BOTH" ||
+    jobTypePreference === "NONE"
+      ? jobTypePreference
+      : null;
+
+  const normalizedAvailability =
+    availability === "IMMEDIATE" ||
+    availability === "ONE_TO_THREE_MONTHS" ||
+    availability === "THREE_TO_SIX_MONTHS" ||
+    availability === "LATER" ||
+    availability === "NONE"
+      ? availability
+      : null;
+
   let isVerified = false;
 
   // Check all required fields are present and not empty
   // Using truthy checks to properly handle null/undefined values
   if (
-    institution &&
-    institution.trim() !== "" &&
-    degree &&
-    degree.trim() !== "" &&
-    graduationYear &&
-    graduationYear.trim() !== "" &&
-    primarySkills &&
-    primarySkills.length > 0 &&
-    experienceLevel &&
-    experienceLevel.trim() !== "" &&
-    preferredRoles &&
-    preferredRoles.length > 0
+    normalizedInstitution &&
+    normalizedDegree &&
+    normalizedGraduationYear &&
+    normalizedExperienceLevel
   ) {
     isVerified = true;
   }
 
-  if (!primarySkills || primarySkills.length === 0) {
-    await prisma.skill.updateMany({
-      where: {
-        primaryForCandidateId: user.id,
-      },
-      data: {
-        primaryForCandidateId: null,
-        popularity: { decrement: 1 },
-      },
-    });
-  } else {
-    await prisma.$transaction([
-      prisma.skill.updateMany({
-        where: {
-          primaryForCandidateId: user.id,
-          id: {
-            notIn: primarySkills,
-          },
-        },
-        data: {
-          primaryForCandidateId: null,
-          popularity: { decrement: 1 },
-        },
-      }),
-      prisma.skill.updateMany({
-        where: {
-          id: {
-            in: primarySkills,
-          },
-        },
-        data: {
-          primaryForCandidateId: user.id,
-          popularity: { increment: 1 },
-        },
-      }),
-    ]);
-  }
 
-  if (!secondarySkills || secondarySkills.length === 0) {
-    await prisma.skill.updateMany({
-      where: {
-        secondaryForCandidateId: user.id,
-      },
-      data: {
-        secondaryForCandidateId: null,
-        popularity: { decrement: 1 },
-      },
-    });
-  } else {
-    await prisma.$transaction([
-      prisma.skill.updateMany({
-        where: {
-          secondaryForCandidateId: user.id,
-          id: {
-            notIn: secondarySkills,
-          },
-        },
-        data: {
-          secondaryForCandidateId: null,
-          popularity: { decrement: 1 },
-        },
-      }),
-      prisma.skill.updateMany({
-        where: {
-          id: {
-            in: secondarySkills,
-          },
-        },
-        data: {
-          secondaryForCandidateId: user.id,
-          popularity: { increment: 1 },
-        },
-      }),
-    ]);
-  }
-
-  if (!preferredRoles || preferredRoles.length === 0) {
-    // Remove all preferred roles for this candidate
-    await prisma.role.updateMany({
-      where: {
-        preferredByCandidateId: user.id,
-      },
-      data: {
-        preferredByCandidateId: null,
-        popularity: { decrement: 1 },
-      },
-    });
-  } else {
-    await prisma.$transaction([
-      prisma.role.updateMany({
-        where: {
-          preferredByCandidateId: user.id,
-        },
-        data: {
-          preferredByCandidateId: null,
-          popularity: { decrement: 1 },
-        },
-      }),
-      prisma.role.updateMany({
-        where: {
-          id: {
-            in: preferredRoles,
-          },
-        },
-        data: {
-          preferredByCandidateId: user.id,
-          popularity: { increment: 1 },
-        },
-      }),
-    ]);
-  }
 
   console.log("isVerified", isVerified);
 
+  const token=signJwt({
+    userId:authUser.userId,
+    role:authUser.role,
+    isVerified
+  })
+
+  const cookieStore= await cookies()
+  cookieStore.set("auth_token",token,{
+    httpOnly:true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+  })
+
   // Prepare transaction with basic updates
-  const transactionOps: any[] = [
-    prisma.user.update({
-      where: { id },
-      data: { name },
-    }),
+  
+
+  
+
+  
+
+  const transactionOps: any[] = [];
+  if (normalizedName) {
+    transactionOps.push(
+      prisma.user.update({
+        where: { id },
+        data: { name: normalizedName },
+      }),
+    );
+  }
+  transactionOps.push(
     prisma.candidate.update({
       where: { userId: id },
       data: {
-        phoneNumber,
-        status,
-        institution,
-        degree,
-        graduationYear,
-        experienceLevel,
-        githubUrl,
-        portfolioUrl,
-        linkedinUrl,
-        jobTypePreference,
-        openToWork,
+        phoneNumber: normalizedPhone,
+        status: normalizedStatus,
+        institution: normalizedInstitution,
+        degree: normalizedDegree,
+        graduationYear: normalizedGraduationYear,
+        experienceLevel: normalizedExperienceLevel,
+        githubUrl: normalizedGithubUrl,
+        portfolioUrl: normalizedPortfolioUrl,
+        linkedinName: normalizedLinkedinName,
+        jobTypePreference: normalizedJobType,
+        openToWork: Boolean(openToWork),
         isVerified,
-        availability,
+        availability: normalizedAvailability,
+        
       },
     }),
-  ];
+  );
 
   // Handle Projects
   if (projects) {
@@ -234,7 +189,9 @@ async function handler(req: NextRequest, authUser: UserPayload) {
               stars: p.stars,
               forks: p.forks,
               githubRepoId: p.githubRepoId,
-              githubUpdatedAt: p.githubUpdatedAt,
+              githubUpdatedAt: p.githubUpdatedAt
+                ? new Date(p.githubUpdatedAt)
+                : null,
             },
           }),
         );
@@ -251,7 +208,9 @@ async function handler(req: NextRequest, authUser: UserPayload) {
               stars: p.stars,
               forks: p.forks,
               githubRepoId: p.githubRepoId,
-              githubUpdatedAt: p.githubUpdatedAt,
+              githubUpdatedAt: p.githubUpdatedAt
+                ? new Date(p.githubUpdatedAt)
+                : null,
             },
           }),
         );

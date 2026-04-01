@@ -20,10 +20,10 @@ export type CandidateInterview = {
       name: string;
     };
   };
-  startAt: Date;
+  startAt: string;
   duration: number;
   status: InterviewStatus;
-  type: string;
+  type: "ONLINE" | "IN_PERSON" | "PHONE";
   location: string | null;
   meetingLink: string | null;
   notes: string | null;

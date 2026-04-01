@@ -41,8 +41,7 @@ type Candidate = {
     institution: string;
     experienceLevel: string;
     degree: string;
-    primarySkills: { id: string, name: string }[];
-    secondarySkills: { id: string, name: string }[];
+    
     user: {
         name: string;
         profilePic?: string;
@@ -84,17 +83,17 @@ export default function MatchResultsClientPage({ candidateId, jobId }: { candida
         description: "",
         location: "",
         minSalary: 0,
-        maxSalary: "",
-        department: "",
-        jobType: "",
-        experienceRequired: "",
-        requirements: [],
-        optional: [],
+        maxSalary: 0,
+        department: "NONE",
+        jobType: "NONE",
+        experienceRequired: "NONE",
+        primary_skills: [],
+        secondry_skill: [],
         benifits: [],
         createdAt: "",
         updatedAt: "",
         recruiter: "",
-        status: "",
+        status: "ACTIVE",
     })
     const [uniqueApplication, setUniqueApplication] = useState<Application>({
         candidate: {
@@ -102,8 +101,7 @@ export default function MatchResultsClientPage({ candidateId, jobId }: { candida
             institution: "",
             experienceLevel: "",
             degree: "",
-            primarySkills: [],
-            secondarySkills: [],
+           
             user: {
                 name: "",
                 profilePic: "",
@@ -250,13 +248,13 @@ export default function MatchResultsClientPage({ candidateId, jobId }: { candida
                                     <University className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
                                     <span>{uniqueApplication?.candidate.institution}</span>
                                 </div>
-                                <div className="flex items-center gap-3 text-sm">
+                                {/*<div className="flex items-center gap-3 text-sm">
                                     <Star className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
                                     <span>{uniqueApplication?.candidate.primarySkills.length + uniqueApplication?.candidate.secondarySkills.length} Skills</span>
-                                </div>
+                                </div>*/}
                             </div>
 
-                            <div className="mt-6">
+                           {/* <div className="mt-6">
                                 <p className="text-sm font-medium mb-2">Top Skills</p>
                                 <div className="flex flex-wrap gap-2">
                                     {uniqueApplication?.candidate.primarySkills.map((skill) => (
@@ -265,9 +263,9 @@ export default function MatchResultsClientPage({ candidateId, jobId }: { candida
                                         </Badge>
                                     ))}
                                 </div>
-                            </div>
+                            </div>*/}
 
-                            <div className="mt-6">
+                            {/*<div className="mt-6">
                                 <p className="text-sm font-medium mb-2">Secondary Skills</p>
                                 <div className="flex flex-wrap gap-2">
                                     {uniqueApplication?.candidate.secondarySkills.map((skill) => (
@@ -276,7 +274,7 @@ export default function MatchResultsClientPage({ candidateId, jobId }: { candida
                                         </Badge>
                                     ))}
                                 </div>
-                            </div>
+                            </div>*/}
                             <div className="flex flex-col md:flex-row gap-4 justify-start items-center mt-6">
                                 {uniqueApplication?.resume?.resumeMimeType === "application/pdf" && <Button size="sm" onClick={() => {
                                     window.open(`https://docs.google.com/gview?url=${encodeURIComponent(uniqueApplication?.resume?.resumeUrl)}&embedded=true`, "_blank", "noopener,noreferrer")
@@ -322,9 +320,9 @@ export default function MatchResultsClientPage({ candidateId, jobId }: { candida
                             <div className="mt-6">
                                 <p className="text-sm font-medium mb-2">Required Skills</p>
                                 <div className="flex flex-wrap gap-2">
-                                    {uniqueJob?.requirements.map((tag) => (
-                                        <Badge key={tag.id} variant="outline">
-                                            {tag.name}
+                                    {uniqueJob?.primary_skills.map((tag) => (
+                                        <Badge key={tag} variant="outline">
+                                            {tag}
                                         </Badge>
                                     ))}
                                 </div>

@@ -8,7 +8,7 @@ export default async function AuthRedirect() {
   if (!session) redirect("/login");
 
   // First-time Google login → onboarding
-  if (!session.user.role) {
+  if (session.user.isNewUser) {
     redirect("/onBoarding/role");
   } else {
     redirect("/generate_cookie");

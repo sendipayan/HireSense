@@ -46,7 +46,7 @@ interface User {
     resumeId: string
     resumeName: string
     resumeUrl: string
-    createdAt: Date
+    createdAt: string | Date
 }
 
 export function JobsBrowser() {
@@ -522,9 +522,9 @@ export function JobsBrowser() {
 
                                             <div className="flex flex-wrap gap-2">
                                                 <Badge variant="secondary">{job.jobType}</Badge>
-                                                {job.requirements.map((tag) => (
-                                                    <Badge key={tag.id} variant="outline" className="font-normal">
-                                                        {tag.name}
+                                                {job.primary_skills.map((tag) => (
+                                                    <Badge key={tag} variant="outline" className="font-normal">
+                                                        {tag}
                                                     </Badge>
                                                 ))}
                                             </div>

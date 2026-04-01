@@ -47,63 +47,46 @@ async function handler(req: NextRequest, user: UserPayload) {
     );
   }
 
-  if (minSalary > maxSalary) {
+  const minSalaryValue = Number(minSalary);
+  const maxSalaryValue = Number(maxSalary);
+  if (Number.isNaN(minSalaryValue) || Number.isNaN(maxSalaryValue)) {
+    return NextResponse.json(
+      { error: "Salary must be a number" },
+      { status: 400 },
+    );
+  }
+
+  if (minSalaryValue > maxSalaryValue) {
     return NextResponse.json(
       { error: "Minimum salary cannot be greater than maximum salary" },
       { status: 400 },
     );
   }
 
-  if (requirements.length <= 0) {
-    return NextResponse.json(
-      { error: "Requirements are required" },
-      { status: 400 },
-    );
-  }
+  
+
+  
+
+  
+
   const job = await prisma.postJob.create({
     data: {
       title,
       description,
       location,
-      minSalary,
-      maxSalary,
+      minSalary: minSalaryValue,
+      maxSalary: maxSalaryValue,
       jobType,
       experienceRequired,
       department,
+      primary_skills:requirements,
+      secondry_skill:optional,
       benifits,
       recruiterId: id,
     },
   });
 
-  await prisma.skill.updateMany({
-    where: {
-      id: {
-        in: requirements,
-      },
-    },
-    data: {
-      popularity: {
-        increment: 1,
-      },
-      requiredForJobId: job.id,
-    },
-  });
-
-  if (optional.length > 0) {
-    await prisma.skill.updateMany({
-      where: {
-        id: {
-          in: optional,
-        },
-      },
-      data: {
-        popularity: {
-          increment: 1,
-        },
-        optionalForJobId: job.id,
-      },
-    });
-  }
+  
 
   return NextResponse.json(
     { message: "Job created successfully" },

@@ -63,7 +63,7 @@ type formType = {
     requirements: string[];
     optional?: string[];
     benifits: string[];
-    status: "ACTIVE" | "CLOSED" | "NONE";
+    status: "ACTIVE" | "CLOSED";
 };
 
 export default function EditJob({ job }: { job: string }) {
@@ -90,7 +90,7 @@ export default function EditJob({ job }: { job: string }) {
         requirements: [],
         optional: [],
         benifits: [],
-        status: "NONE",
+        status: "ACTIVE",
         minSalary: 0,
         maxSalary: 0,
     });
@@ -155,17 +155,17 @@ export default function EditJob({ job }: { job: string }) {
                     jobType: jobData.jobType ?? "NONE",
                     experienceRequired: jobData.experienceRequired ?? "NONE",
                     department: jobData.department ?? "NONE",
-                    requirements: jobData.requirements?.map((skill: { id: string; name: string }) => skill.id) ?? [],
-                    optional: jobData.optional?.map((skill: { id: string; name: string }) => skill.id) ?? [],
+                    requirements: jobData.primary_skills,
+                    optional: jobData.secondry_skill,
                     benifits: jobData.benifits ?? [],
-                    status: (jobData.status as "ACTIVE" | "CLOSED" | "NONE") ?? "NONE",
+                    status: (jobData.status as "ACTIVE" | "CLOSED") ?? "ACTIVE",
                     minSalary: jobData.minSalary ?? 0,
                     maxSalary: Number(jobData.maxSalary ?? 0),
                 });
 
                 // Convert string arrays to objects for MultiSelect display
-                const requirementsObjects = (jobData.requirements || []).map((skill: { id: string; name: string }) => ({ value: skill.id, label: skill.name }))
-                const optionalObjects = (jobData.optional || []).map((skill: { id: string; name: string }) => ({ value: skill.id, label: skill.name }))
+                const requirementsObjects = (jobData.primary_skills || [])
+                const optionalObjects = (jobData.secondry_skill || [])
 
                 setSelectedRequirements(requirementsObjects)
                 setSelectedOptional(optionalObjects)

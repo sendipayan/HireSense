@@ -46,7 +46,6 @@ model Recruiter {
   interviews      Interview[]
   postJob         PostJob[]
   user            User               @relation(fields: [userId], references: [id])
-  hiringForRoles  Role[]             @relation("RecruiterHiringRoles")
 }
 
 model Candidate {
@@ -67,14 +66,12 @@ model Candidate {
   createdAt         DateTime         @default(now())
   updatedAt         DateTime         @updatedAt
   isVerified        Boolean          @default(false)
+  preferredRoles    String[]
   applications      Application[]
   user              User             @relation(fields: [userId], references: [id])
   Github            Github?
   projects          Project[]
   resumes           Resume[]
-  preferredRoles    Role[]           @relation("CandidatePreferredRoles")
-  primarySkills     Skill[]          @relation("CandidatePrimarySkills")
-  secondarySkills   Skill[]          @relation("CandidateSecondarySkills")
 }
 
 model Project {
@@ -130,47 +127,12 @@ model PostJob {
   createdAt          DateTime           @default(now())
   updatedAt          DateTime           @updatedAt
   status             JobStatus          @default(ACTIVE)
+  primary_skills     String[]
+  secondry_skill     String[]
   applications       Application[]
   recruiter          Recruiter          @relation(fields: [recruiterId], references: [id])
-  optional           Skill[]            @relation("JobOptionalSkills")
-  requirements       Skill[]            @relation("JobRequiredSkills")
 
   @@index([createdAt, id])
-}
-
-model Skill {
-  id                      String                 @id @default(uuid())
-  name                    String                 @unique
-  aliases                 String[]               @default([])
-  popularity              Int                    @default(0)
-  createdAt               DateTime               @default(now())
-  updatedAt               DateTime               @updatedAt
-  requiredForJobId        String?
-  optionalForJobId        String?
-  primaryForCandidateId   String?
-  secondaryForCandidateId String?
-  category                String[]
-  embedding               Unsupported("vector")?
-  optionalForJob          PostJob?               @relation("JobOptionalSkills", fields: [optionalForJobId], references: [id])
-  primaryForCandidate     Candidate?             @relation("CandidatePrimarySkills", fields: [primaryForCandidateId], references: [id])
-  requiredForJob          PostJob?               @relation("JobRequiredSkills", fields: [requiredForJobId], references: [id])
-  secondaryForCandidate   Candidate?             @relation("CandidateSecondarySkills", fields: [secondaryForCandidateId], references: [id])
-}
-
-model Role {
-  id                     String                 @id @default(uuid())
-  name                   String                 @unique
-  aliases                String[]               @default([])
-  popularity             Int                    @default(0)
-  createdAt              DateTime               @default(now())
-  updatedAt              DateTime               @updatedAt
-  jobId                  String?
-  recruiterId            String?
-  preferredByCandidateId String?
-  category               String[]
-  embedding              Unsupported("vector")?
-  preferredByCandidate   Candidate?             @relation("CandidatePreferredRoles", fields: [preferredByCandidateId], references: [id])
-  recruiter              Recruiter?             @relation("RecruiterHiringRoles", fields: [recruiterId], references: [id])
 }
 
 model Application {

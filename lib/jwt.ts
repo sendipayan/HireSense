@@ -2,7 +2,7 @@ import jwt from "jsonwebtoken";
 
 const JWT_SECRET = process.env.JWT_SECRET!;
 
-type verificationStatus = "APPROVED" | "PENDING" | "REJECTED";
+type verificationStatus = "APPROVED" | "PENDING" | "REJECTED" | true | false;
 
 export function signJwt(payload: {
   userId: string;
