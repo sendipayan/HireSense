@@ -16,6 +16,39 @@ export const processTask = inngest.createFunction(
   },
 );
 
+export const updateScore = inngest.createFunction(
+  {id: "update-scores", triggers: {event: "app/update/scores"}},
+  async ({event,step})=>{
+    const application= await step.run("fetch-applications", async () =>{
+      return await prisma.application.findMany({
+        where:{
+          jobId:event.data.jobId
+        },
+        select: {
+          id:true,
+          resume:true
+        }
+      })
+    })
+
+    await step.sendEvent("fan-out-score-events",
+      application.map((app) => ({
+        name: "app/jdmatch",
+        data: {
+          applicationId: app.id,
+          resume_url:     app.resume.resumeUrl,
+          tittle:      event.data.jobTitle,
+          primary_skills:    event.data.primSkills,
+          secondry_skill:   event.data.seconSkills,
+          description:       event.data.jobResp,
+        }
+      }))
+    )
+
+    return {message: `${application.length} applications found` }
+  }
+)
+
 export const getScore = inngest.createFunction(
   { id: "process-score", triggers: { event: "app/jdmatch" } },
   async ({ event, step }) => {
@@ -57,9 +90,19 @@ export const getScore = inngest.createFunction(
                    score: rec.score
                 }
             }),
-            prisma.application_report.create({
-                data:{
+            prisma.application_report.upsert({
+                where:{applicationId:event.data.applicationId},
+                create:{
                     applicationId: event.data.applicationId,
+                    missing_sections: result.missing_sections,
+                    achievment: rec.achievment,
+                    certificates: rec.certificates,
+                    experience: rec.experience,
+                    primary_skill: rec.primary_skill,
+                    projects: rec.projects,
+                    secondry_skill: rec.secondry_skill
+                },
+                update:{
                     missing_sections: result.missing_sections,
                     achievment: rec.achievment,
                     certificates: rec.certificates,
@@ -76,4 +119,4 @@ export const getScore = inngest.createFunction(
   },
 );
 
-export const functions = [processTask, getScore];
+export const functions = [processTask, getScore,updateScore];

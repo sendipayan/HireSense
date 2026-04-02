@@ -57,6 +57,16 @@ export async function GET(req: NextRequest) {
             },
           },
         },
+        application_report:{
+            select :{
+              achievment: true,
+              certificates: true,
+              experience: true,
+              primary_skill: true,
+              projects: true,
+              secondry_skill: true
+            }
+        },
         job: {
           select: {
             id: true,
