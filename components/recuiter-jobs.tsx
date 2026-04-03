@@ -294,7 +294,7 @@ export function RecruiterJobsClient() {
                                     <p className="text-xs text-muted-foreground uppercase font-medium">Applicants</p>
                                     <div className="flex items-center gap-2">
                                         <Users className="h-4 w-4 text-primary" />
-                                        <span className="font-semibold">15</span>
+                                        <span className="font-semibold">{job._count?.applications || 0}</span>
                                     </div>
                                 </div>
                                 <div className="space-y-1">

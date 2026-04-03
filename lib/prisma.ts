@@ -6,7 +6,8 @@ const globalForPrisma = global as unknown as {
   prisma: PrismaClient;
 };
 
-const connectionString = process.env.DIRECT_URL ?? process.env.DATABASE_URL;
+// Use pooled connection for runtime when available; fall back to direct.
+const connectionString = process.env.DATABASE_URL ?? process.env.DIRECT_URL;
 
 if (!connectionString) {
   throw new Error("Missing DATABASE_URL or DIRECT_URL for Prisma connection.");

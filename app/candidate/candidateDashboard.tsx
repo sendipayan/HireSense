@@ -23,6 +23,7 @@ import {
     Clock,
     CheckCircle2,
     AlertCircle,
+    Users,
 } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Inbox, Calendar } from "lucide-react"
@@ -33,6 +34,7 @@ interface Stats {
     applications: number;
     jobs: number;
     resumeScore: number;
+    interviews: number;
 }
 
 
@@ -45,7 +47,8 @@ export default function CandidateClientDashboardPage() {
     const [stat, setStat] = useState<Stats>({
         applications: 0,
         jobs: 0,
-        resumeScore: 0
+        resumeScore: 0,
+        interviews: 0
     })
 
     useEffect(() => {
@@ -92,14 +95,16 @@ export default function CandidateClientDashboardPage() {
                 setStat({
                     applications: data3.applications || 0,
                     jobs: data3.jobs || 0,
-                    resumeScore: data3.resumeScore || 0
+                    resumeScore: data3.resumeScore || 0,
+                    interviews: data3.interviews || 0
                 })
             } catch (error) {
                 console.error("Error fetching stats:", error)
                 setStat({
                     applications: 0,
                     jobs: 0,
-                    resumeScore: 0
+                    resumeScore: 0,
+                    interviews: 0
                 })
             } finally {
                 setInitialLoad(false)
@@ -120,8 +125,8 @@ export default function CandidateClientDashboardPage() {
     const stats = [
         { title: "Applications", value: `${stat.applications}`, icon: Briefcase, description: "Based on your profile" },
         { title: "Job Matches", value: `${stat.jobs}`, icon: Target, description: "Based on your profile" },
-        { title: "Profile Views", value: 89, icon: TrendingUp, trend: { value: 15, positive: true } },
-        { title: "Resume Score", value: `${stat.resumeScore}%`, icon: FileText, description: "Good standing" },
+        { title: "Interviews", value:`${stat.interviews}`, icon: Users, description: "Based on your profile" },
+        { title: "Resume ATS Score", value: `${stat.resumeScore}`, icon: FileText, description: "Good standing" },
     ]
 
     // Get status badge variant
@@ -221,15 +226,15 @@ export default function CandidateClientDashboardPage() {
                             </div>
                         </Link>
                         <Link
-                            href="/match-results"
+                            href="/candidate/browse-jobs"
                             className="group flex items-center gap-4 rounded-xl border border-border bg-card p-4 transition-all hover:border-primary/50 hover:shadow-lg"
                         >
                             <div className="rounded-lg bg-primary/10 p-3">
                                 <Target className="h-5 w-5 text-primary" aria-hidden="true" />
                             </div>
                             <div>
-                                <p className="font-medium group-hover:text-primary transition-colors">View Matches</p>
-                                <p className="text-sm text-muted-foreground">Find your fit</p>
+                                <p className="font-medium group-hover:text-primary transition-colors">View Jobs</p>
+                                <p className="text-sm text-muted-foreground">Find your recommended jobs</p>
                             </div>
                         </Link>
                     </div> :

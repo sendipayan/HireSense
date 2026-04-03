@@ -33,6 +33,10 @@ export interface Job {
   maxSalary: number;
   department: Department;
   jobType: JobType;
+  _count?:{
+  applications: number;
+  };
+  interviews?: number;
   experienceRequired: ExperienceRequired;
   primary_skills: string[],
   secondry_skill: string[],

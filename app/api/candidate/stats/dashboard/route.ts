@@ -35,15 +35,21 @@ async function handler(req: NextRequest, user: UserPayload) {
     },
   });
 
-  if (!present) {
-    return NextResponse.json(
-      { applications, jobs, resumeScore: 0 },
-      { status: 200 },
-    );
-  }
+  const interviews= await prisma.interview.count({
+    where:{
+      application:{
+        candidate:{
+          userId: user.userId
+        }
+      }
+    }
+  })
+
+  const resumeScore = present?.resumeScore ?? 0
+
 
   return NextResponse.json(
-    { applications, jobs, resumeScore: present?.resumeScore },
+    { applications, jobs, resumeScore,interviews },
     { status: 200 },
   );
 }

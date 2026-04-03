@@ -65,7 +65,7 @@ export function JobCard({ id, title, company, location, salary, type, posted, ta
           </div>
         </div>
 
-        <div className="flex flex-col items-end gap-2">
+        {/*<div className="flex flex-col items-end gap-2">
           {matchScore !== undefined && (
             <div className="text-right">
               <p className="text-2xl font-bold text-primary">{matchScore}%</p>
@@ -80,7 +80,7 @@ export function JobCard({ id, title, company, location, salary, type, posted, ta
           >
             <Bookmark className="h-5 w-5" />
           </Button>
-        </div>
+        </div>*/}
       </div>
     </article>
   )

@@ -65,6 +65,11 @@ async function handler(req: NextRequest, user: UserPayload) {
         select: {
           companyName: true,
         },
+      },
+      _count:{
+        select:{
+          applications:true   
+        }
       }
     },
     take: limit + 1,

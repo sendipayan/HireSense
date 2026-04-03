@@ -108,7 +108,7 @@ export default function CandidateProfileClientPage() {
   const [roles, setRoles] = useState<{ value: string; label: string }[]>([])
   const [selectedSkills, setSelectedSkills] = useState<{ value: string; label: string }[]>([])
   const [selectedSecondarySkills, setSelectedSecondarySkills] = useState<{ value: string; label: string }[]>([])
-  const [selectedRoles, setSelectedRoles] = useState<{ value: string; label: string }[]>([])
+  const [selectedRoles, setSelectedRoles] = useState<string []>([])
   const [searchLoading, setSearchLoading] = useState(false)
   const [initialLoad, setInitialLoad] = useState(true)
   const [loading, setLoading] = useState(false)
@@ -168,6 +168,7 @@ export default function CandidateProfileClientPage() {
 
         })) || [],
       })
+      setSelectedRoles(candidateProfile.preferredRoles || [])
 
 
       // Convert string arrays to objects for MultiSelect display
@@ -552,16 +553,16 @@ export default function CandidateProfileClientPage() {
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground">Preferred Roles</label>
+              <label className="text-sm font-medium text-foreground">Recomended Roles</label>
               <div className="min-h-11 rounded-md border border-border bg-muted/30 px-3 py-2 text-sm">
                 {selectedRoles.length > 0 ? (
                   <div className="flex flex-wrap gap-2">
                     {selectedRoles.map((role) => (
                       <span
-                        key={role.value}
-                        className="inline-flex items-center rounded-full bg-accent/60 px-2.5 py-1 text-xs font-medium text-foreground"
+                        key={role}
+                        className="inline-flex items-center rounded-md bg-primary px-2.5 py-1 text-xs font-medium text-background"
                       >
-                        {role.label}
+                        {role}
                       </span>
                     ))}
                   </div>

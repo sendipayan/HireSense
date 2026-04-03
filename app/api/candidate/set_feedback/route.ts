@@ -26,6 +26,8 @@ async function handler(req: NextRequest, user: UserPayload) {
   if (!candidate) {
     return NextResponse.json({ error: "Candidate not found" }, { status: 404 });
   }
+  const score =
+  ats?.ATS_score == null ? 0 : Math.round(Number(ats.ATS_score));
 
   try {
     const result = await prisma.$transaction(async (tx) => {
@@ -41,11 +43,13 @@ async function handler(req: NextRequest, user: UserPayload) {
       });
 
       const createdRecommendations: any[] = [];
+      const roles: string[]=[];
       const recommendationArray = Array.isArray(recomendation)
         ? recomendation
         : [];
 
       for (const rec of recommendationArray) {
+        roles.push(rec?.Title)
         const created = await tx.resume_recommendations.create({
           data: {
             resume_id,
@@ -65,8 +69,28 @@ async function handler(req: NextRequest, user: UserPayload) {
         });
         createdRecommendations.push(created);
       }
+      console.log(roles)
+      
+      const profile=await tx.candidate.update({
+          where:{
+            id:candidate.id
+          },
+          data:{
+            preferredRoles:roles
+          }
+      })
 
-      return { atsRecord, createdRecommendations };
+      const resume=await tx.resume.update({
+        where:{
+          id:resume_id
+        },
+        data:{
+          resumeScore: score
+        }
+      })
+      
+
+      return { atsRecord, createdRecommendations, profile, resume };
     });
 
     return NextResponse.json(
