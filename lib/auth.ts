@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { verifyJwt } from "@/lib/jwt";
 import prisma from "@/lib/prisma";
+import { redis } from "./redis";
 //import { getJob } from "./job";
 
 export async function getAuthUser() {
@@ -11,6 +12,12 @@ export async function getAuthUser() {
     const payload = verifyJwt(token);
 
     let data;
+    const user=await redis.get(`user:${payload.userId}`);
+    if (user){
+    
+      data=JSON.parse(user);
+      return data;
+    }
     if (payload.role === "RECRUITER") {
       data = await prisma.recruiter.findUnique({
         where: { userId: payload.userId },
@@ -48,6 +55,7 @@ export async function getAuthUser() {
     //if (!job) {
     //return data;
     //}
+    await redis.set(`user:${payload.userId}`, JSON.stringify(data), 'EX', 3600)
     return data;
   } catch {
     return null;
