@@ -30,7 +30,7 @@ export function withAuth(
   return async (req: NextRequest, context?: any) => {
     try {
       const token = req.cookies.get("auth_token")?.value;
-      console.log(token)
+     
       if (!token) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
       }
@@ -38,7 +38,7 @@ export function withAuth(
       let payload: UserPayload;
       try {
         payload = verifyJwt(token);
-        console.log("api-middleware: ",payload)
+        
       } catch (error) {
         console.log(error)
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

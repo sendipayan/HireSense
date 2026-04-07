@@ -1,6 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { verifyJwt } from "@/lib/jwt";
+import { redis } from "@/lib/redis";
+import { createHash } from "crypto";
+
+type UserPayload = {
+  userId: string;
+  role: string;
+};
+
+const CACHE_TTL_SECONDS = 60;
+
+const buildCacheKey = (userId: string, resumeId: string, payload:UserPayload) => {
+  const hash = createHash("sha1")
+    .update(JSON.stringify({ userId, resumeId }))
+    .digest("hex");
+
+  return `user:${payload.userId}:candidate:get_resumes:detail:${hash}`;
+};
 
 export async function GET(
   req: NextRequest,
@@ -31,6 +48,21 @@ export async function GET(
 
     const { id } = await context.params;
 
+    const cacheKey = buildCacheKey(payload.userId, id, payload);
+
+    try {
+      const cached = await redis.get(cacheKey);
+      if (cached) {
+        const cachedPayload = JSON.parse(cached);
+        return NextResponse.json(cachedPayload, {
+          status: 200,
+          headers: { "x-cache": "HIT" },
+        });
+      }
+    } catch (err) {
+      console.error("Redis GET error", err);
+    }
+
     const resume = await prisma.resume.findUnique({
       where: {
         id,
@@ -50,7 +82,20 @@ export async function GET(
       
     });
 
-    return NextResponse.json({ resume }, { status: 200 });
+    const responsePayload = { resume };
+
+    try {
+      await redis.set(
+        cacheKey,
+        JSON.stringify(responsePayload),
+        "EX",
+        CACHE_TTL_SECONDS,
+      );
+    } catch (err) {
+      console.error("Redis SET error", err);
+    }
+
+    return NextResponse.json(responsePayload, { status: 200 });
   } catch (err) {
     console.error("Error fetching applications:", err);
     return NextResponse.json(

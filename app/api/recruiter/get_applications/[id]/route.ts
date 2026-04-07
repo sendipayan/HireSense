@@ -1,11 +1,46 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { withAuth } from "@/lib/api-middleware";
+import { redis } from "@/lib/redis";
+import { createHash } from "crypto";
 
 type UserPayload = {
   userId: string;
   role: string;
   isVerified?: "APPROVED" | "PENDING" | "REJECTED" | true | false;
+};
+
+const CACHE_TTL_SECONDS = 60;
+
+const normalizeArray = (value?: string[]) => {
+  if (!Array.isArray(value)) return [];
+  return Array.from(new Set(value.map((v) => v.toLowerCase()))).sort();
+};
+
+const buildCacheKey = (
+  recruiterId: string,
+  payload:UserPayload,
+  params: {
+    jobId: string;
+    search?: string[];
+    cursor?: { createdAt?: string; id?: string };
+    limit: number;
+  },
+) => {
+  const normalized = {
+    jobId: params.jobId,
+    search: normalizeArray(params.search),
+    cursor: params.cursor
+      ? { createdAt: params.cursor.createdAt ?? "", id: params.cursor.id ?? "" }
+      : null,
+    limit: params.limit,
+  };
+
+  const hash = createHash("sha1")
+    .update(JSON.stringify(normalized))
+    .digest("hex");
+
+  return `user:${payload.userId}:recruiter:get_applications:job:${recruiterId}:${hash}`;
 };
 
 async function handler(
@@ -40,6 +75,26 @@ async function handler(
 
   const limit = 3;
   const tokens = search?.map((s: string) => s.toLowerCase());
+
+  const cacheKey = buildCacheKey(recruiter.id, user, {
+    jobId: id,
+    search,
+    cursor,
+    limit,
+  });
+
+  try {
+    const cached = await redis.get(cacheKey);
+    if (cached) {
+      const cachedPayload = JSON.parse(cached);
+      return NextResponse.json(cachedPayload, {
+        status: 200,
+        headers: { "x-cache": "HIT" },
+      });
+    }
+  } catch (err) {
+    console.error("Redis GET error", err);
+  }
 
   const nameConditions = tokens?.map((token: string) => ({
     candidate: {
@@ -128,19 +183,29 @@ async function handler(
 
   applications = hasMore ? applications.slice(0, limit) : applications;
 
-  return NextResponse.json(
-    {
-      applications,
-      cursor: hasMore
-        ? {
-            createdAt: applications[applications.length - 1].createdAt,
-            id: applications[applications.length - 1].id,
-          }
-        : null,
-      hasMore,
-    },
-    { status: 200 },
-  );
+  const responsePayload = {
+    applications,
+    cursor: hasMore
+      ? {
+          createdAt: applications[applications.length - 1].createdAt,
+          id: applications[applications.length - 1].id,
+        }
+      : null,
+    hasMore,
+  };
+
+  try {
+    await redis.set(
+      cacheKey,
+      JSON.stringify(responsePayload),
+      "EX",
+      CACHE_TTL_SECONDS,
+    );
+  } catch (err) {
+    console.error("Redis SET error", err);
+  }
+
+  return NextResponse.json(responsePayload, { status: 200 });
 }
 
 export const POST = withAuth(handler, { allowedRoles: ["RECRUITER"] });

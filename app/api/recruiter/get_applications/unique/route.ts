@@ -1,6 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { verifyJwt } from "@/lib/jwt";
+import { redis } from "@/lib/redis";
+import { createHash } from "crypto";
+
+const CACHE_TTL_SECONDS = 60;
+
+const buildCacheKey = (userId: string, jobId: string, candidateId: string) => {
+  const hash = createHash("sha1")
+    .update(JSON.stringify({ userId, jobId, candidateId }))
+    .digest("hex");
+
+  return `user:${userId}:recruiter:get_applications:unique:${hash}`;
+};
 
 export async function GET(req: NextRequest) {
   const token = req.cookies.get("auth_token")?.value;
@@ -27,6 +39,21 @@ export async function GET(req: NextRequest) {
         { error: "Invalid job ID or candidate ID" },
         { status: 400 },
       );
+    }
+
+    const cacheKey = buildCacheKey(payload.userId, jobId, candidateId);
+
+    try {
+      const cached = await redis.get(cacheKey);
+      if (cached) {
+        const cachedPayload = JSON.parse(cached);
+        return NextResponse.json(cachedPayload, {
+          status: 200,
+          headers: { "x-cache": "HIT" },
+        });
+      }
+    } catch (err) {
+      console.error("Redis GET error", err);
     }
 
     const applications = await prisma.application.findUnique({
@@ -85,7 +112,20 @@ export async function GET(req: NextRequest) {
       },
     });
 
-    return NextResponse.json({ applications }, { status: 200 });
+    const responsePayload = { applications };
+
+    try {
+      await redis.set(
+        cacheKey,
+        JSON.stringify(responsePayload),
+        "EX",
+        CACHE_TTL_SECONDS,
+      );
+    } catch (err) {
+      console.error("Redis SET error", err);
+    }
+
+    return NextResponse.json(responsePayload, { status: 200 });
   } catch (err) {
     console.error("Error fetching applications:", err);
     return NextResponse.json(

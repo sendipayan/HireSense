@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { withAuth } from "@/lib/api-middleware";
+import { redis } from "@/lib/redis";
+import { createHash } from "crypto";
 
 type UserPayload = {
   userId: string;
@@ -8,13 +10,53 @@ type UserPayload = {
   isVerified?: "APPROVED" | "PENDING" | "REJECTED" | true | false;
 };
 
+const CACHE_TTL_SECONDS = 60;
+
+const buildCacheKey = (userId: string, isVerified: UserPayload["isVerified"]) => {
+  const hash = createHash("sha1")
+    .update(JSON.stringify({ userId, isVerified }))
+    .digest("hex");
+
+  return `user:${userId}:recruiter:stats:dashboard:${hash}`;
+};
+
 async function handler(req: NextRequest, user: UserPayload) {
+  const cacheKey = buildCacheKey(user.userId, user.isVerified);
+
+  try {
+    const cached = await redis.get(cacheKey);
+    if (cached) {
+      const cachedPayload = JSON.parse(cached);
+      return NextResponse.json(cachedPayload, {
+        status: 200,
+        headers: { "x-cache": "HIT" },
+      });
+    }
+  } catch (err) {
+    console.error("Redis GET error", err);
+  }
+
   console.log(user);
   if (user.isVerified !== "APPROVED") {
-    return NextResponse.json(
-      { jobs: 0, applications: 0, interviews: 0, scheduled: 0 },
-      { status: 200 },
-    );
+    const responsePayload = {
+      jobs: 0,
+      applications: 0,
+      interviews: 0,
+      scheduled: 0,
+    };
+
+    try {
+      await redis.set(
+        cacheKey,
+        JSON.stringify(responsePayload),
+        "EX",
+        CACHE_TTL_SECONDS,
+      );
+    } catch (err) {
+      console.error("Redis SET error", err);
+    }
+
+    return NextResponse.json(responsePayload, { status: 200 });
   }
 
   const jobs = await prisma.postJob.count({
@@ -58,10 +100,25 @@ async function handler(req: NextRequest, user: UserPayload) {
     },
   });
 
-  return NextResponse.json(
-    { jobs, applications, interviews: interviews._avg.score, scheduled },
-    { status: 200 },
-  );
+  const responsePayload = {
+    jobs,
+    applications,
+    interviews: interviews._avg.score,
+    scheduled,
+  };
+
+  try {
+    await redis.set(
+      cacheKey,
+      JSON.stringify(responsePayload),
+      "EX",
+      CACHE_TTL_SECONDS,
+    );
+  } catch (err) {
+    console.error("Redis SET error", err);
+  }
+
+  return NextResponse.json(responsePayload, { status: 200 });
 }
 
 export const GET = withAuth(handler, { allowedRoles: ["RECRUITER"] });

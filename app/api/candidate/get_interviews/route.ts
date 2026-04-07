@@ -1,10 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { withAuth } from "@/lib/api-middleware";
+import { redis } from "@/lib/redis";
+import { createHash } from "crypto";
 
 type UserPayload = {
   userId: string;
   role: string;
+};
+
+const CACHE_TTL_SECONDS = 60;
+
+const buildCacheKey = (candidateId: string, limit: number, payload:UserPayload) => {
+  const hash = createHash("sha1")
+    .update(JSON.stringify({ limit }))
+    .digest("hex");
+
+  return `user:${payload.userId}:candidate:get_interviews:${candidateId}:${hash}`;
 };
 
 async function handler(req: NextRequest, user: UserPayload) {
@@ -18,6 +30,21 @@ async function handler(req: NextRequest, user: UserPayload) {
   }
 
   const limit = 3;
+
+  const cacheKey = buildCacheKey(candidate.id, limit,user);
+
+  try {
+    const cached = await redis.get(cacheKey);
+    if (cached) {
+      const cachedPayload = JSON.parse(cached);
+      return NextResponse.json(cachedPayload, {
+        status: 200,
+        headers: { "x-cache": "HIT" },
+      });
+    }
+  } catch (err) {
+    console.error("Redis GET error", err);
+  }
 
   let interviews = await prisma.interview.findMany({
     where: {
@@ -73,19 +100,29 @@ async function handler(req: NextRequest, user: UserPayload) {
   const hasMore = interviews.length > limit;
   interviews = hasMore ? interviews.slice(0, limit) : interviews;
 
-  return NextResponse.json(
-    {
-      interviews,
-      cursor: hasMore
-        ? {
-            createdAt: interviews[interviews.length - 1].createdAt,
-            id: interviews[interviews.length - 1].id,
-          }
-        : null,
-      hasMore,
-    },
-    { status: 200 },
-  );
+  const responsePayload = {
+    interviews,
+    cursor: hasMore
+      ? {
+          createdAt: interviews[interviews.length - 1].createdAt,
+          id: interviews[interviews.length - 1].id,
+        }
+      : null,
+    hasMore,
+  };
+
+  try {
+    await redis.set(
+      cacheKey,
+      JSON.stringify(responsePayload),
+      "EX",
+      CACHE_TTL_SECONDS,
+    );
+  } catch (err) {
+    console.error("Redis SET error", err);
+  }
+
+  return NextResponse.json(responsePayload, { status: 200 });
 }
 
 export const GET = withAuth(handler, { allowedRoles: ["CANDIDATE"] });
