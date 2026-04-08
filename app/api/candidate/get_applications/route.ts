@@ -55,7 +55,7 @@ async function handler(req: NextRequest, user: UserPayload) {
 
   const limit = 3;
 
-  console.log(status);
+  
 
   const cacheKey = buildCacheKey(candidate.id,user, {
     status,

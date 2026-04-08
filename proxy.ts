@@ -7,7 +7,7 @@ export default async function proxy(req: NextRequest) {
   const cookieStore = await cookies();
   const token = cookieStore.get("auth_token")?.value;
   if (token) {
-    console.log("token present");
+    
 
     // Not logged in
 

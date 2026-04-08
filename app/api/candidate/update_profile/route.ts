@@ -106,7 +106,7 @@ async function handler(req: NextRequest, authUser: UserPayload) {
 
 
 
-  console.log("isVerified", isVerified);
+  
 
   const token=signJwt({
     userId:authUser.userId,

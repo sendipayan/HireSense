@@ -36,7 +36,6 @@ async function handler(req: NextRequest, user: UserPayload) {
     console.error("Redis GET error", err);
   }
 
-  console.log(user);
   if (user.isVerified !== "APPROVED") {
     const responsePayload = {
       jobs: 0,

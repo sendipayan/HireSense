@@ -8,7 +8,7 @@ import { template } from "@/lib/template";
 export async function sendOtp(email: string) {
   // 1. Generate OTP
   const otp = generateOtp();
-  console.log(otp);
+ 
   const otpHash = hashOtp(otp);
 
   // 2. Remove previous OTPs
@@ -25,7 +25,7 @@ export async function sendOtp(email: string) {
     },
   });
 
-  console.log(newotp)
+  
 
   // 4. Send email
   await sendEmail({

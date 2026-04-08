@@ -21,7 +21,6 @@ export async function POST(req: Request) {
     let user = await prisma.user.findUnique({
       where: { email },
     });
-    console.log(user?.id)
     const verified = await verifyOtp(email, otp);
 
     if (!verified) {

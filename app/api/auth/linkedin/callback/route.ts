@@ -56,7 +56,7 @@ async function handler(req: NextRequest, user: UserPayload) {
   const { sub, name, email } = await userRes.json();
 
   // Step 3: sub, name, email → save to your DB here
-  console.log({ sub, name, email });
+
   if(user.role==="CANDIDATE"){
     await prisma.candidate.update({
         where:{

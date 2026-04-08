@@ -21,7 +21,8 @@ export async function GET(
       return NextResponse.json({ error: "Invalid job ID" }, { status: 400 });
     }
 
-    console.log("params: ", id);
+    
+    
     const job = await prisma.postJob.findUnique({
       where: {
         id,

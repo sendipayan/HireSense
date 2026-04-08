@@ -69,7 +69,7 @@ async function handler(req: NextRequest, user: UserPayload) {
         });
         createdRecommendations.push(created);
       }
-      console.log(roles)
+      
       
       const profile=await tx.candidate.update({
           where:{

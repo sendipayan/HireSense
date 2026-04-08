@@ -15,6 +15,7 @@ import toast from "react-hot-toast"
 interface Resume {
   id: string;
   resumeName: string;
+  resumeScore:number;
   createdAt: Date;
   isActive: boolean;
   resumeUrl: string;
@@ -278,7 +279,7 @@ export default function ResumeUploadPage() {
                       <p className="text-sm text-muted-foreground">{new Date(file.createdAt).toISOString().split("T")[0]}</p>
                     </div>
                     <div className="text-right shrink-0">
-                      <p className="font-medium">80%</p>
+                      <p className="font-medium">{file.resumeScore}%</p>
                       <p className="text-xs text-muted-foreground">Score</p>
                     </div>
                   </article>

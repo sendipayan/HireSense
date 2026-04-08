@@ -23,7 +23,7 @@ export async function GET(req: NextRequest) {
 
   try {
     const payload = verifyJwt(token);
-    console.log(payload);
+  
 
     if (!payload || payload.role !== "RECRUITER") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

@@ -31,7 +31,7 @@ export async function GET(
 
   try {
     const payload = verifyJwt(token);
-    console.log(payload);
+  
 
     if (!payload || payload.role !== "CANDIDATE") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

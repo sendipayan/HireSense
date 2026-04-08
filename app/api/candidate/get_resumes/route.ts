@@ -55,6 +55,7 @@ async function handler(req: NextRequest, user: UserPayload) {
       id: true,
       isActive: true,
       resumeUrl: true,
+      resumeScore: true,
     },
     orderBy: {
       createdAt: "asc",
