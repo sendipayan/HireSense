@@ -14,11 +14,16 @@ export async function getAuthUser() {
     const payload = verifyJwt(token);
 
     let data;
-    const user=await redis.get(`user:${payload.userId}`);
-    if (user){
-    
-      data=JSON.parse(user);
-      return data;
+    try {
+      const cached = await redis.get(`user:${payload.userId}`);
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (parsed) {
+          return parsed;
+        }
+      }
+    } catch (err) {
+      console.warn("Redis cache read failed:", err);
     }
     if (payload.role === "RECRUITER") {
       data = await prisma.recruiter.findUnique({
@@ -57,12 +62,18 @@ export async function getAuthUser() {
     //if (!job) {
     //return data;
     //}
-    await redis.set(
-      `user:${payload.userId}`,
-      JSON.stringify(data),
-      "EX",
-      AUTH_USER_CACHE_TTL_SECONDS,
-    );
+    if (data) {
+      try {
+        await redis.set(
+          `user:${payload.userId}`,
+          JSON.stringify(data),
+          "EX",
+          AUTH_USER_CACHE_TTL_SECONDS,
+        );
+      } catch (err) {
+        console.warn("Redis cache write failed:", err);
+      }
+    }
     return data;
   } catch {
     return null;

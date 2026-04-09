@@ -142,7 +142,7 @@ export default function RecruiterDashboardPage() {
             icon: Users,
             description: "Total candidates applied"
         },
-        { title: "Avg. Match Score", value: `${stat.interviews}%`, icon: Target, description: "AI matching accuracy" },
+        { title: "Avg. Match Score", value: `${stat.interviews.toFixed(2)} %`, icon: Target, description: "AI matching accuracy" },
         { title: "Scheduled Interviews", value: `${stat.scheduled}`, icon: Clock },
     ]
 

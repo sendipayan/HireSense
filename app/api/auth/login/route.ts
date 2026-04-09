@@ -18,51 +18,59 @@ export async function POST(req: Request) {
       where: { email },
     });
 
-    if (user) {
-      const verified = await verifyPassword(password, user.password);
-      if (!verified) {
-        return NextResponse.json(
-          { message: "Invalid credentials" },
-          { status: 401 },
-        );
-      }
-      let verifier;
-      if (user.role === "RECRUITER") {
-        verifier = await prisma.recruiter.findUnique({
-          select: {
-            isVerified: true,
-          },
-          where: {
-            userId: user.id,
-          },
-        });
-      } else {
-        verifier = await prisma.candidate.findUnique({
-          where: {
-            userId: user.id,
-          },
-          select: {
-            isVerified: true,
-          },
-        });
-      }
-      const token = signJwt({
-        userId: user.id,
-        role: user.role,
-        isVerified: verifier?.isVerified,
-      });
-      const cookieStore = await cookies();
-      cookieStore.set("auth_token", token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "lax",
-        path: "/",
-      });
+    if (!user) {
       return NextResponse.json(
-        { message: "Login successful" },
-        { status: 200 },
+        { message: "Invalid credentials" },
+        { status: 401 },
       );
     }
+
+    const verified = await verifyPassword(password, user.password);
+    if (!verified) {
+      return NextResponse.json(
+        { message: "Invalid credentials" },
+        { status: 401 },
+      );
+    }
+
+    let verifier;
+    if (user.role === "RECRUITER") {
+      verifier = await prisma.recruiter.findUnique({
+        select: {
+          isVerified: true,
+        },
+        where: {
+          userId: user.id,
+        },
+      });
+    } else {
+      verifier = await prisma.candidate.findUnique({
+        where: {
+          userId: user.id,
+        },
+        select: {
+          isVerified: true,
+        },
+      });
+    }
+
+    const token = signJwt({
+      userId: user.id,
+      role: user.role,
+      isVerified: verifier?.isVerified,
+    });
+
+    const res = NextResponse.json(
+      { message: "Login successful" },
+      { status: 200 },
+    );
+    res.cookies.set("auth_token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+    });
+    return res;
   } catch (err: any) {
     console.log("Error in login: ", err);
     return NextResponse.json({ message: "login failed" }, { status: 500 });
