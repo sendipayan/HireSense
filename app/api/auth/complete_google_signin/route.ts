@@ -4,9 +4,24 @@ import prisma from "@/lib/prisma";
 import { signJwt } from "@/lib/jwt";
 
 export async function POST(req: NextRequest) {
+  const authSecret = process.env.NEXTAUTH_SECRET ?? process.env.AUTH_SECRET;
+  if (!authSecret) {
+    return NextResponse.json(
+      { error: "Missing auth secret" },
+      { status: 500 },
+    );
+  }
+
+  const secureCookie = process.env.NODE_ENV === "production";
+  const cookieName = secureCookie
+    ? "__Secure-next-auth.session-token"
+    : "next-auth.session-token";
+
   const token = await getToken({
     req,
-    secret: process.env.AUTH_SECRET,
+    secret: authSecret,
+    secureCookie,
+    cookieName,
   });
 
   if (!token?.email) {
