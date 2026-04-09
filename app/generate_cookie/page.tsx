@@ -31,7 +31,11 @@ export default function TriggerGoogleJwt() {
                 }
                 setIsLoggedIn(true)
                 toast.success("Welcome back!")
-                router.replace(`${data.role}/dashboard`)
+                window.location.href = `/${data.role.toLowerCase()}/dashboard`
+                
+            } else {
+                toast.error("Login failed!")
+                window.location.href= "/login"
             }
         }
 

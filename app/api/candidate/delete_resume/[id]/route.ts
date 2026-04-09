@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { withAuth } from "@/lib/api-middleware";
+import { redis } from "@/lib/redis";
+import { AUTH_USER_CACHE_TTL_SECONDS } from "@/lib/auth";
 
 type UserPayload = {
   userId: string;
@@ -78,6 +80,41 @@ async function handler(
       },
     });
   });
+
+  try {
+    const cacheKey = `user:${authUser.userId}`;
+    await redis.del(cacheKey);
+
+    const refreshedUser = await prisma.candidate.findUnique({
+      where: { userId: authUser.userId },
+      include: {
+        resumes: {
+          where: { isActive: true },
+          select: {
+            id: true,
+            resumeName: true,
+            resumeUrl: true,
+            createdAt: true,
+          },
+        },
+        user: {
+          select: { name: true, email: true, role: true, profilePic: true },
+        },
+        projects: true,
+      },
+    });
+
+    if (refreshedUser) {
+      await redis.set(
+        cacheKey,
+        JSON.stringify(refreshedUser),
+        "EX",
+        AUTH_USER_CACHE_TTL_SECONDS,
+      );
+    }
+  } catch (err) {
+    console.error("Redis cache update error", err);
+  }
 
   return NextResponse.json(
     { message: "Resume deleted successfully" },

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { withAuth } from "@/lib/api-middleware";
 import { inngest } from "@/inngest/client";
+import { redis } from "@/lib/redis";
 
 
 type UserPayload = {
@@ -128,6 +129,16 @@ async function handler(request: NextRequest, user: UserPayload) {
   job = JSON.parse(
     JSON.stringify(job, (_, v) => (typeof v === "bigint" ? v.toString() : v)),
   );
+
+  try {
+    const keys = await redis.keys(`user:${user.userId}:recruiter:*`);
+    if (keys.length > 0) {
+      await redis.del(...keys);
+    }
+  } catch (err) {
+    console.error("Redis cache update error", err);
+  }
+
   return NextResponse.json(
     { message: "Job updated successfully", job },
     { status: 200 },

@@ -18,11 +18,12 @@ export default function AuthRedirect() {
 
         const isNewUser = Boolean((session.user as { isNewUser?: boolean })?.isNewUser)
         if (isNewUser) {
-            router.replace("/onBoarding/role")
+            window.location.href= "/onBoarding/role"
+            
             return
         }
-
-        router.replace("/generate_cookie")
+        window.location.href= "/generate_cookie"
+        
     }, [router, session, status])
 
     return (

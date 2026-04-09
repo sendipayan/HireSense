@@ -32,6 +32,9 @@ export default function RolePage() {
             toast.success("Welcome to HireSense!")
             window.location.href = `/${role.toLowerCase()}/dashboard`
     
+        } else {
+            toast.error("Signup failed!")
+            window.location.href= "/login"
         }
 
 
