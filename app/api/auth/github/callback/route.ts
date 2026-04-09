@@ -57,6 +57,7 @@ export async function GET(req: NextRequest) {
   });
 
   const githubUser = await userRes.json();
+  
 
   const candidate = await prisma.candidate.findUnique({
     where: {
@@ -69,26 +70,48 @@ export async function GET(req: NextRequest) {
   if (!candidate) {
     return NextResponse.json({ error: "Candidate not found" }, { status: 404 });
   }
-  await prisma.github.upsert({
-    where: {
-      id: String(githubUser.id),
-    },
-    update: {
-      accessToken: accessToken,
-      connectedAt: new Date(),
-      avatarUrl: githubUser.avatar_url,
-      profileUrl: githubUser.html_url,
-    },
-    create: {
-      id: String(githubUser.id),
-      username: githubUser.login,
-      accessToken: accessToken,
-      connectedAt: new Date(),
-      avatarUrl: githubUser.avatar_url,
-      profileUrl: githubUser.html_url,
-      candidateId: candidate.id,
-    },
+
+  const githubId = String(githubUser.id);
+  const githubPayload = {
+    username: githubUser.login,
+    accessToken: accessToken,
+    connectedAt: new Date(),
+    avatarUrl: githubUser.avatar_url,
+    profileUrl: githubUser.html_url,
+  };
+
+  const existingByCandidate = await prisma.github.findUnique({
+    where: { candidateId: candidate.id },
   });
+
+  if (existingByCandidate) {
+    await prisma.github.update({
+      where: { candidateId: candidate.id },
+      data: githubPayload,
+    });
+  } else {
+    const existingById = await prisma.github.findUnique({
+      where: { id: githubId },
+    });
+
+    if (existingById) {
+      await prisma.github.update({
+        where: { id: githubId },
+        data: {
+          ...githubPayload,
+          candidateId: candidate.id,
+        },
+      });
+    } else {
+      await prisma.github.create({
+        data: {
+          id: githubId,
+          candidateId: candidate.id,
+          ...githubPayload,
+        },
+      });
+    }
+  }
 
   await prisma.candidate.update({
     where: {

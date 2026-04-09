@@ -47,7 +47,7 @@ export default async function proxy(req: NextRequest) {
       return NextResponse.redirect(new URL("/", req.url));
     }
   } else {
-    console.log("token not present");
+    
     if (pathname.startsWith("/recruiter")) {
       return NextResponse.redirect(new URL("/login", req.url));
     }

@@ -1,6 +1,5 @@
 "use client"
 
-import { useRouter } from "next/navigation"
 import { useSession } from "next-auth/react"
 import { useAuthStore } from "@/store/authStore"
 import { useRecruiterStore } from "@/store/RecuiterStore"
@@ -12,7 +11,6 @@ export default function RolePage() {
     const { setRecuiterProfile } = useRecruiterStore()
     const { setCandidateProfile } = useCandidateStore()
     const { data: session } = useSession()
-    const router = useRouter()
 
     async function submitRole(role: "CANDIDATE" | "RECRUITER") {
         const res = await fetch("/api/auth/complete_google_signup", {
@@ -32,8 +30,10 @@ export default function RolePage() {
             }
             setIsLoggedIn(true)
             toast.success("Welcome to HireSense!")
-            router.replace(`/${role.toLowerCase()}/dashboard`)
+            window.location.href = `/${role.toLowerCase()}/dashboard`
+    
         }
+
 
     }
 

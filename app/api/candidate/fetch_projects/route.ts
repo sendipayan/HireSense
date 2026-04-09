@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { withAuth } from "@/lib/api-middleware";
+import { redis } from "@/lib/redis";
+import { AUTH_USER_CACHE_TTL_SECONDS } from "@/lib/auth";
 
 type UserPayload = {
   userId: string;
@@ -16,6 +18,7 @@ async function handler(req: NextRequest, user: UserPayload) {
       },
       select: {
         id: true,
+        githubUrl: true,
       },
     });
     if (!candidate)
@@ -31,6 +34,7 @@ async function handler(req: NextRequest, user: UserPayload) {
         accessToken: true,
       },
     });
+    
     if (!access_token || access_token.accessToken.trim() === "")
       return NextResponse.json(
         { error: "Access token not found", reauth: true },
@@ -42,6 +46,7 @@ async function handler(req: NextRequest, user: UserPayload) {
       },
     });
     if (projects.status === 401) {
+      
       await prisma.github.update({
         where: { candidateId: candidate.id },
         data: {
@@ -67,6 +72,67 @@ async function handler(req: NextRequest, user: UserPayload) {
       forks: project?.forks_count,
       githubUpdatedAt: project?.pushed_at,
     }));
+
+    const githubUrlFromProjects =
+      Array.isArray(projectsData) && projectsData.length > 0
+        ? projectsData[0]?.owner?.html_url || null
+        : null;
+
+    try {
+      const cacheKey = `user:${user.userId}`;
+      const cached = await redis.get(cacheKey);
+
+      if (cached) {
+        const cachedUser = JSON.parse(cached);
+        const updatedUser = {
+          ...cachedUser,
+          githubUrl: candidate.githubUrl ?? githubUrlFromProjects ?? cachedUser?.githubUrl ?? null,
+          projects: project,
+        };
+
+        await redis.set(
+          cacheKey,
+          JSON.stringify(updatedUser),
+          "EX",
+          AUTH_USER_CACHE_TTL_SECONDS,
+        );
+      } else {
+        const refreshedUser = await prisma.candidate.findUnique({
+          where: { userId: user.userId },
+          include: {
+            resumes: {
+              where: { isActive: true },
+              select: {
+                id: true,
+                resumeName: true,
+                resumeUrl: true,
+                createdAt: true,
+              },
+            },
+            user: {
+              select: { name: true, email: true, role: true, profilePic: true },
+            },
+            projects: true,
+          },
+        });
+
+        if (refreshedUser) {
+          const updatedUser = {
+            ...refreshedUser,
+            githubUrl: candidate.githubUrl ?? githubUrlFromProjects ?? refreshedUser.githubUrl ?? null,
+            projects: project,
+          };
+          await redis.set(
+            cacheKey,
+            JSON.stringify(updatedUser),
+            "EX",
+            AUTH_USER_CACHE_TTL_SECONDS,
+          );
+        }
+      }
+    } catch (err) {
+      console.error("Redis cache update error", err);
+    }
 
     return NextResponse.json({ project }, { status: 200 });
   } catch (error) {

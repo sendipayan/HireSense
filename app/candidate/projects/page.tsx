@@ -1,56 +1,10 @@
-"use client"
+import { Suspense } from "react"
+import ProjectsClientPage from "./clientPage"
 
-import { useEffect } from "react"
-import { useRouter } from "next/navigation"
-import toast from "react-hot-toast"
-import { useProjectStore } from "@/store/projectStore"
-import { useSearchParams } from "next/navigation"
-
-export default function Projects() {
-    const router = useRouter()
-    const { setProjects } = useProjectStore()
-    const searchParams = useSearchParams();
-
-    useEffect(() => {
-        if (searchParams.get("github") === "cancelled") {
-            toast.error("GitHub connection was cancelled.");
-            router.replace("/candidate/profile");
-            return;
-        }
-
-        const fetchProjects = async () => {
-            try {
-                const res = await fetch("/api/candidate/fetch_projects");
-                const data = await res.json();
-
-                if (res.status === 200) {
-                    setProjects(data.project);
-                    toast.success(`${data.project.length} projects fetched successfully`);
-                    router.push("/candidate/profile");
-                }
-                else if (res.status === 404) {
-                    toast.error("Please connect your github account");
-
-                    window.location.href =
-                        `https://github.com/login/oauth/authorize?client_id=${process.env.NEXT_PUBLIC_GITHUB_CLIENT_ID}&scope=repo`;
-                }
-                else {
-                    toast.error(data.error || "Failed to fetch projects");
-                }
-
-            } catch (error) {
-                console.error("Project fetch error:", error);
-                router.push("/candidate/profile");
-                toast.error("An unexpected error occurred");
-            }
-        };
-
-        fetchProjects()
-    }, [router, setProjects, searchParams])
-
+export default function ProjectsPage() {
     return (
-        <div className="flex items-center justify-center h-screen">
-            <h1>Loading...</h1>
-        </div>
+        <Suspense fallback={null}>
+            <ProjectsClientPage />
+        </Suspense>
     )
 }

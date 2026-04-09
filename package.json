@@ -2,6 +2,11 @@
   "name": "hiresense",
   "version": "1.0",
   "private": true,
+  "author": "Dipayan Sen",
+  "packageManager": "pnpm@10.26.1",
+  "engines": {
+    "node": "22.19.0"
+  },
   "scripts": {
     "build": "next build",
     "dev": "next dev",
