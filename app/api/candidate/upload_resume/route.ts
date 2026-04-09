@@ -42,6 +42,30 @@ async function handler(
       );
     }
 
+    const resumeCount = await prisma.resume.count({
+      where: {
+        candidateId: candidate.id,
+      },
+    });
+
+    if (resumeCount >= 5) {
+      return NextResponse.json(
+        { error: "Resume upload limit reached (max 5)" },
+        { status: 400 },
+      );
+    }
+
+    // Check for existing active resume
+    const existing = await prisma.resume.findMany({
+      where: {
+        candidateId: candidate.id,
+        isActive: true,
+      },
+      select: {
+        id: true,
+      },
+    });
+
     const buffer = Buffer.from(await file.arrayBuffer());
     if (!buffer.subarray(0, 5).toString().startsWith("%PDF")) {
       return NextResponse.json(
@@ -65,14 +89,6 @@ async function handler(
           },
         )
         .end(buffer);
-    });
-
-    // Check for existing active resume
-    const existing = await prisma.resume.findMany({
-      where: {
-        candidateId: candidate.id,
-        isActive: true,
-      },
     });
 
     let activeResume = false;

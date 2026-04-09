@@ -4,6 +4,8 @@ import prisma from "@/lib/prisma";
 import { redis } from "./redis";
 //import { getJob } from "./job";
 
+export const AUTH_USER_CACHE_TTL_SECONDS = 3600;
+
 export async function getAuthUser() {
   const token = (await cookies()).get("auth_token")?.value;
   if (!token) return null;
@@ -55,7 +57,12 @@ export async function getAuthUser() {
     //if (!job) {
     //return data;
     //}
-    await redis.set(`user:${payload.userId}`, JSON.stringify(data), 'EX', 3600)
+    await redis.set(
+      `user:${payload.userId}`,
+      JSON.stringify(data),
+      "EX",
+      AUTH_USER_CACHE_TTL_SECONDS,
+    );
     return data;
   } catch {
     return null;

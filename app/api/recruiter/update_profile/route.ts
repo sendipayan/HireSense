@@ -4,6 +4,8 @@ import prisma from "@/lib/prisma";
 import { withAuth } from "@/lib/api-middleware";
 import { signJwt } from "@/lib/jwt";
 import { cookies } from "next/headers";
+import { redis } from "@/lib/redis";
+import { AUTH_USER_CACHE_TTL_SECONDS } from "@/lib/auth";
 
 
 type UserPayload = {
@@ -139,6 +141,31 @@ async function handler(req: NextRequest, user: UserPayload) {
   );
 
   await prisma.$transaction(transactionCalls);
+
+  try {
+    const cacheKey = `user:${user.userId}`;
+    await redis.del(cacheKey)
+
+    const cachedUser = await prisma.recruiter.findUnique({
+      where: { userId: user.userId },
+      include: {
+        user: {
+          select: { name: true, email: true, role: true, profilePic: true },
+        },
+      },
+    });
+
+    if (cachedUser) {
+      await redis.set(
+        cacheKey,
+        JSON.stringify(cachedUser),
+        "EX",
+        AUTH_USER_CACHE_TTL_SECONDS,
+      );
+    }
+  } catch (err) {
+    console.error("Redis cache update error", err);
+  }
 
   
 

@@ -3,6 +3,8 @@ import prisma from "@/lib/prisma";
 import { withAuth } from "@/lib/api-middleware";
 import { signJwt } from "@/lib/jwt";
 import { cookies } from "next/headers";
+import { redis } from "@/lib/redis";
+import { AUTH_USER_CACHE_TTL_SECONDS } from "@/lib/auth";
 
 type UserPayload = {
   userId: string;
@@ -11,7 +13,7 @@ type UserPayload = {
 
 async function handler(req: NextRequest, authUser: UserPayload) {
   const body = await req.json();
-
+  
   const {
     id,
     name,
@@ -219,6 +221,42 @@ async function handler(req: NextRequest, authUser: UserPayload) {
   }
 
   await prisma.$transaction(transactionOps);
+
+  try {
+    const cacheKey = `user:${authUser.userId}`;
+    await redis.del(cacheKey)
+    
+
+    const cachedUser = await prisma.candidate.findUnique({
+      where: { userId: authUser.userId },
+      include: {
+        resumes: {
+          where: { isActive: true },
+          select: {
+            id: true,
+            resumeName: true,
+            resumeUrl: true,
+            createdAt: true,
+          },
+        },
+        user: {
+          select: { name: true, email: true, role: true, profilePic: true },
+        },
+        projects: true,
+      },
+    });
+
+    if (cachedUser) {
+      await redis.set(
+        cacheKey,
+        JSON.stringify(cachedUser),
+        "EX",
+        AUTH_USER_CACHE_TTL_SECONDS,
+      );
+    }
+  } catch (err) {
+    console.error("Redis cache update error", err);
+  }
 
   return NextResponse.json(
     { message: "Profile updated successfully" },
