@@ -68,7 +68,7 @@ async function handler(
       },
     });
 
-    await tx.resume_ats.delete({
+    await tx.resume_ats.deleteMany({
       where: {
         resume_id: id,
       },

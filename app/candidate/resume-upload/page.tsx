@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Breadcrumbs } from "@/components/breadcrumbs"
 import { PageHeader } from "@/components/page-header"
 import { Progress } from "@/components/ui/progress"
-import { Upload, FileText, CheckCircle2, Sparkles, ArrowRight, X, File } from "lucide-react"
+import { Upload, FileText, CheckCircle2, Sparkles, ArrowRight, X, File as FileIcon } from "lucide-react"
 import axios from "axios"
 import { useRouter } from "next/navigation"
 import toast from "react-hot-toast"
@@ -15,7 +15,7 @@ import toast from "react-hot-toast"
 interface Resume {
   id: string;
   resumeName: string;
-  resumeScore:number;
+  resumeScore: number;
   createdAt: Date;
   isActive: boolean;
   resumeUrl: string;
@@ -109,13 +109,28 @@ export default function ResumeUploadPage() {
       toast.error("Only PDF files are allowed.");
       return
     }
+
     setUploadedFile(file)
     setIsUploading(true)
     setUploadProgress(0)
 
+    let safeFile: File;
+    try {
+      const buf = await file.arrayBuffer(); // forces provider to deliver bytes
+      safeFile = new File([buf], file.name, {
+        type: file.type || "application/pdf",
+      });
+    } catch (err) {
+      toast.error("This file provider blocked access. Please download the PDF locally first.");
+      setUploadProgress(0);
+      setIsUploading(false);
+      setUploadedFile(null);
+      return;
+    }
+
     try {
       const formData = new FormData();
-      formData.append("file", file);
+      formData.append("file", safeFile);
 
       const res = await axios.post("/api/candidate/upload_resume", formData, {
         withCredentials: true,
@@ -214,7 +229,7 @@ export default function ResumeUploadPage() {
                 {/* File Info */}
                 <div className="flex items-start gap-4">
                   <div className="rounded-lg bg-primary/10 p-3">
-                    <File className="h-6 w-6 text-primary" aria-hidden="true" />
+                    <FileIcon className="h-6 w-6 text-primary" aria-hidden="true" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between gap-4">
