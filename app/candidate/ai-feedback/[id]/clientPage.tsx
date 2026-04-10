@@ -31,14 +31,14 @@ export default function AIFeedbackClientPage({
 }) {
   const router = useRouter();
   const setResumeFeedback = useResumeFeedbackStore((state) => state.setResume);
-  const { resume, setResumeAts, setResumeRecommendations,clearResume } =
+  const { resume, setResumeAts, setResumeRecommendations, clearResume } =
     useResumeFeedbackStore();
   const [loading, setLoading] = useState(false);
   const [trigger, setTrigger] = useState(false);
   const [viewurl, setViewurl] = useState("");
   const [selectedRecId, setSelectedRecId] = useState("");
   const [showResume, setShowResume] = useState(true);
-  const [feedloading,setFeedloading]=useState(false)
+  const [feedloading, setFeedloading] = useState(false)
   const [isFeedbackPending, setIsFeedbackPending] = useState(false);
   const feedbackTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -337,13 +337,13 @@ export default function AIFeedbackClientPage({
               </p>
               <Button className="mt-6 mb-4 cursor-pointer" onClick={getFeedback} disabled={feedloading}>
                 <Sparkles className="mr-2 h-4 w-4" aria-hidden="true" />
-                {feedloading?"Generating feedback...":"Generate feedback"}
+                {feedloading ? "Generating feedback..." : "Generate feedback"}
               </Button>
-              {isFeedbackPending &&<p className="mt-2 text-sm text-warning">
+              {isFeedbackPending && <p className="mt-2 text-sm text-warning">
                 Waking server from sleep this may take 30 sec or more...
               </p>}
             </div>
-            
+
           </section>
         ) : (
           <>
@@ -721,62 +721,62 @@ export default function AIFeedbackClientPage({
                         experience ||
                         achievement ||
                         certificates) && (
-                        <div className="grid gap-4 sm:grid-cols-2">
-                          {projects && (
-                            <div className="rounded-lg border border-border bg-background/60 p-4 space-y-3">
-                              <h4 className="text-sm font-medium">
-                                Projects Match
-                              </h4>
-                              <div className="text-xs text-muted-foreground">
-                                Semantic: {formatDecimal(projectSemantic)} | Match:{" "}
-                                {formatDecimal(projectMatch)} | Final:{" "}
-                                {formatDecimal(projectFinal)}
-                              </div>
+                          <div className="grid gap-4 sm:grid-cols-2">
+                            {projects && (
+                              <div className="rounded-lg border border-border bg-background/60 p-4 space-y-3">
+                                <h4 className="text-sm font-medium">
+                                  Projects Match
+                                </h4>
+                                <div className="text-xs text-muted-foreground">
+                                  Semantic: {formatDecimal(projectSemantic)} | Match:{" "}
+                                  {formatDecimal(projectMatch)} | Final:{" "}
+                                  {formatDecimal(projectFinal)}
+                                </div>
 
-                              <div className="flex flex-wrap gap-2">
-                                {projectSkills.length > 0 ? (
-                                  projectSkills.map((skill) => (
-                                    <Badge key={skill} variant="default">
-                                      {skill}
-                                    </Badge>
-                                  ))
-                                ) : (
-                                  <div className="text-xs font-medium text-muted-foreground">
-                                    no matching skills
+                                <div className="flex flex-wrap gap-2">
+                                  {projectSkills.length > 0 ? (
+                                    projectSkills.map((skill) => (
+                                      <Badge key={skill} variant="default">
+                                        {skill}
+                                      </Badge>
+                                    ))
+                                  ) : (
+                                    <div className="text-xs font-medium text-muted-foreground">
+                                      no matching skills
+                                    </div>
+                                  )}
+                                </div>
+
+                                {projectMissing.length > 0 && (
+                                  <div className="space-y-2">
+                                    <p className="text-xs font-medium text-muted-foreground">
+                                      Missing
+                                    </p>
+                                    <div className="flex flex-wrap gap-2">
+                                      {projectMissing.map((skill) => (
+                                        <Badge key={skill} variant="destructive">
+                                          {skill}
+                                        </Badge>
+                                      ))}
+                                    </div>
                                   </div>
                                 )}
                               </div>
-
-                              {projectMissing.length > 0 && (
-                                <div className="space-y-2">
-                                  <p className="text-xs font-medium text-muted-foreground">
-                                    Missing
-                                  </p>
-                                  <div className="flex flex-wrap gap-2">
-                                    {projectMissing.map((skill) => (
-                                      <Badge key={skill} variant="destructive">
-                                        {skill}
-                                      </Badge>
-                                    ))}
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                          )}
-                          <div className="rounded-lg border border-border bg-background/60 p-4 space-y-3">
-                            <h4 className="text-sm font-medium">Experience</h4>
-                            <div className="text-xs text-muted-foreground">
-                              Score: {formatDecimal(experienceScore)}
-                            </div>
-                            <h4 className="text-sm font-medium pt-2">
-                              Certificates
-                            </h4>
-                            <div className="text-xs text-muted-foreground">
-                              Final Score: {formatDecimal(certificatesFinal)}
+                            )}
+                            <div className="rounded-lg border border-border bg-background/60 p-4 space-y-3">
+                              <h4 className="text-sm font-medium">Experience</h4>
+                              <div className="text-xs text-muted-foreground">
+                                Score: {formatDecimal(experienceScore)}
+                              </div>
+                              <h4 className="text-sm font-medium pt-2">
+                                Certificates
+                              </h4>
+                              <div className="text-xs text-muted-foreground">
+                                Final Score: {formatDecimal(certificatesFinal)}
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      )}
+                        )}
 
                       {achievement && (
                         <div className="rounded-lg border border-border bg-background/60 p-4">
@@ -840,7 +840,7 @@ export default function AIFeedbackClientPage({
               className="flex-1 bg-transparent"
               disabled={loading}
             >
-              <Link href="/match-results">
+              <Link href="/candidate/browse-jobs">
                 View Job Matches
                 <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />
               </Link>

@@ -273,7 +273,7 @@ export default function LoginPage() {
               variant="outline"
               size="lg"
               className="w-full justify-center gap-3 bg-transparent"
-              disabled={loading}
+              disabled
               aria-label={
                 isSignUp ? "Sign up with GitHub" : "Sign in with GitHub"
               }
@@ -412,7 +412,7 @@ export default function LoginPage() {
                   </Label>
                   {!isSignUp && (
                     <Link
-                      href="/login"
+                      href="/forgot-password"
                       className="text-sm text-primary hover:underline"
                     >
                       Forgot password?
