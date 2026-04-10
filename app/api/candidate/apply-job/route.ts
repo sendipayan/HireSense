@@ -85,17 +85,31 @@ async function handler(req: NextRequest, user: UserPayload) {
     },
   });
 
-  await inngest.send({
-    name: "app/jdmatch",
-    data:{
-      resume_url:resume.resumeUrl,
-      tittle:job.title,
-      primary_skills:job.primary_skills,
-      secondry_skill:job.secondry_skill,
-      description:job.description,
-      applicationId: application.id
-    }
-  })
+  try {
+    await inngest.send({
+      name: "app/jdmatch",
+      data:{
+        resume_url:resume.resumeUrl,
+        tittle:job.title,
+        primary_skills:job.primary_skills,
+        secondry_skill:job.secondry_skill,
+        description:job.description,
+        applicationId: application.id
+      }
+    });
+  } catch (error) {
+    // Inngest failed — roll back the application so the candidate can retry
+    await prisma.application.delete({
+      where: { id: application.id },
+    });
+
+    console.error("Inngest send failed:", error);
+
+    return NextResponse.json(
+      { error: "Application processing service is currently unavailable. Please try again later." },
+      { status: 503 },
+    );
+  }
 
   return NextResponse.json(
     { message: "Application submitted successfully", application },
