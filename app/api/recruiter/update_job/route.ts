@@ -4,7 +4,6 @@ import { withAuth } from "@/lib/api-middleware";
 import { inngest } from "@/inngest/client";
 import { redis } from "@/lib/redis";
 
-
 type UserPayload = {
   userId: string;
   role: string;
@@ -92,16 +91,24 @@ async function handler(request: NextRequest, user: UserPayload) {
     );
 
   if (skillsChanged || s_skillsChanged || oldjob.description !== description) {
-    await inngest.send({
-      name: "app/update/scores",
-      data: {
-        jobId: oldjob.id,
-        jobTitle: title,
-        primSkills: requirements,
-        seconSkills: optional,
-        jobResp: description,
-      },
-    });
+    try {
+      await inngest.send({
+        name: "app/update/scores",
+        data: {
+          jobId: oldjob.id,
+          jobTitle: title,
+          primSkills: requirements,
+          seconSkills: optional,
+          jobResp: description,
+        },
+      });
+    } catch (err) {
+      console.error("Inngest send failed (score re-calculation skipped):", err);
+      return NextResponse.json(
+        { error: "Inngest send failed" },
+        { status: 503 },
+      );
+    }
   }
 
   const normalizedStatus =

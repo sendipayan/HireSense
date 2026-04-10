@@ -3,6 +3,7 @@ import prisma from "@/lib/prisma";
 import { withAuth } from "@/lib/api-middleware";
 import { redis } from "@/lib/redis";
 import { AUTH_USER_CACHE_TTL_SECONDS } from "@/lib/auth";
+import { cookies } from "next/headers";
 
 type UserPayload = {
   userId: string;
@@ -10,8 +11,9 @@ type UserPayload = {
 };
 
 async function handler(req: NextRequest, user: UserPayload) {
-    const { searchParams } = new URL(req.url);
+  const { searchParams } = new URL(req.url);
   const code = searchParams.get('code');
+  const state = searchParams.get('state');
   const clientId = process.env.LINKEDIN_CLIENT_ID;
   const clientSecret = process.env.LINKEDIN_CLIENT_SECRET;
   const redirectUri = process.env.LINKEDIN_REDIRECT_URI;
@@ -22,6 +24,18 @@ async function handler(req: NextRequest, user: UserPayload) {
   if (error) {
     console.log('LinkedIn OAuth error:', error, errorDescription);
     return NextResponse.redirect(new URL(`/${user.role.toLowerCase()}/profile`, req.url));
+  }
+
+  // Validate CSRF state parameter
+  const cookieStore = await cookies();
+  const storedState = cookieStore.get("linkedin_oauth_state")?.value;
+  cookieStore.delete("linkedin_oauth_state");
+
+  if (!state || !storedState || state !== storedState) {
+    return NextResponse.json(
+      { error: "Invalid OAuth state. Please try again." },
+      { status: 403 },
+    );
   }
 
   if (!code) {
@@ -48,6 +62,13 @@ async function handler(req: NextRequest, user: UserPayload) {
     }),
   });
 
+  if (!tokenRes.ok) {
+    console.error("LinkedIn token exchange failed:", tokenRes.status, await tokenRes.text());
+    return NextResponse.redirect(
+      new URL(`/${user.role.toLowerCase()}/profile`, req.url),
+    );
+  }
+
   const { access_token } = await tokenRes.json();
 
   // Step 2: Fetch user info
@@ -55,7 +76,21 @@ async function handler(req: NextRequest, user: UserPayload) {
     headers: { Authorization: `Bearer ${access_token}` },
   });
 
+  if (!userRes.ok) {
+    console.error("LinkedIn userinfo fetch failed:", userRes.status, await userRes.text());
+    return NextResponse.redirect(
+      new URL(`/${user.role.toLowerCase()}/profile`, req.url),
+    );
+  }
+
   const { sub, name, email } = await userRes.json();
+
+  if (!name) {
+    console.error("LinkedIn userinfo response missing name");
+    return NextResponse.redirect(
+      new URL(`/${user.role.toLowerCase()}/profile`, req.url),
+    );
+  }
 
   // Step 3: sub, name, email → save to your DB here
 
