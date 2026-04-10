@@ -1,12 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getToken } from "next-auth/jwt";
+import { verifyJwt } from "@/lib/jwt";
+import { cookies } from "next/headers";
 
 export async function GET(req: NextRequest) {
-  const token = await getToken({
-    req,
-    secret: process.env.AUTH_SECRET,
-  });
-  if (!token?.userId || token.role !== "CANDIDATE") {
+  const token = (await cookies()).get("auth_token")?.value;
+  if (!token) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const payload = verifyJwt(token);
+  if (!payload || payload.role !== "CANDIDATE") {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
