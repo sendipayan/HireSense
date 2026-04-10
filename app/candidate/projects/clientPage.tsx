@@ -30,8 +30,7 @@ export default function ProjectsClientPage() {
                 } else if (res.status === 404) {
                     toast.error("Please connect your github account")
 
-                    window.location.href =
-                        `https://github.com/login/oauth/authorize?client_id=${process.env.NEXT_PUBLIC_GITHUB_CLIENT_ID}&scope=repo`
+                    window.location.href = "/api/auth/github"
                 } else {
                     toast.error(data.error || "Failed to fetch projects")
                 }

@@ -592,7 +592,7 @@ export default function CandidateProfileClientPage() {
               size="sm"
               disabled={loading}
             >
-              <Link href={`https://github.com/login/oauth/authorize?client_id=${process.env.NEXT_PUBLIC_GITHUB_CLIENT_ID}&scope=repo`}>
+              <Link href="/api/auth/github">
                 Connect github
               </Link>
             </Button>}
@@ -731,7 +731,7 @@ export default function CandidateProfileClientPage() {
                 className="w-full"
                 disabled={loading}
               >
-                <Link href={`https://github.com/login/oauth/authorize?client_id=${process.env.NEXT_PUBLIC_GITHUB_CLIENT_ID}&scope=repo`}>
+                <Link href="/api/auth/github">
                   Import Projects from GitHub
                 </Link>
 
