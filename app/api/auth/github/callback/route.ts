@@ -1,14 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { getToken } from "next-auth/jwt";
+import { verifyJwt } from "@/lib/jwt";
 import { cookies } from "next/headers";
 
 export async function GET(req: NextRequest) {
-  const token = await getToken({
-    req,
-    secret: process.env.AUTH_SECRET,
-  });
-  if (!token?.userId || token.role !== "CANDIDATE") {
+  const token = (await cookies()).get("auth_token")?.value;
+  if (!token) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const payload = verifyJwt(token);
+  if (!payload || payload.role !== "CANDIDATE") {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -72,7 +74,10 @@ export async function GET(req: NextRequest) {
     const accessToken = tokenData.access_token;
 
     if (!accessToken) {
-      console.error("GitHub token exchange returned no access_token:", tokenData);
+      console.error(
+        "GitHub token exchange returned no access_token:",
+        tokenData,
+      );
       return NextResponse.redirect(
         new URL("/candidate/projects?github=cancelled", req.url),
       );
@@ -100,7 +105,7 @@ export async function GET(req: NextRequest) {
 
     const candidate = await prisma.candidate.findUnique({
       where: {
-        userId: token.userId,
+        userId: payload.userId,
       },
       select: {
         id: true,
