@@ -1,16 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
+import { PutObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
 import prisma from "@/lib/prisma";
 import { withAuth } from "@/lib/api-middleware";
-import { v2 as cloudinary } from "cloudinary";
 import { redis } from "@/lib/redis";
 import { AUTH_USER_CACHE_TTL_SECONDS } from "@/lib/auth";
+import { s3 } from "@/lib/s3";
 
-// Configure Cloudinary
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
-});
+const bucketName = process.env.AWS_S3_BUCKET!;
 
 async function handler(
   req: NextRequest,
@@ -76,38 +72,40 @@ async function handler(
       );
     }
 
-    const uploadResult = await new Promise<any>((resolve, reject) => {
-      cloudinary.uploader
-        .upload_stream(
-          {
-            folder: `resumes/${candidate?.id}`,
-            resource_type: "raw",
-            use_filename: true,
-            unique_filename: true,
-          },
-          (error, result) => {
-            if (error) reject(error);
-            else resolve(result);
-          },
-        )
-        .end(buffer);
-    });
+    const objectKey = `resumes/${candidate.id}/${crypto.randomUUID()}.pdf`;
+
+    await s3.send(
+      new PutObjectCommand({
+        Bucket: bucketName,
+        Key: objectKey,
+        Body: buffer,
+        ContentType: file.type,
+        ContentDisposition: `attachment; filename="${file.name.replaceAll('"', "")}"`,
+      }),
+    );
 
     let activeResume = false;
     if (existing.length === 0) {
       activeResume = true;
     }
 
-    const resume = await prisma.resume.create({
-      data: {
-        candidateId: candidate.id,
-        resumeUrl: uploadResult.secure_url,
-        resumeMimeType: file.type,
-        resumeSize: uploadResult.bytes,
-        resumeName: file.name,
-        isActive: activeResume,
-      },
-    });
+    let resume;
+    try {
+      resume = await prisma.resume.create({
+        data: {
+          candidateId: candidate.id,
+          resumeUrl: objectKey,
+          resumeMimeType: file.type,
+          resumeSize: file.size,
+          resumeName: file.name,
+          isActive: activeResume,
+        },
+      });
+    } catch (error) {
+      await s3.send(
+        new DeleteObjectCommand({ Bucket: bucketName, Key: objectKey }));
+      throw error;
+    }
 
     try {
       const cacheKey = `user:${user.userId}`;

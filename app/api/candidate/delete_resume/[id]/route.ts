@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
+import { DeleteObjectCommand } from "@aws-sdk/client-s3";
 import prisma from "@/lib/prisma";
 import { withAuth } from "@/lib/api-middleware";
 import { redis } from "@/lib/redis";
 import { AUTH_USER_CACHE_TTL_SECONDS } from "@/lib/auth";
+import { s3 } from "@/lib/s3";
+
+const bucketName = process.env.AWS_S3_BUCKET!;
 
 type UserPayload = {
   userId: string;
@@ -33,24 +37,19 @@ async function handler(
     return NextResponse.json({ error: "User not found" }, { status: 404 });
   }
 
-  // Ensure the resume belongs to the candidate? The original code didn't check ownership,
-  // but it's good practice. Assuming 'id' is resume ID.
-
-  const resumeStatus = await prisma.resume.findUnique({
+  const resume = await prisma.resume.findFirst({
     where: {
       id,
+      candidateId: user.id,
     },
     select: {
-      isActive: true,
+      resumeUrl: true,
     },
   });
 
-  if (!resumeStatus) {
+  if (!resume) {
     return NextResponse.json({ error: "Resume not found" }, { status: 404 });
   }
-
-  
-
   const inUse = await prisma.application.findFirst({
     where: {
       resumeId: id,
@@ -59,6 +58,12 @@ async function handler(
 
   if (inUse) {
     return NextResponse.json({ error: "Resume is in use" }, { status: 400 });
+  }
+
+  if (resume.resumeUrl.startsWith(`resumes/${user.id}/`)) {
+    await s3.send(
+      new DeleteObjectCommand({ Bucket: bucketName, Key: resume.resumeUrl }),
+    );
   }
 
   await prisma.$transaction(async (tx) => {
