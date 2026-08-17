@@ -9,14 +9,18 @@ export const s3=new S3Client({
     },
 })
 
-export function getPdfUrl(key: string) {
+export function getPdfUrl(
+    key: string,
+    contentType: string,
+    contentDisposition: "inline" | "attachment",
+) {
     return getSignedUrl(
         s3,
         new GetObjectCommand({
             Bucket: process.env.AWS_S3_BUCKET!,
             Key: key,
-            ResponseContentType: "application/pdf",
-            ResponseContentDisposition: "inline",
+            ResponseContentType: contentType,
+            ResponseContentDisposition: contentDisposition,
         }),
         { expiresIn: 60 },
     );

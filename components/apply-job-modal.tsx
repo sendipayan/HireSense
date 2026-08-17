@@ -47,21 +47,32 @@ export function ApplyJobModal({ job, user, open, trigger, setTrigger, onOpenChan
     const [isSuccess, setIsSuccess] = useState(false)
     const [isError, setIsError] = useState(false)
     const [errormessg, setErrormessg] = useState("")
-    const [viewurl, setViewurl] = useState("")
+    const [isPreviewLoading, setIsPreviewLoading] = useState(false)
 
     useEffect(() => {
         if (!user) return
         if (user.resumeUrl.trim() === "") {
             setIsError(true)
             setErrormessg("Please upload your resume to apply for this job")
-        } else {
-            const viewerUrl =
-                "https://docs.google.com/gview?url=" +
-                encodeURIComponent(user.resumeUrl) +
-                "&embedded=true";
-            setViewurl(viewerUrl)
         }
     }, [user])
+
+    const previewResume = async () => {
+        if (!user?.resumeId || isPreviewLoading) return
+
+        try {
+            setIsPreviewLoading(true)
+            const response = await axios.get("/api/show_resume", {
+                params: { resumeId: user.resumeId, disposition: "inline" },
+            })
+            window.open(response.data.pdfUrl, "_blank", "noopener,noreferrer")
+        } catch (error) {
+            console.error(error)
+            toast.error("Failed to load resume preview")
+        } finally {
+            setIsPreviewLoading(false)
+        }
+    }
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -167,12 +178,13 @@ export function ApplyJobModal({ job, user, open, trigger, setTrigger, onOpenChan
                         <div className="grid gap-2">
                             <label className="text-sm font-medium">Resume</label>
                             <div className="flex items-center gap-4 rounded-lg border border-dashed border-border p-4 bg-muted/50 cursor-pointer hover:bg-primary/10"
-                                onClick={() => window.open(viewurl, "_blank", "noopener,noreferrer")}
+                                onClick={previewResume}
                             >
                                 <FileText className="h-8 w-8 text-primary" />
                                 <div className="flex-1 text-sm">
                                     <p className="font-medium">{user?.resumeName}</p>
                                     {user?.createdAt && <p className="text-muted-foreground text-xs">Uploaded on {new Date(user.createdAt).toISOString().split("T")[0]}</p>}
+                                    {isPreviewLoading && <p className="text-muted-foreground text-xs">Loading preview...</p>}
                                 </div>
                                 {/*<Button variant="ghost" size="sm" type="button" className="text-primary hover:text-primary/80">
                                     <Upload className="h-4 w-4 mr-2" />

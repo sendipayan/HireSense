@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { withAuth } from "@/lib/api-middleware";
 import { inngest } from "@/inngest/client";
+import {getPdfUrl} from "@/lib/s3"
 
 type UserPayload = {
   userId: string;
@@ -85,11 +86,17 @@ async function handler(req: NextRequest, user: UserPayload) {
     },
   });
 
+  const pdfUrl = await getPdfUrl(
+    resume.resumeUrl,
+    resume.resumeMimeType,
+    "attachment",
+  );
+
   try {
     await inngest.send({
       name: "app/jdmatch",
       data:{
-        resume_url:resume.resumeUrl,
+        resume_url:pdfUrl, 
         tittle:job.title,
         primary_skills:job.primary_skills,
         secondry_skill:job.secondry_skill,

@@ -5,12 +5,16 @@ import { getPdfUrl } from "@/lib/s3";
 
 async function handler(req: NextRequest, user: UserPayload) {
   const resumeId = req.nextUrl.searchParams.get("resumeId");
+  const contentDisposition =
+    req.nextUrl.searchParams.get("disposition") === "attachment"
+      ? "attachment"
+      : "inline";
 
   if (!resumeId) {
     return NextResponse.json({ error: "Resume ID is required" }, { status: 400 });
   }
 
-  let resume: { resumeUrl: string } | null = null;
+  let resume: { resumeUrl: string; resumeMimeType: string } | null = null;
 
   if (user.role === "CANDIDATE") {
     const candidate = await prisma.candidate.findUnique({
@@ -24,7 +28,7 @@ async function handler(req: NextRequest, user: UserPayload) {
 
     resume = await prisma.resume.findFirst({
       where: { id: resumeId, candidateId: candidate.id },
-      select: { resumeUrl: true },
+      select: { resumeUrl: true, resumeMimeType: true },
     });
   } else {
     const recruiter = await prisma.recruiter.findUnique({
@@ -45,7 +49,7 @@ async function handler(req: NextRequest, user: UserPayload) {
           },
         },
       },
-      select: { resumeUrl: true },
+      select: { resumeUrl: true, resumeMimeType: true },
     });
   }
 
@@ -60,7 +64,11 @@ async function handler(req: NextRequest, user: UserPayload) {
     );
   }
 
-  const pdfUrl = await getPdfUrl(resume.resumeUrl);
+  const pdfUrl = await getPdfUrl(
+    resume.resumeUrl,
+    resume.resumeMimeType,
+    contentDisposition,
+  );
   return NextResponse.json({ pdfUrl }, { status: 200 });
 }
 

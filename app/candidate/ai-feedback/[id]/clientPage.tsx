@@ -162,9 +162,18 @@ export default function AIFeedbackClientPage({
         setIsFeedbackPending(true);
       }, 8000);
 
+      const resumeResponse = await axios.get("/api/show_resume", {
+        params: { resumeId, disposition: "attachment" },
+      });
+      const getObjectUrl = resumeResponse.data.pdfUrl;
+
+      if (!getObjectUrl) {
+        throw new Error("Failed to get a downloadable resume URL");
+      }
+
       const res = await axios.post(
         "https://53jljxuloivay4q5n3pizi274m0deskh.lambda-url.eu-north-1.on.aws/feedback",
-        { resume_url: resume.resumeUrl },
+        { resume_url: getObjectUrl },
       );
       if (res.status === 200) {
         toast.success("Feedback fetched");
@@ -272,7 +281,7 @@ export default function AIFeedbackClientPage({
     try {
       setIsResumeViewerLoading(true);
       const response = await axios.get("/api/show_resume", {
-        params: { resumeId },
+        params: { resumeId, disposition: "inline" },
       });
       setPdfUrl(response.data.pdfUrl);
       setIsResumeViewerOpen(true);
