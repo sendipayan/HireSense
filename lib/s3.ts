@@ -16,6 +16,7 @@ export function getPdfUrl(key: string) {
             Bucket: process.env.AWS_S3_BUCKET!,
             Key: key,
             ResponseContentType: "application/pdf",
+            ResponseContentDisposition: "inline",
         }),
         { expiresIn: 60 },
     );

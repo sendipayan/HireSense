@@ -35,7 +35,9 @@ export default function AIFeedbackClientPage({
     useResumeFeedbackStore();
   const [loading, setLoading] = useState(false);
   const [trigger, setTrigger] = useState(false);
-  const [viewurl, setViewurl] = useState("");
+  const [pdfUrl, setPdfUrl] = useState("");
+  const [isResumeViewerOpen, setIsResumeViewerOpen] = useState(false);
+  const [isResumeViewerLoading, setIsResumeViewerLoading] = useState(false);
   const [selectedRecId, setSelectedRecId] = useState("");
   const [showResume, setShowResume] = useState(true);
   const [feedloading, setFeedloading] = useState(false)
@@ -88,17 +90,6 @@ export default function AIFeedbackClientPage({
     getResume();
   }, [resumeId, trigger]);
 
-  useEffect(() => {
-    if (resume?.resumeUrl) {
-      if (resume.resumeMimeType === "application/pdf") {
-        const viewerUrl =
-          "https://docs.google.com/gview?url=" +
-          encodeURIComponent(resume.resumeUrl) +
-          "&embedded=true";
-        setViewurl(viewerUrl);
-      }
-    }
-  }, [resume]);
   const recommendations = resume?.resume_recommendations ?? [];
 
   const getRecommendationKey = (rec: any, index: number) =>
@@ -272,9 +263,30 @@ export default function AIFeedbackClientPage({
     }
   };
 
+  const toggleResumeViewer = async () => {
+    if (isResumeViewerOpen) {
+      setIsResumeViewerOpen(false);
+      return;
+    }
+
+    try {
+      setIsResumeViewerLoading(true);
+      const response = await axios.get("/api/show_resume", {
+        params: { resumeId },
+      });
+      setPdfUrl(response.data.pdfUrl);
+      setIsResumeViewerOpen(true);
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to load resume preview");
+    } finally {
+      setIsResumeViewerLoading(false);
+    }
+  };
+
   return (
     <main className="py-8 sm:py-12">
-      <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         {/* Breadcrumbs */}
         <Breadcrumbs
           items={[
@@ -296,38 +308,27 @@ export default function AIFeedbackClientPage({
             <Button
               variant="outline"
               className="bg-transparent cursor-pointer"
-              onClick={() =>
-                window.open(viewurl, "_blank", "noopener,noreferrer")
-              }
-              disabled={!viewurl}
+              onClick={toggleResumeViewer}
+              disabled={isResumeViewerLoading}
             >
               <Eye className="mr-2 h-4 w-4" aria-hidden="true" />
-              View Resume
-            </Button>
-          )}
-          {resume && (
-            <Button
-              variant="outline"
-              className="bg-transparent cursor-pointer"
-              onClick={() =>
-                window.open(resume?.resumeUrl, "_blank", "noopener,noreferrer")
-              }
-              disabled={!resume?.resumeUrl}
-            >
-              <Link
-                href={resume.resumeUrl}
-                download={resume.resumeName}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center"
-              >
-                <Download className="mr-2 h-4 w-4" aria-hidden="true" />
-                Download Resume
-              </Link>
+              {isResumeViewerLoading
+                ? "Loading Resume..."
+                : isResumeViewerOpen
+                  ? "Hide Resume"
+                  : "View Resume"}
             </Button>
           )}
         </PageHeader>
 
+        <div
+          className={
+            isResumeViewerOpen
+              ? "mt-8 grid gap-8 xl:grid-cols-[minmax(0,1fr)_minmax(26rem,0.9fr)]"
+              : ""
+          }
+        >
+          <div>
         {showResume ? (
           <section className="mt-8">
             <div className="rounded-2xl border border-dashed border-border bg-card p-10 text-center">
@@ -847,6 +848,18 @@ export default function AIFeedbackClientPage({
             </Button>
           </div>
         </section>
+          </div>
+
+          {isResumeViewerOpen && pdfUrl && (
+            <aside className="min-w-0 rounded-xl border border-border bg-card p-2 xl:sticky xl:top-6 xl:h-[calc(100vh-3rem)]">
+              <iframe
+                src={pdfUrl}
+                title={`${resume?.resumeName || "Resume"} preview`}
+                className="h-[70vh] w-full rounded-lg bg-background xl:h-full"
+              />
+            </aside>
+          )}
+        </div>
       </div>
     </main>
   );
