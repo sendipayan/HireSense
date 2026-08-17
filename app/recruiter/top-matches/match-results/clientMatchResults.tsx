@@ -113,6 +113,9 @@ export default function MatchResultsClientPage({
   const [trigger, setTrigger] = useState(false);
   const router = useRouter();
   const [link, setLink] = useState<string>("");
+  const [pdfUrl, setPdfUrl] = useState("");
+  const [isResumeViewerOpen, setIsResumeViewerOpen] = useState(false);
+  const [isResumeViewerLoading, setIsResumeViewerLoading] = useState(false);
   const [uniqueJob, setUniqueJob] = useState<Job>({
     id: "",
     recruiterId: "",
@@ -259,6 +262,32 @@ export default function MatchResultsClientPage({
         console.error("Unexpected error:", err);
         toast.error("An unexpected error occurred");
       }
+    }
+  };
+
+  const toggleResumeViewer = async () => {
+    if (isResumeViewerOpen) {
+      setIsResumeViewerOpen(false);
+      return;
+    }
+
+    if (!uniqueApplication.resume.id) return;
+
+    try {
+      setIsResumeViewerLoading(true);
+      const response = await axios.get("/api/show_resume", {
+        params: {
+          resumeId: uniqueApplication.resume.id,
+          disposition: "inline",
+        },
+      });
+      setPdfUrl(response.data.pdfUrl);
+      setIsResumeViewerOpen(true);
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to load resume preview");
+    } finally {
+      setIsResumeViewerLoading(false);
     }
   };
 
@@ -423,34 +452,26 @@ export default function MatchResultsClientPage({
                     "application/pdf" && (
                     <Button
                       size="sm"
-                      onClick={() => {
-                        window.open(
-                          `https://docs.google.com/gview?url=${encodeURIComponent(uniqueApplication?.resume?.resumeUrl)}&embedded=true`,
-                          "_blank",
-                          "noopener,noreferrer",
-                        );
-                      }}
+                      onClick={toggleResumeViewer}
+                      disabled={isResumeViewerLoading}
                       variant="default"
                       className="cursor-pointer"
                     >
-                      View Resume
+                      {isResumeViewerLoading
+                        ? "Loading Resume..."
+                        : isResumeViewerOpen
+                          ? "Hide Resume"
+                          : "View Resume"}
                     </Button>
                   )}
-                  <Button
-                    size="sm"
-                    onClick={() => {
-                      window.open(
-                        uniqueApplication?.resume?.resumeUrl,
-                        "_blank",
-                        "noopener,noreferrer",
-                      );
-                    }}
-                    variant="secondary"
-                    className="cursor-pointer"
-                  >
-                    Download Resume
-                  </Button>
                 </div>
+                {isResumeViewerOpen && pdfUrl && (
+                  <iframe
+                    src={pdfUrl}
+                    title={`${uniqueApplication.resume.resumeName} resume preview`}
+                    className="mt-6 h-[70vh] w-full rounded-lg border border-border bg-background"
+                  />
+                )}
               </div>
             </section>
 

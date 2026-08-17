@@ -10,11 +10,13 @@ import { useState, useEffect } from "react"
 import { Input } from "../ui/input"
 import axios from "axios"
 import { convertToInputValues } from "@/lib/datePraser"
+import toast from "react-hot-toast"
 
 export interface InterviewDetail {
     id: string
     candidateName: string
     recruiterName: string
+    resumeId: string
     resumeUrl: string
     resumeName: string
     resumeType: string
@@ -63,6 +65,9 @@ export function InterviewDetailModal({
     const [loading, setLoading] = useState(false)
     const [date, setDate] = useState("")
     const [time, setTime] = useState("")
+    const [pdfUrl, setPdfUrl] = useState("")
+    const [isResumeViewerOpen, setIsResumeViewerOpen] = useState(false)
+    const [isResumeViewerLoading, setIsResumeViewerLoading] = useState(false)
 
 
     useEffect(() => {
@@ -158,6 +163,29 @@ export function InterviewDetailModal({
             onOpenChange(false);
         }
     };
+
+    const toggleResumeViewer = async () => {
+        if (isResumeViewerOpen) {
+            setIsResumeViewerOpen(false)
+            return
+        }
+
+        if (!interview.resumeId) return
+
+        try {
+            setIsResumeViewerLoading(true)
+            const response = await axios.get("/api/show_resume", {
+                params: { resumeId: interview.resumeId, disposition: "inline" },
+            })
+            setPdfUrl(response.data.pdfUrl)
+            setIsResumeViewerOpen(true)
+        } catch (error) {
+            console.error(error)
+            toast.error("Failed to load resume preview")
+        } finally {
+            setIsResumeViewerLoading(false)
+        }
+    }
 
 
 
@@ -267,22 +295,27 @@ export function InterviewDetailModal({
                                 <span className="text-xs font-mono  truncate max-w-[300px] hidden lg:block">
                                     {interview.resumeName}
                                 </span>
-                                {interview.resumeType === "application/pdf" ?
-                                    <Button size="sm" variant="outline" className="h-8 bg-transparent"
-                                        onClick={() => {
-                                            window.open(`https://docs.google.com/gview?url=${encodeURIComponent(interview.resumeUrl)}&embedded=true`, "_blank", "noopener,noreferrer")
-                                        }}
-                                    >
-                                        View
-                                    </Button> :
-                                    <Button size="sm" variant="outline" className="h-8 bg-transparent"
-                                        onClick={() => {
-                                            window.open(interview.resumeUrl, "_blank", "noopener,noreferrer")
-                                        }}
-                                    >
-                                        Download
-                                    </Button>}
+                                <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="h-8 bg-transparent"
+                                    onClick={toggleResumeViewer}
+                                    disabled={isResumeViewerLoading}
+                                >
+                                    {isResumeViewerLoading
+                                        ? "Loading..."
+                                        : isResumeViewerOpen
+                                            ? "Hide"
+                                            : "View"}
+                                </Button>
                             </div>
+                            {isResumeViewerOpen && pdfUrl && (
+                                <iframe
+                                    src={pdfUrl}
+                                    title={`${interview.resumeName} resume preview`}
+                                    className="h-[60vh] w-full rounded-lg border border-border bg-background"
+                                />
+                            )}
                         </div>
 
                         {/* Links/Actions */}

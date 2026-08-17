@@ -72,7 +72,7 @@ export function InterviewCard({ interview, onConfirm, onReschedule, onAddToCalen
                     </div>
                 </div>
 
-                {interview.resumeType === "application/pdf" ?
+                {/*{interview.resumeType === "application/pdf" ?
                     <Button
                         variant="outline"
                         className="w-full bg-primary/5 border-primary/20 text-primary hover:bg-primary/10 h-9"
@@ -96,7 +96,7 @@ export function InterviewCard({ interview, onConfirm, onReschedule, onAddToCalen
                         <FileText className="mr-2 h-4 w-4" />
                         <strong>Resume: </strong>{interview.resumeName.slice(0, 20)}{interview.resumeName.length > 20 ? "..." : ""}
 
-                    </Button>}
+                    </Button>}*/}
 
                 {interview.meetingLink && (
                     <Button

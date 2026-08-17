@@ -268,6 +268,7 @@ export default function CandidateInterviewsPage() {
             meetingLink: interview.meetingLink,
             location: interview.location,
             resumeName: interview.resumeName,
+            resumeId: interview.application.resume.id,
             resumeUrl: interview.resumeUrl,
             resumeType: interview.resumeType,
             instructions: interview.instructions,
@@ -326,6 +327,7 @@ export default function CandidateInterviewsPage() {
                                             meetingLink: interview.meetingLink || "",
                                             instructions: interview.notes || "",
                                             resumeName: interview.application.resume.resumeName || "",
+                                            //resumeId: interview.application.resume.id,
                                             resumeUrl: interview.application.resume.resumeUrl || "",
                                             resumeType: interview.application.resume.resumeMimeType || "",
                                         }}
@@ -448,6 +450,7 @@ export default function CandidateInterviewsPage() {
                                                         instructions: interview.notes || "",
                                                         duration: interview.duration.toString() || "",
                                                         resumeName: interview.application.resume.resumeName || "",
+                                                        resumeId: interview.application.resume.id,
                                                         resumeUrl: interview.application.resume.resumeUrl || "",
                                                         resumeType: interview.application.resume.resumeMimeType || "",
 

@@ -113,17 +113,7 @@ export function CandidateCard({
             <Button size="sm" asChild>
               <Link href={`/recruiter/top-matches/match-results?candidate=${Cid}&job=${Jid}`}>View Profile</Link>
             </Button>
-            {resumeMimeType === "application/pdf" &&
-              <Button size="sm" variant="outline"
-                onClick={() => {
-                  window.open(`https://docs.google.com/gview?url=${encodeURIComponent(resumeUrl)}&embedded=true`, "_blank", "noopener,noreferrer")
-                }}>
-                View Resume
-              </Button>}
-            <Button size="sm" variant="outline"
-              onClick={() => { window.open(resumeUrl, "_blank", "noopener,noreferrer") }}>
-              Download Resume
-            </Button>
+           
 
 
 

@@ -552,6 +552,7 @@ export default function RecruiterInterviewsPage() {
                                             phno: int.phno || "",
                                             notes: int.notes || "",
                                             recruiterName: "",
+                                            resumeId: int.application.resume.id,
                                             resumeUrl: int.application.resume.resumeUrl,
                                             resumeName: int.application.resume.resumeName,
                                             resumeType: int.application.resume.resumeMimeType,

@@ -278,7 +278,7 @@ export default function ApplicationsPage() {
                                                     <Calendar className="h-4 w-4" />
                                                     Applied on {new Date(app.createdAt).toISOString().split("T")[0]}
                                                 </div>
-                                                {app.resume.resumeMimeType === "application/pdf" ? <div className="flex items-center gap-1.5 cursor-pointer hover:text-primary"
+                                                {/*{app.resume.resumeMimeType === "application/pdf" ? <div className="flex items-center gap-1.5 cursor-pointer hover:text-primary"
                                                     onClick={() => {
                                                         window.open(`https://docs.google.com/gview?url=${encodeURIComponent(app.resume.resumeUrl)}&embedded=true`, "_blank", "noopener,noreferrer")
                                                     }}>
@@ -288,7 +288,7 @@ export default function ApplicationsPage() {
                                                     onClick={() => { window.open(app.resume.resumeUrl, "_blank", "noopener,noreferrer") }}>
                                                     <FileText className="h-4 w-4" />
                                                     {"Resume: " + app.resume.resumeName}
-                                                </div>}
+                                                </div>}*/}
                                             </div>
                                         </div>
                                         <div className="border-t border-border bg-muted/30 p-4 md:border-l md:border-t-0 md:p-6">
