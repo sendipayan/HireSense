@@ -22,6 +22,6 @@ export function getPdfUrl(
             ResponseContentType: contentType,
             ResponseContentDisposition: contentDisposition,
         }),
-        { expiresIn: 60 },
+        { expiresIn: 300 },
     );
 }
